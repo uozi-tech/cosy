@@ -18,7 +18,7 @@ type ValidError struct {
 func (c *Ctx[T]) validate() (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	_ = c.ctx.ShouldBindJSON(&c.Payload)
+	_ = c.ShouldBindJSON(&c.Payload)
 
 	errs = validate.ValidateMap(c.Payload, c.rules)
 

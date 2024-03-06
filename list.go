@@ -27,7 +27,7 @@ func GetPagingParams(c *gin.Context) (page, offset, pageSize int) {
 }
 
 func (c *Ctx[T]) combineStdSelectorRequest() {
-	StdSelectorInitID := c.ctx.QueryArray("id[]")
+	StdSelectorInitID := c.QueryArray("id[]")
 
 	if len(StdSelectorInitID) == 0 {
 		return
@@ -52,7 +52,7 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 	var dbModel T
 	result := model.UseDB()
 
-	if cast.ToBool(c.ctx.Query("trash")) {
+	if cast.ToBool(c.Query("trash")) {
 		tableName := c.table
 		if c.table == "" {
 			stmt := &gorm.Statement{DB: model.UseDB()}
@@ -126,13 +126,13 @@ func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
 	delete(result.Statement.Clauses, "LIMIT")
 	result.Count(&totalRecords)
 
-	page := cast.ToInt(c.ctx.Query("page"))
+	page := cast.ToInt(c.Query("page"))
 	if page == 0 {
 		page = 1
 	}
 
 	pageSize := settings.AppSettings.PageSize
-	if reqPageSize := c.ctx.Query("page_size"); reqPageSize != "" {
+	if reqPageSize := c.Query("page_size"); reqPageSize != "" {
 		pageSize = cast.ToInt(reqPageSize)
 	}
 
@@ -148,18 +148,18 @@ func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
 func (c *Ctx[T]) PagingList() {
 	data, ok := c.PagingListData()
 	if ok {
-		c.ctx.JSON(http.StatusOK, data)
+		c.JSON(http.StatusOK, data)
 	}
 }
 
 // EmptyPagingList return empty list
 func (c *Ctx[T]) EmptyPagingList() {
 	pageSize := settings.AppSettings.PageSize
-	if reqPageSize := c.ctx.Query("page_size"); reqPageSize != "" {
+	if reqPageSize := c.Query("page_size"); reqPageSize != "" {
 		pageSize = cast.ToInt(reqPageSize)
 	}
 
 	data := &model.DataList{Data: make([]any, 0)}
 	data.Pagination.PerPage = pageSize
-	c.ctx.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, data)
 }

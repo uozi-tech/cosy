@@ -13,6 +13,11 @@ type ICurd[T any] interface {
 	Destroy() gin.HandlerFunc
 	Recover() gin.HandlerFunc
 	InitRouter(*gin.RouterGroup, ...gin.HandlerFunc)
+	GetHook(hook func(*Ctx[T]))
+	GetListHook(hook func(*Ctx[T]))
+	CreateHook(hook func(*Ctx[T]))
+	ModifyHook(hook func(*Ctx[T]))
+	DestroyHook(hook func(*Ctx[T]))
 }
 
 type Curd[T any] struct {

@@ -13,7 +13,7 @@ import (
 func (c *Ctx[T]) SetFussy(keys ...string) *Ctx[T] {
 	c.fussy = append(c.fussy, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToFussySearch(c.ctx, tx, keys...)
+		return QueryToFussySearch(c.Context, tx, keys...)
 	})
 	return c
 }
@@ -21,7 +21,7 @@ func (c *Ctx[T]) SetFussy(keys ...string) *Ctx[T] {
 func (c *Ctx[T]) SetSearchFussyKeys(keys ...string) *Ctx[T] {
 	c.search = append(c.search, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToFussyKeysSearch(c.ctx, tx, keys...)
+		return QueryToFussyKeysSearch(c.Context, tx, keys...)
 	})
 	return c
 }
@@ -29,7 +29,7 @@ func (c *Ctx[T]) SetSearchFussyKeys(keys ...string) *Ctx[T] {
 func (c *Ctx[T]) SetEqual(keys ...string) *Ctx[T] {
 	c.eq = append(c.eq, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToEqualSearch(c.ctx, tx, keys...)
+		return QueryToEqualSearch(c.Context, tx, keys...)
 	})
 	return c
 }
@@ -37,7 +37,7 @@ func (c *Ctx[T]) SetEqual(keys ...string) *Ctx[T] {
 func (c *Ctx[T]) SetIn(keys ...string) *Ctx[T] {
 	c.in = append(c.in, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToInSearch(c.ctx, tx, keys...)
+		return QueryToInSearch(c.Context, tx, keys...)
 	})
 	return c
 }
@@ -45,7 +45,7 @@ func (c *Ctx[T]) SetIn(keys ...string) *Ctx[T] {
 func (c *Ctx[T]) SetOrFussy(keys ...string) *Ctx[T] {
 	c.orFussy = append(c.orFussy, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToOrFussySearch(c.ctx, tx, keys...)
+		return QueryToOrFussySearch(c.Context, tx, keys...)
 	})
 	return c
 }
@@ -53,7 +53,7 @@ func (c *Ctx[T]) SetOrFussy(keys ...string) *Ctx[T] {
 func (c *Ctx[T]) SetOrEqual(keys ...string) *Ctx[T] {
 	c.orEq = append(c.orEq, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToOrEqualSearch(c.ctx, tx, keys...)
+		return QueryToOrEqualSearch(c.Context, tx, keys...)
 	})
 	return c
 }
@@ -61,7 +61,7 @@ func (c *Ctx[T]) SetOrEqual(keys ...string) *Ctx[T] {
 func (c *Ctx[T]) SetOrIn(keys ...string) *Ctx[T] {
 	c.orIn = append(c.orIn, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
-		return QueryToOrInSearch(c.ctx, tx, keys...)
+		return QueryToOrInSearch(c.Context, tx, keys...)
 	})
 	return c
 }

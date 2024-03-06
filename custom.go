@@ -13,7 +13,7 @@ func (c *Ctx[T]) Custom(fx func(ctx *Ctx[T])) {
 	errs := c.validate()
 
 	if len(errs) > 0 {
-		c.ctx.JSON(http.StatusNotAcceptable, gin.H{
+		c.JSON(http.StatusNotAcceptable, gin.H{
 			"message": "Requested with wrong parameters",
 			"errors":  errs,
 		})
@@ -29,7 +29,7 @@ func (c *Ctx[T]) Custom(fx func(ctx *Ctx[T])) {
 	err := map2struct.WeakDecode(c.Payload, &c.Model)
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 

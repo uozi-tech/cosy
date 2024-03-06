@@ -14,7 +14,7 @@ func init() {
 }
 
 type Ctx[T any] struct {
-	ctx                      *gin.Context
+	*gin.Context
 	rules                    gin.H
 	Payload                  map[string]interface{}
 	Model                    T
@@ -46,7 +46,7 @@ type Ctx[T any] struct {
 
 func Core[T any](c *gin.Context) *Ctx[T] {
 	return &Ctx[T]{
-		ctx:                      c,
+		Context:                  c,
 		gormScopes:               make([]func(tx *gorm.DB) *gorm.DB, 0),
 		beforeExecuteHookFunc:    make([]func(ctx *Ctx[T]), 0),
 		beforeDecodeHookFunc:     make([]func(ctx *Ctx[T]), 0),
@@ -88,5 +88,5 @@ func (c *Ctx[T]) SetTransformer(t func(m *T) any) *Ctx[T] {
 }
 
 func (c *Ctx[T]) GetParamID() int {
-	return cast.ToInt(c.ctx.Param("id"))
+	return cast.ToInt(c.Param("id"))
 }

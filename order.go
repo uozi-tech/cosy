@@ -13,7 +13,7 @@ func (c *Ctx[T]) UpdateOrder() {
 		AffectedIDs []int `json:"affected_ids"`
 	}
 
-	if !BindAndValid(c.ctx, &json) {
+	if !BindAndValid(c.Context, &json) {
 		return
 	}
 
@@ -29,7 +29,7 @@ func (c *Ctx[T]) UpdateOrder() {
 	err := db.Model(&c.Model).Where("id = ?", json.TargetID).Update("order_id", gorm.Expr("order_id + ?", affectedLen*(-json.Direction))).Error
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
@@ -37,9 +37,9 @@ func (c *Ctx[T]) UpdateOrder() {
 	err = db.Model(&c.Model).Where("id in ?", json.AffectedIDs).Update("order_id", gorm.Expr("order_id + ?", json.Direction)).Error
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
-	c.ctx.JSON(http.StatusOK, json)
+	c.JSON(http.StatusOK, json)
 }

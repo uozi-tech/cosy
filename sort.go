@@ -9,12 +9,12 @@ import (
 )
 
 func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
-	order := c.ctx.DefaultQuery("order", "desc")
+	order := c.DefaultQuery("order", "desc")
 	if order != "desc" && order != "asc" {
 		order = "desc"
 	}
 
-	sortBy := c.ctx.DefaultQuery("sort_by", c.itemKey)
+	sortBy := c.DefaultQuery("sort_by", c.itemKey)
 
 	s, _ := schema.Parse(c.Model, &sync.Map{}, schema.NamingStrategy{})
 	if _, ok := s.FieldsByDBName[sortBy]; !ok && sortBy != c.itemKey {
@@ -32,6 +32,6 @@ func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
 
 func (c *Ctx[T]) orderAndPaginate(db *gorm.DB) *gorm.DB {
 	db = c.sortOrder(db)
-	_, offset, pageSize := GetPagingParams(c.ctx)
+	_, offset, pageSize := GetPagingParams(c.Context)
 	return db.Offset(offset).Limit(pageSize)
 }

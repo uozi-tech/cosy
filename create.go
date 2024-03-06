@@ -13,7 +13,7 @@ func (c *Ctx[T]) Create() {
 	errs := c.validate()
 
 	if len(errs) > 0 {
-		c.ctx.JSON(http.StatusNotAcceptable, gin.H{
+		c.JSON(http.StatusNotAcceptable, gin.H{
 			"message": "Requested with wrong parameters",
 			"errors":  errs,
 		})
@@ -31,7 +31,7 @@ func (c *Ctx[T]) Create() {
 	err := map2struct.WeakDecode(c.Payload, &c.Model)
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (c *Ctx[T]) Create() {
 	}
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
@@ -69,9 +69,9 @@ func (c *Ctx[T]) Create() {
 	tx.Table(c.table, c.tableArgs...).First(&c.Model)
 
 	if c.nextHandler != nil {
-		(*c.nextHandler)(c.ctx)
+		(*c.nextHandler)(c.Context)
 	} else {
-		c.ctx.JSON(http.StatusOK, c.Model)
+		c.JSON(http.StatusOK, c.Model)
 	}
 }
 

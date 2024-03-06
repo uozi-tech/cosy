@@ -24,22 +24,22 @@ func (c *Ctx[T]) Get() {
 
 	// scan into custom struct
 	if c.scan != nil {
-		c.ctx.JSON(http.StatusOK, c.scan(db))
+		c.JSON(http.StatusOK, c.scan(db))
 		return
 	}
 
 	err := db.First(&data, id).Error
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
 	// no transformer
 	if c.transformer == nil {
-		c.ctx.JSON(http.StatusOK, data)
+		c.JSON(http.StatusOK, data)
 		return
 	}
 
 	// use transformer
-	c.ctx.JSON(http.StatusOK, c.transformer(data))
+	c.JSON(http.StatusOK, c.transformer(data))
 }

@@ -16,7 +16,7 @@ func (c *Ctx[T]) Destroy() {
 	if c.abort {
 		return
 	}
-	id := c.ctx.Param("id")
+	id := c.Param("id")
 
 	c.beforeExecuteHook()
 
@@ -24,7 +24,7 @@ func (c *Ctx[T]) Destroy() {
 
 	result := db
 
-	if cast.ToBool(c.ctx.Query("permanent")) || c.permanentlyDelete {
+	if cast.ToBool(c.Query("permanent")) || c.permanentlyDelete {
 		result = result.Unscoped()
 	}
 
@@ -41,13 +41,13 @@ func (c *Ctx[T]) Destroy() {
 	}
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
 	err = result.Delete(&c.OriginModel).Error
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
@@ -61,14 +61,14 @@ func (c *Ctx[T]) Destroy() {
 		}
 	}
 
-	c.ctx.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusNoContent, nil)
 }
 
 func (c *Ctx[T]) Recover() {
 	if c.abort {
 		return
 	}
-	id := c.ctx.Param("id")
+	id := c.Param("id")
 
 	c.beforeExecuteHook()
 
@@ -89,13 +89,13 @@ func (c *Ctx[T]) Recover() {
 	}
 
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
 	err = result.Model(&dbModel).Update("deleted_at", nil).Error
 	if err != nil {
-		errHandler(c.ctx, err)
+		errHandler(c.Context, err)
 		return
 	}
 
@@ -109,5 +109,5 @@ func (c *Ctx[T]) Recover() {
 		}
 	}
 
-	c.ctx.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusNoContent, nil)
 }

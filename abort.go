@@ -2,7 +2,7 @@ package cosy
 
 func (c *Ctx[T]) AbortWithError(err error) {
 	c.abort = true
-	errHandler(c.ctx, err)
+	errHandler(c.Context, err)
 }
 
 func (c *Ctx[T]) Abort() {

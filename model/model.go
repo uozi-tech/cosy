@@ -51,7 +51,7 @@ func Init(driver string) *gorm.DB {
 
 	switch driver {
 	case MySQL:
-		dialect = mysql.Open(fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Asia/Shanghai",
+		dialect = mysql.Open(fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			dbs.User, dbs.Password, dbs.Host, dbs.Port, dbs.Name))
 	case Postgres:
 		dialect = postgres.Open(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Shanghai",
