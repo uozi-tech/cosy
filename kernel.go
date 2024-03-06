@@ -36,7 +36,6 @@ func Boot(confPath string) {
 	logger.Init(settings.ServerSettings.RunMode)
 	defer logger.Sync()
 
-	logger.Infof("Built at: %v", settings.LastModified)
 	// Kernel boot
 	kernel.Boot()
 
