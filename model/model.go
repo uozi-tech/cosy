@@ -54,7 +54,7 @@ func Init(driver string) *gorm.DB {
 		dialect = mysql.Open(fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			dbs.User, dbs.Password, dbs.Host, dbs.Port, dbs.Name))
 	case Postgres:
-		dialect = postgres.Open(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Shanghai",
+		dialect = postgres.Open(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
 			dbs.Host, dbs.User, dbs.Password, dbs.Name, dbs.Port))
 	case Sqlite:
 		dialect = sqlite.Open(path.Join(path.Dir(settings.ConfPath), fmt.Sprintf("%s.db", settings.DataBaseSettings.Name)))

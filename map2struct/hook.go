@@ -11,10 +11,6 @@ import (
 
 var timeLocation *time.Location
 
-func init() {
-	timeLocation, _ = time.LoadLocation("Asia/Shanghai")
-}
-
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,

@@ -1,18 +1,13 @@
 package settings
 
 import (
-	"github.com/spf13/cast"
 	"gopkg.in/ini.v1"
 	"log"
-	"strings"
-	"time"
 )
 
 var (
-	Conf         *ini.File
-	ConfPath     string
-	buildTime    string
-	LastModified string
+	Conf     *ini.File
+	ConfPath string
 )
 
 type section struct {
@@ -33,12 +28,6 @@ var sections = []section{
 		Name: "database",
 		Ptr:  DataBaseSettings,
 	},
-}
-
-// init the settings package
-func init() {
-	t := time.Unix(cast.ToInt64(buildTime), 0)
-	LastModified = strings.ReplaceAll(t.Format(time.RFC1123), "UTC", "GMT")
 }
 
 // Register the setting, this should be called before Init

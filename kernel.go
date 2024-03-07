@@ -15,11 +15,6 @@ import (
 	"time"
 )
 
-func init() {
-	loc, _ := time.LoadLocation("Asia/Shanghai")
-	time.Local = loc
-}
-
 func Boot(confPath string) {
 
 	// Create context that listens for the interrupt signal from the OS.
