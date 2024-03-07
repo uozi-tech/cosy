@@ -73,7 +73,6 @@ func (c *Ctx[T]) Recover() {
 	c.beforeExecuteHook()
 
 	db := model.UseDB()
-	var dbModel T
 
 	result := db.Unscoped()
 	if len(c.gormScopes) > 0 {
@@ -83,9 +82,9 @@ func (c *Ctx[T]) Recover() {
 	var err error
 	session := result.Session(&gorm.Session{})
 	if c.table != "" {
-		err = session.Table(c.table).Take(&dbModel, id).Error
+		err = session.Table(c.table).First(&c.Model, id).Error
 	} else {
-		err = session.First(&dbModel, id).Error
+		err = session.First(&c.Model, id).Error
 	}
 
 	if err != nil {
@@ -93,7 +92,7 @@ func (c *Ctx[T]) Recover() {
 		return
 	}
 
-	err = result.Model(&dbModel).Update("deleted_at", nil).Error
+	err = result.Model(&c.Model).Update("deleted_at", nil).Error
 	if err != nil {
 		errHandler(c.Context, err)
 		return

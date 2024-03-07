@@ -34,6 +34,7 @@ type Ctx[T any] struct {
 	permanentlyDelete        bool
 	SelectedFields           []string
 	itemKey                  string
+	columnWhiteList          map[string]bool
 	in                       []string
 	eq                       []string
 	fussy                    []string
@@ -52,6 +53,7 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 		beforeDecodeHookFunc:     make([]func(ctx *Ctx[T]), 0),
 		itemKey:                  "id",
 		skipAssociationsOnCreate: true,
+		columnWhiteList:          make(map[string]bool),
 	}
 }
 
@@ -89,4 +91,11 @@ func (c *Ctx[T]) SetTransformer(t func(m *T) any) *Ctx[T] {
 
 func (c *Ctx[T]) GetParamID() int {
 	return cast.ToInt(c.Param("id"))
+}
+
+func (c *Ctx[T]) AddColWhiteList(cols ...string) *Ctx[T] {
+	for _, col := range cols {
+		c.columnWhiteList[col] = true
+	}
+	return c
 }

@@ -18,6 +18,10 @@ func (c *Ctx[T]) Get() {
 
 	db := model.UseDB()
 
+	if c.table != "" {
+		db = db.Table(c.table)
+	}
+
 	c.handleTable()
 	c.resolvePreload()
 	c.appleGormScopes(db)
