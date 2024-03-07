@@ -16,6 +16,6 @@ func RegisterModels(models ...any) {
 }
 
 // InitDB init db.
-func InitDB(driver string) *gorm.DB {
-	return model.Init(driver)
+func InitDB(dialect gorm.Dialector) *gorm.DB {
+	return model.Init(dialect)
 }

@@ -1,9 +1,11 @@
 package cosy
 
 import (
+	"github.com/0xJacky/cosy-driver-postgres"
 	"github.com/0xJacky/cosy/kernel"
 	"github.com/0xJacky/cosy/model"
 	"github.com/0xJacky/cosy/router"
+	"github.com/0xJacky/cosy/settings"
 	"testing"
 	"time"
 )
@@ -11,7 +13,7 @@ import (
 func TestCosyIntegration(t *testing.T) {
 	model.RegisterModels(User{})
 	kernel.RegisterAsyncFunc(func() {
-		model.Init("postgres")
+		model.Init(postgres.Open(settings.DataBaseSettings))
 
 		r := router.InitRouter()
 		g := r.Group("/")

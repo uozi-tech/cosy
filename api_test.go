@@ -3,6 +3,7 @@ package cosy
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/0xJacky/cosy-driver-postgres"
 	"github.com/0xJacky/cosy/logger"
 	"github.com/0xJacky/cosy/map2struct"
 	"github.com/0xJacky/cosy/model"
@@ -43,7 +44,7 @@ func TestApi(t *testing.T) {
 	// prepare testing env
 	settings.Init("app.ini")
 	model.RegisterModels(User{})
-	model.Init("postgres")
+	model.Init(postgres.Open(settings.DataBaseSettings))
 	logger.Init("debug")
 
 	defer func() {
