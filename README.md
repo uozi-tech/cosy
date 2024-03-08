@@ -18,7 +18,7 @@ Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于
     - 数据库执行时的钩子 `GormScope(hook func(tx *gorm.DB) *gorm.DB) *Ctx[T]`
     - 数据库执行后的钩子 `ExecutedHook(hook ...func(ctx *Ctx[T])) *Ctx[T]`
     - 钩子的设置函数可以被多次调用，将会按照调用顺序执行
-4. **接口级性能**：只涉及到泛型，Cosy 层面上没有使用 reflect。
+4. **接口级性能**：只涉及到泛型，Cosy 层面上没有使用 reflect
 5. **路由级性能**：仅在程序初始化阶段使用 reflect，并对模型的反射结果缓存到 map 中
 
 ## 数据库驱动支持
@@ -72,7 +72,7 @@ type User struct {
 
 在 Gin Handler Func 中，使用 `cosy.Core[类型](c)` 初始化一个 Core 对象
 
-```
+```go
 func GetUser(c *gin.Context) {
     cosy.Core[model.User](c).Get()
 }
@@ -86,7 +86,7 @@ func GetUser(c *gin.Context) {
 
 当然了，这个是最简单的情况，我们可以使用链式方法来设置查询条件，例如我们可以 Preload 这个用户的用户组
 
-```
+```go
 func GetUser(c *gin.Context) {
     cosy.Core[model.User](c).Preload("User").Get()
 }
@@ -94,7 +94,7 @@ func GetUser(c *gin.Context) {
 
 如果你用到了 SQL View，还可以使用 SetTable() 方法来设置表名。
 
-```
+```go
 func GetUser(c *gin.Context) {
     cosy.Core[model.User](c).SetTable("user_view").Preload("User").Get()
 }
@@ -102,7 +102,7 @@ func GetUser(c *gin.Context) {
 
 Cosy 提供了 GormScope() 方法，可以在执行数据库查询时调用 Gorm 的方法。
 
-```
+```go
 func GetUser(c *gin.Context) {
     cosy.Core[model.User](c).
       SetTable("user_view").
@@ -117,7 +117,7 @@ func GetUser(c *gin.Context) {
 如果我需要在返回响应之前对数据进行处理，怎么办？
 Cosy 提供了 SetTransformer() 方法，可以在返回响应之前对数据进行处理。
 
-```
+```go
 type APIUser struct {
    model.User
    GroupName string `json:"group_name"`
@@ -148,7 +148,7 @@ JOIN，Where 等。
 
 假设，我们有一个 UserView 的 View，它包含了 User 和 Group 的所有字段，并且扩展了一个字段 GroupName。
 
-```
+```go
 type UserView struct {
    model.User
    GroupName string `json:"group_name"`
@@ -195,7 +195,7 @@ func GetUser(c *gin.Context) {
 
 ### 列表
 
-```
+```go
 func GetList() {
    core := cosy.Core[model.User](c).
       SetFussy("name", "phone", "email").
@@ -280,7 +280,7 @@ func GetList() {
 
 验证器文档参考：https://github.com/go-playground/validator
 
-```
+```go
 package api
 
 func GetUser(c *gin.Context) {
@@ -315,7 +315,7 @@ func GetUser(c *gin.Context) {
 举个例子，比如我们在设置用户密码时，从客户端 POST
 的是明文，在保存进数据库中，我们需要对密码进行加密，则可以使用 `BeforeExecuteHook` 钩子。
 
-```
+```go
 func encryptPassword(ctx *cosy.Ctx[model.User]) {
    // ... 加密逻辑
 }
@@ -325,7 +325,7 @@ func encryptPassword(ctx *cosy.Ctx[model.User]) {
 
 再比如，我们要做一个发帖的接口，需求时自动保存用户的 ID，我们可以使用 `BeforeDecodeHook` 钩子来设置用户 ID。
 
-```
+```go
 func setUserID(ctx *cosy.Ctx[model.Post]) {
    ctx.Payload["user_id"] = ctx.User.ID
 }
@@ -362,7 +362,7 @@ func setUserID(ctx *cosy.Ctx[model.Post]) {
 **注意，这里使用 c.Param("id") 作为路由参数**
 使用验证、钩子和下一个处理程序：
 
-```
+```go
 func ModifyUser(c *gin.Context) {
    core := cosy.Core[model.User](c).SetValidRules(gin.H{
          "name": "omitempty",
@@ -405,7 +405,7 @@ func ModifyUser(c *gin.Context) {
 一般情况下，使用下面的方法即可软删除记录，
 如果请求的查询参数中携带 `permanent` 参数，那么就会彻底删除记录。
 
-```
+```go
 func DestroyUser(c *gin.Context) {
    cosy.Core[model.User](c).Destroy()
 }
@@ -413,7 +413,7 @@ func DestroyUser(c *gin.Context) {
 
 如果你默认情况下就想彻底删除记录，请使用下面的方法：
 
-```
+```go
 func DestroyUser(c *gin.Context) {
    cosy.Core[model.User](c).PermanentlyDelete()
 }
@@ -441,7 +441,7 @@ func DestroyUser(c *gin.Context) {
 
 **注意，这里使用 c.Param("id") 作为路由参数**
 
-```
+```go
 func DestroyUser(c *gin.Context) {
    cosy.Core[model.User](c).Recover()
 }
@@ -464,7 +464,7 @@ func DestroyUser(c *gin.Context) {
 
 注意，这个函数不提供 ExecutedHook，毕竟你都自定义了，还需要我来执行吗？
 
-```
+```go
 func MyCustomHandler(c *gin.Context) {
    cosy.Core[model.User](c).
       SetVaildRule(gin.H{
@@ -487,7 +487,7 @@ Cosy 提供了错误处理函数 `cosy.ErrHandle(c, err)`
 例如，常见的模式可能包括检查 `gorm.ErrRecordNotFound` 错误并
 发送 StatusNotFound(404) 状态代码作为响应。
 
-```
+```go
 func GetUser(c *gin.Context) {
    u := query.User
    user, err := u.FirstByID(c.Param("id"))
@@ -541,7 +541,7 @@ func main() {
 go get -u github.com/0xJacky/cosy-driver-mysql
 ```
 调用
-```
+```go
 mysql.Open(settings.DataBaseSettings)
 ```
 
@@ -551,7 +551,7 @@ mysql.Open(settings.DataBaseSettings)
 go get -u github.com/0xJacky/cosy-driver-postgres
 ```
 调用
-```
+```go
 postgres.Open(settings.DataBaseSettings)
 ```
 
@@ -561,7 +561,7 @@ postgres.Open(settings.DataBaseSettings)
 go get -u github.com/0xJacky/cosy-driver-sqlite
 ```
 调用
-```
+```go
 sqlite.Open(settings.DataBaseSettings)
 ```
 
