@@ -6,16 +6,14 @@ import (
 
 var r *gin.Engine
 
-func InitRouter() *gin.Engine {
+func init() {
 	r = gin.New()
 
 	r.Use(recovery())
 
 	r.Use(gin.Logger())
-
-	return r
 }
 
-func GetRouterEngine() *gin.Engine {
+func GetEngine() *gin.Engine {
 	return r
 }

@@ -15,7 +15,7 @@ func TestCosyIntegration(t *testing.T) {
 	kernel.RegisterAsyncFunc(func() {
 		model.Init(postgres.Open(settings.DataBaseSettings))
 
-		r := router.InitRouter()
+		r := router.GetEngine()
 		g := r.Group("/")
 		Api[User]("users").InitRouter(g)
 	})

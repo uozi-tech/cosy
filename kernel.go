@@ -38,7 +38,7 @@ func Boot(confPath string) {
 	logger.Info("Server listing on", addr)
 	srv := &http.Server{
 		Addr:    addr,
-		Handler: router.GetRouterEngine(),
+		Handler: router.GetEngine(),
 	}
 
 	// Start the gin server
@@ -64,4 +64,14 @@ func Boot(confPath string) {
 	}
 
 	logger.Info("Server exited")
+}
+
+// RegisterAsyncFunc Register async functions, this function should be called before kernel boot.
+func RegisterAsyncFunc(f ...func()) {
+	kernel.RegisterAsyncFunc(f...)
+}
+
+// RegisterSyncsFunc Register syncs functions, this function should be called before kernel boot.
+func RegisterSyncsFunc(f ...func()) {
+	kernel.RegisterSyncsFunc(f...)
 }
