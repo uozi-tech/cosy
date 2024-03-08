@@ -29,6 +29,10 @@ func Init(mode string) {
 	// Directly output to stdout and stderr, and add caller information.
 	consoleDebugging := zapcore.Lock(os.Stdout)
 	consoleErrors := zapcore.Lock(os.Stderr)
+	encodeCaller := zapcore.FullCallerEncoder
+	if mode == gin.ReleaseMode {
+		encodeCaller = zapcore.ShortCallerEncoder
+	}
 	encoderConfig := zapcore.EncoderConfig{
 		// Keys can be anything except the empty string.
 		TimeKey:        "T",
@@ -42,7 +46,7 @@ func Init(mode string) {
 		EncodeLevel:    zapcore.CapitalLevelEncoder,
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeCaller:   zapcore.FullCallerEncoder,
+		EncodeCaller:   encodeCaller,
 	}
 	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime)
 	encoderConfig.ConsoleSeparator = "\t"
