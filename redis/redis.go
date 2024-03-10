@@ -42,7 +42,7 @@ func Incr(key string) (int64, error) {
 }
 
 func Set(key string, value interface{}, exp time.Duration) error {
-	return rdb.Set(ctx, buildKey(key), value, exp).Err()
+	return rdb.Set(ctx, buildKey(key), value, exp*time.Second).Err()
 }
 
 func Del(key ...string) error {

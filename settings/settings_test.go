@@ -7,13 +7,6 @@ import (
 	"testing"
 )
 
-type RedisSettings struct {
-	Host     string
-	Port     int
-	Password string
-	DB       int
-}
-
 func TestIntegration(t *testing.T) {
 	ConfPath = "app.testing.ini"
 
@@ -22,13 +15,6 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer file.Close()
-
-	rds := &RedisSettings{}
-	Register("redis", rds)
-
-	assert := assert.New(t)
-	assert.Equal(sections[3].Name, "redis")
-	assert.Equal(sections[3].Ptr, rds)
 
 	Init("app.testing.ini")
 
@@ -47,15 +33,16 @@ func TestIntegration(t *testing.T) {
 	DataBaseSettings.Password = "123456"
 	DataBaseSettings.Name = "test"
 
-	rds.DB = 0
-	rds.Host = "127.0.0.1"
-	rds.Port = 6379
-	rds.Password = jwtSecret
+	RedisSettings.DB = 0
+	RedisSettings.Addr = "127.0.0.1:6379"
+	RedisSettings.Password = jwtSecret
 
 	err = Save()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	assert := assert.New(t)
 
 	assert.NotNil(Conf)
 	assert.Equal("app.testing.ini", ConfPath)
@@ -69,8 +56,7 @@ func TestIntegration(t *testing.T) {
 	assert.Equal("root", DataBaseSettings.User)
 	assert.Equal("123456", DataBaseSettings.Password)
 	assert.Equal("test", DataBaseSettings.Name)
-	assert.Equal(0, rds.DB)
-	assert.Equal("127.0.0.1", rds.Host)
-	assert.Equal(6379, rds.Port)
-	assert.Equal(jwtSecret, rds.Password)
+	assert.Equal(0, RedisSettings.DB)
+	assert.Equal("127.0.0.1:6379", RedisSettings.Addr)
+	assert.Equal(jwtSecret, RedisSettings.Password)
 }
