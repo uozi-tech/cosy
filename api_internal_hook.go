@@ -1,6 +1,6 @@
 package cosy
 
-import "github.com/0xJacky/cosy/model"
+import "git.uozi.org/uozi/cosy/model"
 
 func getHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()

@@ -23,7 +23,7 @@ Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于
 
 ## 数据库驱动支持
 
-- [MySQL](https://github.com/0xJacky/cosy-driver-mysql)
+- [MySQL](https://git.uozi.org/uozi/cosy-driver-mysql)
 - [Postgres](https://github.com/0xJacky/cosy-driver-postgres)
 - Sqlite(TODO)
 
@@ -522,9 +522,9 @@ func GetUser(c *gin.Context) {
 package main
 
 import (
-   "github.com/0xJacky/cosy"
-   "github.com/0xJacky/cosy-driver-mysql"
-   "github.com/0xJacky/cosy/settings"
+   "git.uozi.org/uozi/cosy"
+   "git.uozi.org/uozi/cosy-driver-mysql"
+   "git.uozi.org/uozi/cosy/settings"
 )
 
 func main() {
@@ -538,7 +538,7 @@ func main() {
 #### MySQL
 安装
 ```bash
-go get -u github.com/0xJacky/cosy-driver-mysql
+go get -u git.uozi.org/uozi/cosy-driver-mysql
 ```
 调用
 ```go
@@ -558,7 +558,7 @@ postgres.Open(settings.DataBaseSettings)
 #### Sqlite
 安装
 ```bash
-go get -u github.com/0xJacky/cosy-driver-sqlite
+go get -u git.uozi.org/uozi/cosy-driver-sqlite
 ```
 调用
 ```go
@@ -571,9 +571,9 @@ package main
 
 import (
 	"flag"
-	"github.com/0xJacky/cosy"
-	"github.com/0xJacky/cosy-driver-mysql"
-	"github.com/0xJacky/cosy/settings"
+	"git.uozi.org/uozi/cosy"
+	"git.uozi.org/uozi/cosy-driver-mysql"
+	"git.uozi.org/uozi/cosy/settings"
 	"github.com/0xJacky/store/internal/analytic"
 	"github.com/0xJacky/store/model"
 	"github.com/0xJacky/store/query"
@@ -617,7 +617,7 @@ func main() {
 package router
 
 import (
-	"github.com/0xJacky/cosy"
+	"git.uozi.org/uozi/cosy"
 )
 
 func InitRouter() {
@@ -739,7 +739,7 @@ Cosy CURD 提供了 6 个钩子，这些钩子函数将会在 Model Cosy Tag 设
 package admin
 
 import (
-	"github.com/0xJacky/cosy"
+	"git.uozi.org/uozi/cosy"
 	"github.com/0xJacky/store/model"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

@@ -1,7 +1,7 @@
 package cosy
 
 import (
-	"github.com/0xJacky/cosy/map2struct"
+	"git.uozi.org/uozi/cosy/map2struct"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

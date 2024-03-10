@@ -2,7 +2,7 @@ package cosy
 
 import (
 	"errors"
-	"github.com/0xJacky/cosy/logger"
+	"git.uozi.org/uozi/cosy/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

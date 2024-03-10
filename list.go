@@ -2,9 +2,9 @@ package cosy
 
 import (
 	"fmt"
-	"github.com/0xJacky/cosy/logger"
-	"github.com/0xJacky/cosy/model"
-	"github.com/0xJacky/cosy/settings"
+	"git.uozi.org/uozi/cosy/logger"
+	"git.uozi.org/uozi/cosy/model"
+	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"

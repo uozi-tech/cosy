@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/0xJacky/cosy/logger"
-	"github.com/0xJacky/cosy/settings"
+	"git.uozi.org/uozi/cosy/logger"
+	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
