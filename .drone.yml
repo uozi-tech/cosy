@@ -1,0 +1,75 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: start
+    image: fifsky/drone-wechat-work
+    pull: always
+    settings:
+      url:
+        from_secret: wecom_bot_url
+      msgtype: markdown
+      content: |
+        #### 🎉 ${DRONE_REPO} 已提交，开始执行 CI/CD
+        > Author: ${DRONE_COMMIT_AUTHOR}
+        {{ if ne .Event "tag" -}}
+        > Branch: ${DRONE_COMMIT_BRANCH}
+        {{ end -}}
+        > Event: ${DRONE_BUILD_EVENT}
+        > Runner: ${DRONE_STAGE_MACHINE}
+        > Commit: [{{ .Message }}](${DRONE_COMMIT_LINK})
+        > [点击查看](${DRONE_BUILD_LINK})
+
+  - name: postgres healthcheck
+    image: postgres:latest
+    commands:
+      - while ! pg_isready -h postgres-server -U drone --quiet; do sleep 1; done
+
+  - name: test
+    image: golang:latest
+    commands:
+      - |
+        echo '[app]
+        PageSize = 20
+        JwtSecret = c87047ba-f40b-447f-8da5-24ca617dca9a
+        [server]
+        Host = 127.0.0.1
+        Port = 8080
+        RunMode = debug
+        [database]
+        User = drone
+        Password = drone
+        Host = postgres-server
+        Port = 5432
+        Name = drone' > app.ini
+      - go test -v ./... -test.run TestCosyIntegration
+
+  - name: notify
+    image: fifsky/drone-wechat-work
+    pull: always
+    settings:
+      url:
+        from_secret: wecom_bot_url
+      msgtype: markdown
+      content: |
+        {{ if eq .Status "success" }}
+        #### 🎉 ${DRONE_REPO} 构建成功
+        {{ else }}
+        #### ❌ ${DRONE_REPO} 构建失败
+        {{ end }}
+        > Author: ${DRONE_COMMIT_AUTHOR}
+        > Event: ${DRONE_BUILD_EVENT}
+        > Runner: ${DRONE_STAGE_MACHINE}
+        > Commit: [{{ .Message }}](${DRONE_COMMIT_LINK})
+        > [点击查看](${DRONE_BUILD_LINK})
+    when:
+      status: [ success, failure ]
+
+services:
+  - name: postgres-server
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: drone
+      POSTGRES_USER: drone
+      POSTGRES_PASSWORD: drone
