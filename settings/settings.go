@@ -28,6 +28,10 @@ var sections = []section{
 		Name: "database",
 		Ptr:  DataBaseSettings,
 	},
+	{
+		Name: "redis",
+		Ptr:  RedisSettings,
+	},
 }
 
 // Register the setting, this should be called before Init

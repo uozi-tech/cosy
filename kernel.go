@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"git.uozi.org/uozi/cosy/kernel"
 	"git.uozi.org/uozi/cosy/logger"
+	"git.uozi.org/uozi/cosy/redis"
 	"git.uozi.org/uozi/cosy/router"
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,11 @@ func Boot(confPath string) {
 	// Initialize logger package
 	logger.Init(settings.ServerSettings.RunMode)
 	defer logger.Sync()
+
+	// If redis settings addr is not empty, init redis
+	if settings.RedisSettings.Addr != "" {
+		redis.Init()
+	}
 
 	// Kernel boot
 	kernel.Boot()

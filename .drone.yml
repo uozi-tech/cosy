@@ -26,6 +26,11 @@ steps:
     commands:
       - while ! pg_isready -h postgres-server -U drone --quiet; do sleep 1; done
 
+  - name: redis healthcheck
+    image: redis:latest
+    commands:
+      - while ! redis-cli -h redis-server ping; do sleep 1; done
+
   - name: test
     image: golang:latest
     commands:
@@ -42,7 +47,12 @@ steps:
         Password = drone
         Host = postgres-server
         Port = 5432
-        Name = drone' > app.ini
+        Name = drone
+        [redis]
+        Addr = redis-server:6379
+        Password =
+        DB = 0
+        Prefix = cosy' > app.ini
       - go test -v ./... -test.run TestCosyIntegration
 
   - name: notify
@@ -73,3 +83,6 @@ services:
       POSTGRES_DB: drone
       POSTGRES_USER: drone
       POSTGRES_PASSWORD: drone
+
+  - name: redis-server
+    image: redis:latest
