@@ -54,6 +54,9 @@ steps:
         DB = 0
         Prefix = cosy' > app.ini
       - go test -v ./... -test.run TestCosyIntegration
+    volumes:
+      - name: go_cache
+        path: /go/pkg
 
   - name: notify
     image: fifsky/drone-wechat-work
@@ -86,3 +89,8 @@ services:
 
   - name: redis-server
     image: redis:latest
+
+volumes:
+  - name: go_cache
+    host:
+      path: /tmp/go_cache  # host volume absolute path
