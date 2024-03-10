@@ -3,7 +3,7 @@ module git.uozi.org/uozi/cosy
 go 1.22
 
 require (
-	github.com/0xJacky/cosy-driver-postgres v0.0.0-20240307123600-35e831b88c3f
+	git.uozi.org/uozi/cosy-driver-postgres v0.1.0
 	github.com/fatih/color v1.16.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.19.0
@@ -20,7 +20,6 @@ require (
 )
 
 require (
-	github.com/0xJacky/cosy v0.0.0-20240307032449-9e496e54a2d3 // indirect
 	github.com/bytedance/sonic v1.11.2 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect

@@ -3,11 +3,11 @@ package cosy
 import (
 	"bytes"
 	"encoding/json"
+	"git.uozi.org/uozi/cosy-driver-postgres"
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/map2struct"
 	"git.uozi.org/uozi/cosy/model"
 	"git.uozi.org/uozi/cosy/settings"
-	"github.com/0xJacky/cosy-driver-postgres"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

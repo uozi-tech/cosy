@@ -24,7 +24,7 @@ Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于
 ## 数据库驱动支持
 
 - [MySQL](https://git.uozi.org/uozi/cosy-driver-mysql)
-- [Postgres](https://github.com/0xJacky/cosy-driver-postgres)
+- [Postgres](https://git.uozi.org/uozi/cosy-driver-postgres)
 - Sqlite(TODO)
 
 ## 接口级简化
@@ -548,7 +548,7 @@ mysql.Open(settings.DataBaseSettings)
 #### Postgres
 安装
 ```bash
-go get -u github.com/0xJacky/cosy-driver-postgres
+go get -u git.uozi.org/uozi/cosy-driver-postgres
 ```
 调用
 ```go

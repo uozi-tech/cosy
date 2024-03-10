@@ -1,11 +1,11 @@
 package cosy
 
 import (
+	"git.uozi.org/uozi/cosy-driver-postgres"
 	"git.uozi.org/uozi/cosy/kernel"
 	"git.uozi.org/uozi/cosy/model"
 	"git.uozi.org/uozi/cosy/router"
 	"git.uozi.org/uozi/cosy/settings"
-	"github.com/0xJacky/cosy-driver-postgres"
 	"testing"
 	"time"
 )
