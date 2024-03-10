@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"github.com/0xJacky/cosy/logger"
+	"git.uozi.org/uozi/cosy/logger"
 	"runtime"
 )
 

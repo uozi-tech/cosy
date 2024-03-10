@@ -1,7 +1,7 @@
 package cosy
 
 import (
-	"github.com/0xJacky/cosy/router"
+	"git.uozi.org/uozi/cosy/router"
 	"github.com/gin-gonic/gin"
 )
 

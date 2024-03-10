@@ -1,7 +1,7 @@
 package cosy
 
 import (
-	"github.com/0xJacky/cosy/model"
+	"git.uozi.org/uozi/cosy/model"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	"net/http"
