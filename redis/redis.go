@@ -19,7 +19,7 @@ func Init() {
 		DB:       settings.RedisSettings.DB,
 	})
 
-	err := Set("Hello", "Cosy", 10)
+	err := Set("Hello", "Cosy", 10 *time.Second)
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func Incr(key string) (int64, error) {
 }
 
 func Set(key string, value interface{}, exp time.Duration) error {
-	return rdb.Set(ctx, buildKey(key), value, exp*time.Second).Err()
+	return rdb.Set(ctx, buildKey(key), value, exp).Err()
 }
 
 func Del(key ...string) error {
