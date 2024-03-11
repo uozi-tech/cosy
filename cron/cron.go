@@ -1,19 +1,23 @@
 package cron
 
 import (
-	"github.com/go-co-op/gocron"
-	"time"
+	"git.uozi.org/uozi/cosy/logger"
+	"github.com/go-co-op/gocron/v2"
 )
 
-var s *gocron.Scheduler
+var s gocron.Scheduler
 
-var registeredJobs map[string]func(*gocron.Scheduler)
+var registeredJobs map[string]func(gocron.Scheduler)
 
 func init() {
-	s = gocron.NewScheduler(time.Local)
+	var err error
+	s, err = gocron.NewScheduler()
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
 
-func RegisterJob(name string, job func(*gocron.Scheduler)) {
+func RegisterJob(name string, job func(gocron.Scheduler)) {
 	registeredJobs[name] = job
 }
 
@@ -21,5 +25,5 @@ func Start() {
 	for _, job := range registeredJobs {
 		job(s)
 	}
-	s.StartAsync()
+	s.Start()
 }
