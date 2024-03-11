@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"git.uozi.org/uozi/cosy/cron"
 	"git.uozi.org/uozi/cosy/kernel"
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/redis"
@@ -36,6 +37,9 @@ func Boot(confPath string) {
 	if settings.RedisSettings.Addr != "" {
 		redis.Init()
 	}
+
+	// Start cron
+	cron.Start()
 
 	// Kernel boot
 	kernel.Boot()
