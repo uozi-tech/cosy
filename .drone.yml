@@ -40,7 +40,7 @@ steps:
         JwtSecret = c87047ba-f40b-447f-8da5-24ca617dca9a
         [server]
         Host = 127.0.0.1
-        Port = 8080
+        Port = 0
         RunMode = debug
         [database]
         User = drone
@@ -53,7 +53,7 @@ steps:
         Password =
         DB = 0
         Prefix = cosy' > app.ini
-      - go test -v ./... -test.run TestCosyIntegration
+      - go test -v -p 1 ./...
     volumes:
       - name: go_cache
         path: /go/pkg
