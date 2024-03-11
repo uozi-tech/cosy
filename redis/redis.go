@@ -5,6 +5,7 @@ import (
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/go-redis/redis/v8"
+	"github.com/samber/lo"
 	"strings"
 	"time"
 )
@@ -19,7 +20,7 @@ func Init() {
 		DB:       settings.RedisSettings.DB,
 	})
 
-	err := Set("Hello", "Cosy", 10 *time.Second)
+	err := Set("Hello", "Cosy", 10*time.Second)
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -50,4 +51,16 @@ func Del(key ...string) error {
 		key[i] = buildKey(key[i])
 	}
 	return rdb.Del(ctx, key...).Err()
+}
+
+func Keys(pattern string) ([]string, error) {
+	result, err := rdb.Keys(ctx, buildKey(pattern)).Result()
+	if err != nil {
+		return nil, err
+	}
+	// Trim prefix
+	result = lo.Map(result, func(item string, index int) string {
+		return item[len(settings.RedisSettings.Prefix)+1:]
+	})
+	return result, nil
 }

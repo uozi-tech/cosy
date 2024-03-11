@@ -10,7 +10,7 @@ func TestRedis(t *testing.T) {
 	settings.Init("../app.ini")
 	Init()
 
-	err := Set("test", "test", 10)
+	err := Set("test", "test", 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -37,6 +37,16 @@ func TestRedis(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, int64(2), inc)
+
+	keys, err := Keys("test*")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	assert.Equal(t, []string{
+		"test_incr",
+		"test",
+	}, keys)
 
 	err = Del("test", "test_incr")
 	if err != nil {
