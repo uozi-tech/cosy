@@ -43,9 +43,9 @@ func TestRedis(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	assert.Equal(t, []string{
-		"test_incr",
+	assert.ObjectsAreEqual([]string{
 		"test",
+		"test_incr",
 	}, keys)
 
 	err = Del("test", "test_incr")

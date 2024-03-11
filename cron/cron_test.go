@@ -1,7 +1,7 @@
 package cron
 
 import (
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -9,9 +9,8 @@ import (
 
 func TestRegisterJob(t *testing.T) {
 	// Initialize test data
-	registeredJobs = make(map[string]func(*gocron.Scheduler))
 	testJobName := "testJob"
-	testJobFunc := func(s *gocron.Scheduler) {}
+	testJobFunc := func(s gocron.Scheduler) {}
 
 	// Call the function we want to test
 	RegisterJob(testJobName, testJobFunc)
@@ -26,12 +25,15 @@ func TestStart(t *testing.T) {
 	// Initialize test data
 	test := 0
 
-	registeredJobs = make(map[string]func(*gocron.Scheduler))
 	testJobName := "testJob"
-	testJobFunc := func(s *gocron.Scheduler) {
-		_, err := s.Every(1).Second().Do(func() {
-			test = 1
-		})
+	testJobFunc := func(s gocron.Scheduler) {
+		_, err := s.NewJob(
+			gocron.DurationJob(
+				1*time.Second),
+			gocron.NewTask(func() {
+				test++
+			}),
+		)
 		if err != nil {
 			t.Errorf("error creating job: %v", err)
 		}
