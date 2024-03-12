@@ -74,7 +74,7 @@ type User struct {
 
 ```go
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).Get()
+cosy.Core[model.User](c).Get()
 }
 ```
 
@@ -88,7 +88,7 @@ func GetUser(c *gin.Context) {
 
 ```go
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).Preload("User").Get()
+cosy.Core[model.User](c).Preload("User").Get()
 }
 ```
 
@@ -96,7 +96,7 @@ func GetUser(c *gin.Context) {
 
 ```go
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).SetTable("user_view").Preload("User").Get()
+cosy.Core[model.User](c).SetTable("user_view").Preload("User").Get()
 }
 ```
 
@@ -104,13 +104,13 @@ Cosy 提供了 GormScope() 方法，可以在执行数据库查询时调用 Gorm
 
 ```go
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).
-      SetTable("user_view").
-      GormScope(func(tx *gorm.DB) *gorm.DB {
-         return tx.Where("status", 1)
-      }).
-      Preload("Group").
-      Get()
+cosy.Core[model.User](c).
+SetTable("user_view").
+GormScope(func(tx *gorm.DB) *gorm.DB {
+return tx.Where("status", 1)
+}).
+Preload("Group").
+Get()
 }
 ```
 
@@ -119,25 +119,25 @@ Cosy 提供了 SetTransformer() 方法，可以在返回响应之前对数据进
 
 ```go
 type APIUser struct {
-   model.User
-   GroupName string `json:"group_name"`
+model.User
+GroupName string `json:"group_name"`
 }
 
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).
-      SetTransformer(user *model.User) any {
-         user.status = "active"
-         group := ""
-         if user.Group != nil {
-            group = user.Group.Name
-         }
-         return &APIUser{
-            User: user,
-            GroupName: group,
-         }
-      }).
-      Preload("Group").
-      Get()
+cosy.Core[model.User](c).
+SetTransformer(user *model.User) any {
+user.status = "active"
+group := ""
+if user.Group != nil {
+group = user.Group.Name
+}
+return &APIUser{
+User: user,
+GroupName: group,
+}
+}).
+Preload("Group").
+Get()
 }
 ```
 
@@ -150,25 +150,26 @@ JOIN，Where 等。
 
 ```go
 type UserView struct {
-   model.User
-   GroupName string `json:"group_name"`
+model.User
+GroupName string `json:"group_name"`
 }
 
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).
-      SetScan(func(tx *gorm.DB) any{
-         users := make([]UserView, 0)
-         tx.Scan(&users)
-         
-         return users
-      }).
-      SetTable("user_view").
-      Preload("Group").
-      Get()
+cosy.Core[model.User](c).
+SetScan(func (tx *gorm.DB) any{
+users := make([]UserView, 0)
+tx.Scan(&users)
+
+return users
+}).
+SetTable("user_view").
+Preload("Group").
+Get()
 }
 ```
 
 #### 生命周期
+
 1. **BeforeExecute**
 2. 执行获取操作
 3. **Executed**
@@ -203,15 +204,16 @@ func GetUser(c *gin.Context) {
 
 ```go
 func GetList() {
-   core := cosy.Core[model.User](c).
-      SetFussy("name", "phone", "email").
-      SetIn("status")
-   
-   core.PagingList()
+core := cosy.Core[model.User](c).
+SetFussy("name", "phone", "email").
+SetIn("status")
+
+core.PagingList()
 }
 ```
 
 #### 生命周期
+
 1. **BeforeExecute**
 2. 执行获取操作
 3. **Executed**
@@ -296,13 +298,13 @@ func GetList() {
 package api
 
 func GetUser(c *gin.Context) {
-   core := cosy.Core[model.User](c).SetValidRules(gin.H{
-      "name":  "required",
-      "email": "required",
-      // ... 其他字段
-   })
+	core := cosy.Core[model.User](c).SetValidRules(gin.H{
+		"name":  "required",
+		"email": "required",
+		// ... 其他字段
+	})
 
-   core.BeforeExecuteHook(encryptPassword).Create()
+	core.BeforeExecuteHook(encryptPassword).Create()
 }
 ```
 
@@ -329,7 +331,7 @@ func GetUser(c *gin.Context) {
 
 ```go
 func encryptPassword(ctx *cosy.Ctx[model.User]) {
-   // ... 加密逻辑
+// ... 加密逻辑
 }
 ```
 
@@ -339,7 +341,7 @@ func encryptPassword(ctx *cosy.Ctx[model.User]) {
 
 ```go
 func setUserID(ctx *cosy.Ctx[model.Post]) {
-   ctx.Payload["user_id"] = ctx.User.ID
+ctx.Payload["user_id"] = ctx.User.ID
 }
 ```
 
@@ -376,14 +378,14 @@ func setUserID(ctx *cosy.Ctx[model.Post]) {
 
 ```go
 func ModifyUser(c *gin.Context) {
-   core := cosy.Core[model.User](c).SetValidRules(gin.H{
-         "name": "omitempty",
-         "email": "omitempty",
-         // ... 其他字段
-     })
-   
-   core.BeforeExecuteHook(encryptPassword).
-      SetNextHandler(GetUser).Modify()
+core := cosy.Core[model.User](c).SetValidRules(gin.H{
+"name": "omitempty",
+"email": "omitempty",
+// ... 其他字段
+})
+
+core.BeforeExecuteHook(encryptPassword).
+SetNextHandler(GetUser).Modify()
 }
 ```
 
@@ -419,7 +421,7 @@ func ModifyUser(c *gin.Context) {
 
 ```go
 func DestroyUser(c *gin.Context) {
-   cosy.Core[model.User](c).Destroy()
+cosy.Core[model.User](c).Destroy()
 }
 ```
 
@@ -427,7 +429,7 @@ func DestroyUser(c *gin.Context) {
 
 ```go
 func DestroyUser(c *gin.Context) {
-   cosy.Core[model.User](c).PermanentlyDelete()
+cosy.Core[model.User](c).PermanentlyDelete()
 }
 ```
 
@@ -455,7 +457,7 @@ func DestroyUser(c *gin.Context) {
 
 ```go
 func DestroyUser(c *gin.Context) {
-   cosy.Core[model.User](c).Recover()
+cosy.Core[model.User](c).Recover()
 }
 ```
 
@@ -478,17 +480,17 @@ func DestroyUser(c *gin.Context) {
 
 ```go
 func MyCustomHandler(c *gin.Context) {
-   cosy.Core[model.User](c).
-      SetVaildRule(gin.H{
-         "name": "required",
-      }).
-      BeforeDecodeHook(func(ctx *cosy.Ctx[model.User]) {
-         // 操作
-      }).
-      BeforeExecuteHook(func(ctx *cosy.Ctx[model.User]) {
-         // 我继续操作
-      }).
-      Custom(fx func(ctx *Ctx[T]))
+cosy.Core[model.User](c).
+SetVaildRule(gin.H{
+"name": "required",
+}).
+BeforeDecodeHook(func (ctx *cosy.Ctx[model.User]) {
+// 操作
+}).
+BeforeExecuteHook(func (ctx *cosy.Ctx[model.User]) {
+// 我继续操作
+}).
+Custom(fx func (ctx *Ctx[T]))
 }
 ```
 
@@ -501,83 +503,103 @@ Cosy 提供了错误处理函数 `cosy.ErrHandle(c, err)`
 
 ```go
 func GetUser(c *gin.Context) {
-   u := query.User
-   user, err := u.FirstByID(c.Param("id"))
-   if err != nil {
-      cosy.ErrHandle(c, err)
-      return
-   }
-   c.JSON(http.StatusOK, user)
+u := query.User
+user, err := u.FirstByID(c.Param("id"))
+if err != nil {
+cosy.ErrHandle(c, err)
+return
+}
+c.JSON(http.StatusOK, user)
 }
 ```
 
 ## 路由级简化
-在上一个部分中，我们介绍了如何使用 Cosy 来简化单个记录的 CURD 操作，接下来我们将介绍如何使用 Cosy 来简化整个项目的 CURD 操作。
+
+在上一个部分中，我们介绍了如何使用 Cosy 来简化单个记录的 CURD 操作，接下来我们将介绍如何使用 Cosy 来简化整个项目的 CURD
+操作。
 
 ### 初始化
+
 首先，我们介绍一下如何初始化 Cosy。
 
 在 `main.go` 中，我们需要注册模型，注册顺序执行函数，注册 goroutine，然后启动 Cosy。
 
 1. 注册模型 `cosy.RegisterModels(model ...any)`，将 model 中的模型注册到 Cosy 中，
-在启动时将会执行数据库自动迁移，同时会将模型的反射结果缓存到 map 中以便后续使用。
+   在启动时将会执行数据库自动迁移，同时会将模型的反射结果缓存到 map 中以便后续使用。
 2. 初测顺序执行函数 `RegisterAsyncFunc(f ...func())`
 3. 注册 goroutine `RegisterSyncsFunc(f ...func())`
 4. 启动 Cosy
 
 #### 数据库初始化
+
 我提供了数据库连接初始化函数`cosy.InitDB(db *gorm.DB)`，可以在 `RegisterAsyncFunc` 中调用这个函数。
 
 ##### 示例
+
 这里以 MySQL 驱动为例，`settings.DataBaseSettings` 是 Cosy 中预定义的数据库连接设置。
+
 ```go
 package main
 
 import (
-   "git.uozi.org/uozi/cosy"
-   "git.uozi.org/uozi/cosy-driver-mysql"
-   "git.uozi.org/uozi/cosy/settings"
+	"git.uozi.org/uozi/cosy"
+	"git.uozi.org/uozi/cosy-driver-mysql"
+	"git.uozi.org/uozi/cosy/settings"
 )
 
 func main() {
-   // ...
-   cosy.RegisterAsyncFunc(func() {
-      cosy.InitDB(mysql.Open(settings.DataBaseSettings))
-   })
-   // ...
+	// ...
+	cosy.RegisterAsyncFunc(func() {
+		cosy.InitDB(mysql.Open(settings.DataBaseSettings))
+	})
+	// ...
 }
 ```
+
 #### MySQL
+
 安装
+
 ```bash
 go get -u git.uozi.org/uozi/cosy-driver-mysql
 ```
+
 调用
+
 ```go
 mysql.Open(settings.DataBaseSettings)
 ```
 
 #### Postgres
+
 安装
+
 ```bash
 go get -u git.uozi.org/uozi/cosy-driver-postgres
 ```
+
 调用
+
 ```go
 postgres.Open(settings.DataBaseSettings)
 ```
 
 #### Sqlite
+
 安装
+
 ```bash
 go get -u git.uozi.org/uozi/cosy-driver-sqlite
 ```
+
 调用
+
 ```go
 sqlite.Open(settings.DataBaseSettings)
 ```
 
 #### 完整示例
+
 ```go
 package main
 
@@ -623,6 +645,7 @@ func main() {
 ```
 
 ### 定义路由
+
 使用 `cosy.GetEngine()` 获取 `*gin.Engine`，然后使用 `Group` 方法定义路由组，可以在中间件中实现鉴权。
 
 ```go
@@ -644,6 +667,7 @@ func InitRouter() {
 ```
 
 ### 定义模型
+
 经过上面的初始化配置，接下来我们可以开始业务层的开发。
 
 这里还是以 User CURD 为例子，我们定义一个 User 结构体。
@@ -668,17 +692,25 @@ type User struct {
 ```
 
 #### Tag 分组
+
 分组之间以 `;` 分割，无顺序要求。
+
 ##### add
+
 配置创建时的验证规则，比如这个字段是必须要非零值的，那么就可以设置 `add:required`。
+
 ##### update
+
 配置修改时的验证规则，比如这个字段可以不存在，或者不存在时不进行后续校验，那么就可以设置 `add:omitempty,oneof=1 1000`。
+
 ##### all
+
 配置创建和修改时的验证规则，如果 `add` 或者 `update` 与 `all` 同时存在，则 `all` 的参数会追加到它们的后面。
+
 ##### list
 
-| 指令     | 等价                 |
-| -------- | -------------------- |
+| 指令       | 等价                   |
+|----------|----------------------|
 | in       | SetIn()              |
 | eq       | SetEqual()           |
 | fussy    | SetFussy()           |
@@ -690,19 +722,18 @@ type User struct {
 
 ##### item
 
-| 指令    | 等价         |
-| ------- | ------------ |
+| 指令      | 等价           |
+|---------|--------------|
 | preload | SetPreload() |
 
 ##### json
 
 当 Json Tag 被设置为 `-` 时，如果用到了验证规则，需要在 Cosy Tag 中指定 json 字段名称，否则请求会出错。
 
-
-
 ### CURD 与路由集成
 
 #### 基本语法
+
 Api\[模型\]\(baseUrl).InitRouter(*gin.RouterGroup, ...gin.HandlerFunc)
 
 #### 示例
@@ -711,7 +742,7 @@ Api\[模型\]\(baseUrl).InitRouter(*gin.RouterGroup, ...gin.HandlerFunc)
 
 ```go
 func (g *gin.RouterGroup) {
-   cosy.Api[model.User]("users").InitRouter(g)
+cosy.Api[model.User]("users").InitRouter(g)
 }
 ```
 
@@ -720,12 +751,12 @@ func (g *gin.RouterGroup) {
 ```go
 g := r.Group(c.baseUrl, middleware...)
 {
-  g.GET("/:id", c.Get())
-  g.GET("", c.GetList())
-  g.POST("", c.Create())
-  g.POST("/:id", c.Modify())
-  g.DELETE("/:id", c.Destroy())
-  g.PATCH("/:id", c.Recover())
+g.GET("/:id", c.Get()...)
+g.GET("", c.GetList()...)
+g.POST("", c.Create()...)
+g.POST("/:id", c.Modify()...)
+g.DELETE("/:id", c.Destroy()...)
+g.PATCH("/:id", c.Recover()...)
 }
 ```
 
@@ -744,6 +775,22 @@ Cosy CURD 提供了 6 个钩子，这些钩子函数将会在 Model Cosy Tag 设
 `func (c *Curd[T]) DestroyHook(hook func(*Ctx[T]))`
 
 `func (c *Curd[T]) RecoverHook(hook func(*Ctx[T]))`
+
+**此外，我们还为每个接口提供了前置中间件**
+
+你可以单独为每个接口设置前置中间件，这些中间件将会进入路由前执行。
+
+`func (c *Curd[T]) BeforeGet(...gin.HandlerFunc) ICurd[T]`
+
+`func (c *Curd[T]) BeforeGetList(...gin.HandlerFunc) ICurd[T]`
+
+`func (c *Curd[T]) BeforeCreate(...gin.HandlerFunc) ICurd[T]`
+
+`func (c *Curd[T]) BeforeModify(...gin.HandlerFunc) ICurd[T]`
+
+`func (c *Curd[T]) BeforeDestroy(...gin.HandlerFunc) ICurd[T]`
+
+`func (c *Curd[T]) BeforeRecover(...gin.HandlerFunc) ICurd[T]`
 
 下面是一个例子，它实现了和接口级简化相同的操作。
 
@@ -806,7 +853,9 @@ func InitUserRouter(g *gin.RouterGroup) {
 
 ## 总结
 
-开发时要合理的选择接口级简化还是路由级简化，并不一定是所有的接口都要用路由级简化方案然后加一堆 hook 函数，如果有需求不需要完整的 CURD，可能只有一个 Create 或者 GetList 操作，可以直接用接口级简化来实现。
+开发时要合理的选择接口级简化还是路由级简化，并不一定是所有的接口都要用路由级简化方案然后加一堆 hook 函数，如果有需求不需要完整的
+CURD，可能只有一个 Create 或者 GetList 操作，可以直接用接口级简化来实现。
 
 ## License
+
 MIT
