@@ -168,6 +168,12 @@ func GetUser(c *gin.Context) {
 }
 ```
 
+#### 生命周期
+1. **BeforeExecute**
+2. 执行获取操作
+3. **Executed**
+4. 返回响应
+
 #### 响应示例
 
 ```json
@@ -204,6 +210,12 @@ func GetList() {
    core.PagingList()
 }
 ```
+
+#### 生命周期
+1. **BeforeExecute**
+2. 执行获取操作
+3. **Executed**
+4. 返回响应
 
 #### 筛选方法
 

@@ -66,7 +66,70 @@ func TestApi(t *testing.T) {
 
 		g := r.Group("/")
 
-		Api[User]("users").InitRouter(g)
+		c := Api[User]("users")
+
+		c.BeforeGet(func(context *gin.Context) {
+			t.Log("before get")
+			context.Set("test", "test")
+			context.Next()
+		}).GetHook(func(c *Ctx[User]) {
+			t.Log("get hook")
+			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+				assert.Equal(t, "test", ctx.MustGet("test"))
+			})
+		})
+		c.BeforeCreate(func(context *gin.Context) {
+			t.Log("before create")
+			context.Set("test", "test")
+			context.Next()
+		}).CreateHook(func(c *Ctx[User]) {
+			t.Log("create hook")
+			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+				assert.Equal(t, "test", ctx.MustGet("test"))
+			})
+		})
+		c.BeforeModify(func(context *gin.Context) {
+			t.Log("before modify")
+			context.Set("test", "test")
+			context.Next()
+		}).ModifyHook(func(c *Ctx[User]) {
+			t.Log("modify hook")
+			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+				assert.Equal(t, "test", ctx.MustGet("test"))
+			})
+		})
+		c.BeforeGetList(func(context *gin.Context) {
+			t.Log("before get list")
+			context.Set("test", "test")
+			context.Next()
+		}).GetListHook(func(c *Ctx[User]) {
+			t.Log("get list hook")
+			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+				assert.Equal(t, "test", ctx.MustGet("test"))
+			})
+		})
+		c.BeforeDestroy(func(context *gin.Context) {
+			t.Log("before destroy")
+			context.Set("test", "test")
+			context.Next()
+		}).DestroyHook(func(c *Ctx[User]) {
+			t.Log("destroy hook")
+			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+				assert.Equal(t, "test", ctx.MustGet("test"))
+			})
+		})
+		c.BeforeRecover(func(context *gin.Context) {
+			t.Log("before recover")
+			context.Set("test", "test")
+			context.Next()
+		}).RecoverHook(func(c *Ctx[User]) {
+			t.Log("recover hook")
+			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+				assert.Equal(t, "test", ctx.MustGet("test"))
+			})
+		})
+
+		c.InitRouter(g)
 
 		err = r.Run("127.0.0.1:8080")
 		if err != nil {

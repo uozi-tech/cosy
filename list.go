@@ -148,6 +148,9 @@ func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
 func (c *Ctx[T]) PagingList() {
 	data, ok := c.PagingListData()
 	if ok {
+		if c.executedHook() {
+			return
+		}
 		c.JSON(http.StatusOK, data)
 	}
 }

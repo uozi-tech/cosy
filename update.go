@@ -18,7 +18,7 @@ func (c *Ctx[T]) Modify() {
 	if c.abort {
 		return
 	}
-	id := c.Param("id")
+	c.ID = c.GetParamID()
 	errs := c.validate()
 
 	if len(errs) > 0 {
@@ -36,15 +36,14 @@ func (c *Ctx[T]) Modify() {
 		result = result.Scopes(c.gormScopes...)
 	}
 
-	err := result.Session(&gorm.Session{}).First(&c.OriginModel, id).Error
+	err := result.Session(&gorm.Session{}).First(&c.OriginModel, c.ID).Error
 
 	if err != nil {
 		c.AbortWithError(err)
 		return
 	}
 
-	c.beforeDecodeHook()
-	if c.abort {
+	if c.beforeDecodeHook() {
 		return
 	}
 
@@ -61,8 +60,7 @@ func (c *Ctx[T]) Modify() {
 		return
 	}
 
-	c.beforeExecuteHook()
-	if c.abort {
+	if c.beforeExecuteHook() {
 		return
 	}
 
@@ -76,21 +74,15 @@ func (c *Ctx[T]) Modify() {
 		return
 	}
 
-	err = db.Preload(clause.Associations).First(&c.Model, id).Error
+	err = db.Preload(clause.Associations).First(&c.Model, c.ID).Error
 
 	if err != nil {
 		c.AbortWithError(err)
 		return
 	}
 
-	if len(c.executedHookFunc) > 0 {
-		for _, v := range c.executedHookFunc {
-			v(c)
-
-			if c.abort {
-				return
-			}
-		}
+	if c.executedHook() {
+		return
 	}
 
 	if c.nextHandler != nil {

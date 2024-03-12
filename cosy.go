@@ -15,6 +15,7 @@ func init() {
 
 type Ctx[T any] struct {
 	*gin.Context
+	ID                       int
 	rules                    gin.H
 	Payload                  map[string]interface{}
 	Model                    T

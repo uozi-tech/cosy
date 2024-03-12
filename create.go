@@ -22,9 +22,7 @@ func (c *Ctx[T]) Create() {
 
 	db := model.UseDB()
 
-	c.beforeDecodeHook()
-
-	if c.abort {
+	if c.beforeDecodeHook() {
 		return
 	}
 
@@ -35,9 +33,7 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
-	c.beforeExecuteHook()
-
-	if c.abort {
+	if c.beforeExecuteHook() {
 		return
 	}
 
@@ -52,14 +48,8 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
-	if len(c.executedHookFunc) > 0 {
-		for _, v := range c.executedHookFunc {
-			v(c)
-
-			if c.abort {
-				return
-			}
-		}
+	if c.executedHook() {
+		return
 	}
 
 	tx := db.Preload(clause.Associations)

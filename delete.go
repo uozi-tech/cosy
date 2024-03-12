@@ -16,9 +16,11 @@ func (c *Ctx[T]) Destroy() {
 	if c.abort {
 		return
 	}
-	id := c.Param("id")
+	c.ID = c.GetParamID()
 
-	c.beforeExecuteHook()
+	if c.beforeExecuteHook() {
+		return
+	}
 
 	db := model.UseDB()
 
@@ -35,9 +37,9 @@ func (c *Ctx[T]) Destroy() {
 	var err error
 	session := result.Session(&gorm.Session{})
 	if c.table != "" {
-		err = session.Table(c.table, c.tableArgs...).Take(c.OriginModel, id).Error
+		err = session.Table(c.table, c.tableArgs...).Take(c.OriginModel, c.ID).Error
 	} else {
-		err = session.First(&c.OriginModel, id).Error
+		err = session.First(&c.OriginModel, c.ID).Error
 	}
 
 	if err != nil {
@@ -51,14 +53,8 @@ func (c *Ctx[T]) Destroy() {
 		return
 	}
 
-	if len(c.executedHookFunc) > 0 {
-		for _, v := range c.executedHookFunc {
-			v(c)
-
-			if c.abort {
-				return
-			}
-		}
+	if c.executedHook() {
+		return
 	}
 
 	c.JSON(http.StatusNoContent, nil)
@@ -68,9 +64,11 @@ func (c *Ctx[T]) Recover() {
 	if c.abort {
 		return
 	}
-	id := c.Param("id")
+	c.ID = c.GetParamID()
 
-	c.beforeExecuteHook()
+	if c.beforeExecuteHook() {
+		return
+	}
 
 	db := model.UseDB()
 
@@ -82,9 +80,9 @@ func (c *Ctx[T]) Recover() {
 	var err error
 	session := result.Session(&gorm.Session{})
 	if c.table != "" {
-		err = session.Table(c.table).First(&c.Model, id).Error
+		err = session.Table(c.table).First(&c.Model, c.ID).Error
 	} else {
-		err = session.First(&c.Model, id).Error
+		err = session.First(&c.Model, c.ID).Error
 	}
 
 	if err != nil {
@@ -98,14 +96,8 @@ func (c *Ctx[T]) Recover() {
 		return
 	}
 
-	if len(c.executedHookFunc) > 0 {
-		for _, v := range c.executedHookFunc {
-			v(c)
-
-			if c.abort {
-				return
-			}
-		}
+	if c.executedHook() {
+		return
 	}
 
 	c.JSON(http.StatusNoContent, nil)

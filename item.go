@@ -10,7 +10,11 @@ func (c *Ctx[T]) Get() {
 		return
 	}
 
-	id := c.GetParamID()
+	c.ID = c.GetParamID()
+
+	if c.beforeExecuteHook() {
+		return
+	}
 
 	var data *T
 
@@ -32,9 +36,13 @@ func (c *Ctx[T]) Get() {
 		return
 	}
 
-	err := db.First(&data, id).Error
+	err := db.First(&data, c.ID).Error
 	if err != nil {
 		errHandler(c.Context, err)
+		return
+	}
+
+	if c.executedHook() {
 		return
 	}
 

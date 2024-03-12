@@ -7,20 +7,40 @@ func (c *Ctx[T]) GormScope(hook func(tx *gorm.DB) *gorm.DB) *Ctx[T] {
 	return c
 }
 
-func (c *Ctx[T]) beforeExecuteHook() {
+func (c *Ctx[T]) beforeExecuteHook() (abort bool) {
 	if len(c.beforeExecuteHookFunc) > 0 {
 		for _, v := range c.beforeExecuteHookFunc {
 			v(c)
+			if c.abort {
+				return true
+			}
 		}
 	}
+	return
 }
 
-func (c *Ctx[T]) beforeDecodeHook() {
+func (c *Ctx[T]) beforeDecodeHook() (abort bool) {
 	if len(c.beforeDecodeHookFunc) > 0 {
 		for _, v := range c.beforeDecodeHookFunc {
 			v(c)
+			if c.abort {
+				return true
+			}
 		}
 	}
+	return
+}
+
+func (c *Ctx[T]) executedHook() (abort bool) {
+	if len(c.executedHookFunc) > 0 {
+		for _, v := range c.executedHookFunc {
+			v(c)
+			if c.abort {
+				return true
+			}
+		}
+	}
+	return
 }
 
 func (c *Ctx[T]) BeforeDecodeHook(hook ...func(ctx *Ctx[T])) *Ctx[T] {
