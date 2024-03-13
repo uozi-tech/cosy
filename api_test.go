@@ -10,6 +10,7 @@ import (
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
@@ -17,17 +18,34 @@ import (
 	"time"
 )
 
+func init() {
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	time.Local = loc
+}
+
+type Gender = string
+
 type User struct {
 	model.Model
-	Name       string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
-	Password   string     `json:"-" cosy:"json:password;add:required;update:omitempty"` // hide password
-	Email      string     `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"uniqueIndex"`
-	Phone      string     `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
-	Avatar     string     `json:"avatar" cosy:"all:omitempty"`
-	LastActive *time.Time `json:"last_active"`
-	Power      int        `json:"power" cosy:"add:required;update:omitempty;list:in" gorm:"default:1;index"`
-	Status     int        `json:"status" cosy:"add:required;update:omitempty;list:in" gorm:"default:1;index"`
-	Group      string     `json:"group" cosy:"add:required;update:omitempty;list:in" gorm:"index"`
+	SchoolID           string     `json:"school_id" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
+	Avatar             string     `json:"avatar" cosy:"all:omitempty"`
+	Name               string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
+	Gender             Gender     `json:"gender" cosy:"add:min=0;update:omitempty;list:fussy"`
+	Age                int        `json:"age" cosy:"add:required;update:omitempty"`
+	Title              string     `json:"title" cosy:"add:required;update:omitempty;list:fussy"`
+	Bio                string     `json:"bio" cosy:"update:omitempty"`
+	College            string     `json:"college" cosy:"add:required;update:omitempty;list:fussy"`
+	Direction          string     `json:"direction" cosy:"add:required;update:omitempty;list:fussy"`
+	TeacherCertificate string     `json:"teacher_certificate" cosy:"update:omitempty"`
+	Contract           string     `json:"contract" cosy:"update:omitempty"`
+	TaskAgreement      string     `json:"task_agreement" cosy:"update:omitempty"`
+	OfficeNumber       string     `json:"office_number" cosy:"update:omitempty;list:fussy"`
+	Password           string     `json:"-" cosy:"json:password;add:required;update:omitempty"` // hide password
+	Email              string     `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"type:varchar(255);uniqueIndex"`
+	Phone              string     `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
+	Status             int        `json:"status" cosy:"add:min=0,max=1;update:omitempty,min=0,max=1;list:in" gorm:"default:1"`
+	EmployedAt         *time.Time `json:"employed_at" cosy:"add:required;update:omitempty"`
+	LastActive         *time.Time `json:"last_active"`
 }
 
 type Product struct {
@@ -149,14 +167,25 @@ func TestApi(t *testing.T) {
 func testCreate(t *testing.T) {
 	client := &http.Client{}
 	body := map[string]interface{}{
-		"name":     "test",
-		"password": "test12345678",
-		"email":    "test@jackyu.cn",
-		"phone":    "12345678901",
-		"avatar":   "avatar.jpg",
-		"power":    1,
-		"status":   2,
-		"group":    "user",
+		"school_id":           "0281876",
+		"avatar":              "",
+		"gender":              0,
+		"name":                "张三",
+		"password":            "123457887",
+		"age":                 20,
+		"title":               "助理教授",
+		"bio":                 "",
+		"college":             "大数据与互联网学院",
+		"direction":           "大数据与人工智能",
+		"teacher_certificate": "/xx/xx.pdf",
+		"contract":            "/xx/xx.pdf",
+		"task_agreement":      "/xx/xx.pdf",
+		"office_number":       "208",
+		"email":               "12345@aa.com",
+		"phone":               "13125372516",
+		"user_group_id":       1,
+		"status":              1,
+		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
 	bodyBytes, _ := json.Marshal(body)
@@ -186,13 +215,23 @@ func testCreate(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, "test", data.Name)
-	assert.Equal(t, "test@jackyu.cn", data.Email)
-	assert.Equal(t, "12345678901", data.Phone)
-	assert.Equal(t, "avatar.jpg", data.Avatar)
-	assert.Equal(t, 1, data.Power)
-	assert.Equal(t, 2, data.Status)
-	assert.Equal(t, "user", data.Group)
+	assert.Equal(t, "0281876", data.SchoolID)
+	assert.Equal(t, "", data.Avatar)
+	assert.Equal(t, "张三", data.Name)
+	assert.Equal(t, 20, data.Age)
+	assert.Equal(t, "助理教授", data.Title)
+	assert.Equal(t, "", data.Bio)
+	assert.Equal(t, "大数据与互联网学院", data.College)
+	assert.Equal(t, "大数据与人工智能", data.Direction)
+	assert.Equal(t, "/xx/xx.pdf", data.TeacherCertificate)
+	assert.Equal(t, "/xx/xx.pdf", data.Contract)
+	assert.Equal(t, "/xx/xx.pdf", data.TaskAgreement)
+	assert.Equal(t, "208", data.OfficeNumber)
+	assert.Equal(t, "", data.Password)
+	assert.Equal(t, "12345@aa.com", data.Email)
+	assert.Equal(t, "13125372516", data.Phone)
+	assert.Equal(t, 1, data.Status)
+	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
 func testGet(t *testing.T) {
@@ -215,13 +254,23 @@ func testGet(t *testing.T) {
 		logger.Error(err)
 		return
 	}
-	assert.Equal(t, "test", data.Name)
-	assert.Equal(t, "test@jackyu.cn", data.Email)
-	assert.Equal(t, "12345678901", data.Phone)
-	assert.Equal(t, "avatar.jpg", data.Avatar)
-	assert.Equal(t, 1, data.Power)
-	assert.Equal(t, 2, data.Status)
-	assert.Equal(t, "user", data.Group)
+	assert.Equal(t, "0281876", data.SchoolID)
+	assert.Equal(t, "", data.Avatar)
+	assert.Equal(t, "张三", data.Name)
+	assert.Equal(t, 20, data.Age)
+	assert.Equal(t, "助理教授", data.Title)
+	assert.Equal(t, "", data.Bio)
+	assert.Equal(t, "大数据与互联网学院", data.College)
+	assert.Equal(t, "大数据与人工智能", data.Direction)
+	assert.Equal(t, "/xx/xx.pdf", data.TeacherCertificate)
+	assert.Equal(t, "/xx/xx.pdf", data.Contract)
+	assert.Equal(t, "/xx/xx.pdf", data.TaskAgreement)
+	assert.Equal(t, "208", data.OfficeNumber)
+	assert.Equal(t, "", data.Password)
+	assert.Equal(t, "12345@aa.com", data.Email)
+	assert.Equal(t, "13125372516", data.Phone)
+	assert.Equal(t, 1, data.Status)
+	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
 func testGetList(t *testing.T) {
@@ -257,25 +306,46 @@ func testGetList(t *testing.T) {
 		logger.Error(err)
 		return
 	}
-	assert.Equal(t, "test", user.Name)
-	assert.Equal(t, "test@jackyu.cn", user.Email)
-	assert.Equal(t, "12345678901", user.Phone)
-	assert.Equal(t, "avatar.jpg", user.Avatar)
-	assert.Equal(t, 1, user.Power)
-	assert.Equal(t, 2, user.Status)
-	assert.Equal(t, "user", user.Group)
+	assert.Equal(t, "0281876", user.SchoolID)
+	assert.Equal(t, "", user.Avatar)
+	assert.Equal(t, "张三", user.Name)
+	assert.Equal(t, 20, user.Age)
+	assert.Equal(t, "助理教授", user.Title)
+	assert.Equal(t, "", user.Bio)
+	assert.Equal(t, "大数据与互联网学院", user.College)
+	assert.Equal(t, "大数据与人工智能", user.Direction)
+	assert.Equal(t, "/xx/xx.pdf", user.TeacherCertificate)
+	assert.Equal(t, "/xx/xx.pdf", user.Contract)
+	assert.Equal(t, "/xx/xx.pdf", user.TaskAgreement)
+	assert.Equal(t, "208", user.OfficeNumber)
+	assert.Equal(t, "", user.Password)
+	assert.Equal(t, "12345@aa.com", user.Email)
+	assert.Equal(t, "13125372516", user.Phone)
+	assert.Equal(t, 1, user.Status)
+	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *user.EmployedAt)
 }
 
 func testModify(t *testing.T) {
 	client := &http.Client{}
 	body := map[string]interface{}{
-		"name":   "test123",
-		"email":  "test123@jackyu.cn",
-		"phone":  "123456789012",
-		"avatar": "avatar12.jpg",
-		"power":  2,
-		"status": 1,
-		"group":  "test",
+		"school_id":           "0281876",
+		"avatar":              "",
+		"name":                "张三",
+		"password":            "123457887",
+		"age":                 20,
+		"title":               "助理教授",
+		"bio":                 "",
+		"college":             "大数据与互联网学院",
+		"direction":           "大数据与人工智能",
+		"teacher_certificate": "/xx/xx.pdf",
+		"contract":            "/xx/xx.pdf",
+		"task_agreement":      "/xx/xx.pdf",
+		"office_number":       "208",
+		"email":               "12345@aa.com",
+		"phone":               "13125372516",
+		"user_group_id":       1,
+		"status":              1,
+		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
 	bodyBytes, _ := json.Marshal(body)
@@ -304,13 +374,23 @@ func testModify(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, "test123", data.Name)
-	assert.Equal(t, "test123@jackyu.cn", data.Email)
-	assert.Equal(t, "123456789012", data.Phone)
-	assert.Equal(t, "avatar12.jpg", data.Avatar)
-	assert.Equal(t, 2, data.Power)
+	assert.Equal(t, "0281876", data.SchoolID)
+	assert.Equal(t, "", data.Avatar)
+	assert.Equal(t, "张三", data.Name)
+	assert.Equal(t, 20, data.Age)
+	assert.Equal(t, "助理教授", data.Title)
+	assert.Equal(t, "", data.Bio)
+	assert.Equal(t, "大数据与互联网学院", data.College)
+	assert.Equal(t, "大数据与人工智能", data.Direction)
+	assert.Equal(t, "/xx/xx.pdf", data.TeacherCertificate)
+	assert.Equal(t, "/xx/xx.pdf", data.Contract)
+	assert.Equal(t, "/xx/xx.pdf", data.TaskAgreement)
+	assert.Equal(t, "208", data.OfficeNumber)
+	assert.Equal(t, "", data.Password)
+	assert.Equal(t, "12345@aa.com", data.Email)
+	assert.Equal(t, "13125372516", data.Phone)
 	assert.Equal(t, 1, data.Status)
-	assert.Equal(t, "test", data.Group)
+	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
 func testDestroy(t *testing.T) {
