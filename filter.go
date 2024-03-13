@@ -92,12 +92,10 @@ func QueryToEqualSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
 	for _, v := range keys {
 		if c.Query(v) != "" {
 			var sb strings.Builder
+			stmt := db.Statement
 
-			_, err := fmt.Fprintf(&sb, "`%s` = ?", v)
-			if err != nil {
-				logger.Error(err)
-				continue
-			}
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			sb.WriteString(" = ?")
 
 			db = db.Where(sb.String(), c.Query(v))
 		}
@@ -109,16 +107,15 @@ func QueryToFussySearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
 	for _, v := range keys {
 		if c.Query(v) != "" {
 			var sb strings.Builder
+			stmt := db.Statement
 
-			_, err := fmt.Fprintf(&sb, "`%s` LIKE ?", v)
-			if err != nil {
-				logger.Error(err)
-				continue
-			}
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+
+			sb.WriteString(" LIKE ?")
 
 			var sbValue strings.Builder
 
-			_, err = fmt.Fprintf(&sbValue, "%%%s%%", c.Query(v))
+			_, err := fmt.Fprintf(&sbValue, "%%%s%%", c.Query(v))
 
 			if err != nil {
 				logger.Error(err)
@@ -165,12 +162,10 @@ func QueryToOrInSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
 		}
 		if len(queryArray) >= 1 {
 			var sb strings.Builder
+			stmt := db.Statement
 
-			_, err := fmt.Fprintf(&sb, "`%s` IN ?", v)
-			if err != nil {
-				logger.Error(err)
-				continue
-			}
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			sb.WriteString(" IN ?")
 
 			db = db.Or(sb.String(), queryArray)
 		}
@@ -182,12 +177,10 @@ func QueryToOrEqualSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB 
 	for _, v := range keys {
 		if c.Query(v) != "" {
 			var sb strings.Builder
+			stmt := db.Statement
 
-			_, err := fmt.Fprintf(&sb, "`%s` = ?", v)
-			if err != nil {
-				logger.Error(err)
-				continue
-			}
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			sb.WriteString(" = ?")
 
 			db = db.Or(sb.String(), c.Query(v))
 		}
@@ -199,16 +192,15 @@ func QueryToOrFussySearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB 
 	for _, v := range keys {
 		if c.Query(v) != "" {
 			var sb strings.Builder
+			stmt := db.Statement
 
-			_, err := fmt.Fprintf(&sb, "`%s` LIKE ?", v)
-			if err != nil {
-				logger.Error(err)
-				continue
-			}
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+
+			sb.WriteString(" LIKE ?")
 
 			var sbValue strings.Builder
 
-			_, err = fmt.Fprintf(&sbValue, "%%%s%%", c.Query(v))
+			_, err := fmt.Fprintf(&sbValue, "%%%s%%", c.Query(v))
 
 			if err != nil {
 				logger.Error(err)
