@@ -25,7 +25,7 @@ Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于
 
 - [MySQL](https://git.uozi.org/uozi/cosy-driver-mysql)
 - [Postgres](https://git.uozi.org/uozi/cosy-driver-postgres)
-- Sqlite(TODO)
+- [Sqlite](https://git.uozi.org/uozi/cosy-driver-sqlite)
 
 ## 接口级简化
 
