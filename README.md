@@ -74,7 +74,7 @@ type User struct {
 
 ```go
 func GetUser(c *gin.Context) {
-cosy.Core[model.User](c).Get()
+    cosy.Core[model.User](c).Get()
 }
 ```
 
@@ -88,7 +88,7 @@ cosy.Core[model.User](c).Get()
 
 ```go
 func GetUser(c *gin.Context) {
-cosy.Core[model.User](c).Preload("User").Get()
+    cosy.Core[model.User](c).Preload("User").Get()
 }
 ```
 
@@ -96,7 +96,7 @@ cosy.Core[model.User](c).Preload("User").Get()
 
 ```go
 func GetUser(c *gin.Context) {
-cosy.Core[model.User](c).SetTable("user_view").Preload("User").Get()
+    cosy.Core[model.User](c).SetTable("user_view").Preload("User").Get()
 }
 ```
 
@@ -104,13 +104,13 @@ Cosy 提供了 GormScope() 方法，可以在执行数据库查询时调用 Gorm
 
 ```go
 func GetUser(c *gin.Context) {
-cosy.Core[model.User](c).
-SetTable("user_view").
-GormScope(func(tx *gorm.DB) *gorm.DB {
-return tx.Where("status", 1)
-}).
-Preload("Group").
-Get()
+   cosy.Core[model.User](c).
+   SetTable("user_view").
+   GormScope(func(tx *gorm.DB) *gorm.DB {
+        return tx.Where("status", 1)
+   }).
+   Preload("Group").
+   Get()
 }
 ```
 
@@ -119,25 +119,25 @@ Cosy 提供了 SetTransformer() 方法，可以在返回响应之前对数据进
 
 ```go
 type APIUser struct {
-model.User
-GroupName string `json:"group_name"`
+   model.User
+   GroupName string `json:"group_name"`
 }
 
 func GetUser(c *gin.Context) {
-cosy.Core[model.User](c).
-SetTransformer(user *model.User) any {
-user.status = "active"
-group := ""
-if user.Group != nil {
-group = user.Group.Name
-}
-return &APIUser{
-User: user,
-GroupName: group,
-}
-}).
-Preload("Group").
-Get()
+   cosy.Core[model.User](c).
+   SetTransformer(user *model.User) any {
+      user.status = "active"
+      group := ""
+      if user.Group != nil {
+		  group = user.Group.Name
+      }
+      return &APIUser{
+		  User: user,
+		  GroupName: group,
+      }
+   }).
+   Preload("Group").
+   Get()
 }
 ```
 
@@ -150,21 +150,20 @@ JOIN，Where 等。
 
 ```go
 type UserView struct {
-model.User
-GroupName string `json:"group_name"`
+   model.User
+   GroupName string `json:"group_name"`
 }
 
 func GetUser(c *gin.Context) {
-cosy.Core[model.User](c).
-SetScan(func (tx *gorm.DB) any{
-users := make([]UserView, 0)
-tx.Scan(&users)
-
-return users
-}).
-SetTable("user_view").
-Preload("Group").
-Get()
+   cosy.Core[model.User](c).
+   SetScan(func (tx *gorm.DB) any{
+      users := make([]UserView, 0)
+      tx.Scan(&users)
+      return users
+   }).
+   SetTable("user_view").
+   Preload("Group").
+   Get()
 }
 ```
 
@@ -204,11 +203,11 @@ Get()
 
 ```go
 func GetList() {
-core := cosy.Core[model.User](c).
-SetFussy("name", "phone", "email").
-SetIn("status")
-
-core.PagingList()
+   core := cosy.Core[model.User](c).
+   SetFussy("name", "phone", "email").
+   SetIn("status")
+   
+   core.PagingList()
 }
 ```
 
@@ -331,7 +330,7 @@ func GetUser(c *gin.Context) {
 
 ```go
 func encryptPassword(ctx *cosy.Ctx[model.User]) {
-// ... 加密逻辑
+    // ... 加密逻辑
 }
 ```
 
@@ -341,7 +340,7 @@ func encryptPassword(ctx *cosy.Ctx[model.User]) {
 
 ```go
 func setUserID(ctx *cosy.Ctx[model.Post]) {
-ctx.Payload["user_id"] = ctx.User.ID
+    ctx.Payload["user_id"] = ctx.User.ID
 }
 ```
 
@@ -378,14 +377,14 @@ ctx.Payload["user_id"] = ctx.User.ID
 
 ```go
 func ModifyUser(c *gin.Context) {
-core := cosy.Core[model.User](c).SetValidRules(gin.H{
-"name": "omitempty",
-"email": "omitempty",
-// ... 其他字段
-})
-
-core.BeforeExecuteHook(encryptPassword).
-SetNextHandler(GetUser).Modify()
+   core := cosy.Core[model.User](c).SetValidRules(gin.H{
+      "name": "omitempty",
+      "email": "omitempty",
+      // ... 其他字段
+   })
+   
+   core.BeforeExecuteHook(encryptPassword).
+   SetNextHandler(GetUser).Modify()
 }
 ```
 
@@ -421,7 +420,7 @@ SetNextHandler(GetUser).Modify()
 
 ```go
 func DestroyUser(c *gin.Context) {
-cosy.Core[model.User](c).Destroy()
+    cosy.Core[model.User](c).Destroy()
 }
 ```
 
@@ -429,7 +428,7 @@ cosy.Core[model.User](c).Destroy()
 
 ```go
 func DestroyUser(c *gin.Context) {
-cosy.Core[model.User](c).PermanentlyDelete()
+    cosy.Core[model.User](c).PermanentlyDelete()
 }
 ```
 
@@ -457,7 +456,7 @@ cosy.Core[model.User](c).PermanentlyDelete()
 
 ```go
 func DestroyUser(c *gin.Context) {
-cosy.Core[model.User](c).Recover()
+    cosy.Core[model.User](c).Recover()
 }
 ```
 
@@ -480,17 +479,17 @@ cosy.Core[model.User](c).Recover()
 
 ```go
 func MyCustomHandler(c *gin.Context) {
-cosy.Core[model.User](c).
-SetVaildRule(gin.H{
-"name": "required",
-}).
-BeforeDecodeHook(func (ctx *cosy.Ctx[model.User]) {
-// 操作
-}).
-BeforeExecuteHook(func (ctx *cosy.Ctx[model.User]) {
-// 我继续操作
-}).
-Custom(fx func (ctx *Ctx[T]))
+   cosy.Core[model.User](c).
+   SetVaildRule(gin.H{
+	   "name": "required",
+   }).
+   BeforeDecodeHook(func (ctx *cosy.Ctx[model.User]) {
+   // 操作
+   }).
+   BeforeExecuteHook(func (ctx *cosy.Ctx[model.User]) {
+   // 我继续操作
+   }).
+   Custom(fx func (ctx *Ctx[T]))
 }
 ```
 
@@ -503,13 +502,13 @@ Cosy 提供了错误处理函数 `cosy.ErrHandle(c, err)`
 
 ```go
 func GetUser(c *gin.Context) {
-u := query.User
-user, err := u.FirstByID(c.Param("id"))
-if err != nil {
-cosy.ErrHandle(c, err)
-return
-}
-c.JSON(http.StatusOK, user)
+   u := query.User
+   user, err := u.FirstByID(c.Param("id"))
+   if err != nil {
+      cosy.ErrHandle(c, err)
+      return
+   }
+   c.JSON(http.StatusOK, user)
 }
 ```
 
@@ -742,7 +741,7 @@ Api\[模型\]\(baseUrl).InitRouter(*gin.RouterGroup, ...gin.HandlerFunc)
 
 ```go
 func (g *gin.RouterGroup) {
-cosy.Api[model.User]("users").InitRouter(g)
+    cosy.Api[model.User]("users").InitRouter(g)
 }
 ```
 
@@ -751,12 +750,12 @@ cosy.Api[model.User]("users").InitRouter(g)
 ```go
 g := r.Group(c.baseUrl, middleware...)
 {
-g.GET("/:id", c.Get()...)
-g.GET("", c.GetList()...)
-g.POST("", c.Create()...)
-g.POST("/:id", c.Modify()...)
-g.DELETE("/:id", c.Destroy()...)
-g.PATCH("/:id", c.Recover()...)
+   g.GET("/:id", c.Get()...)
+   g.GET("", c.GetList()...)
+   g.POST("", c.Create()...)
+   g.POST("/:id", c.Modify()...)
+   g.DELETE("/:id", c.Destroy()...)
+   g.PATCH("/:id", c.Recover()...)
 }
 ```
 
