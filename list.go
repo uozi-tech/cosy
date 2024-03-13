@@ -73,7 +73,7 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 
 	c.combineStdSelectorRequest()
 
-	c.appleGormScopes(result)
+	c.applyGormScopes(result)
 
 	return result, true
 }
