@@ -11,14 +11,16 @@ import (
 	"git.uozi.org/uozi/cosy/router"
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
+	"net"
 	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
-func Boot(confPath string) {
+var TCPAddr *net.TCPAddr
 
+func Boot(confPath string) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -45,18 +47,26 @@ func Boot(confPath string) {
 	kernel.Boot()
 
 	addr := fmt.Sprintf("%s:%d", settings.ServerSettings.Host, settings.ServerSettings.Port)
-	logger.Info("Server listing on", addr)
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: router.GetEngine(),
 	}
 
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		logger.Fatalf("listen: %s\n", err)
+	}
+
 	// Start the gin server
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatalf("listen: %s\n", err)
 		}
 	}()
+
+	TCPAddr = listener.Addr().(*net.TCPAddr)
+
+	logger.Info("Server listing on", TCPAddr.String())
 
 	// Listen for the interrupt signal.
 	<-ctx.Done()
