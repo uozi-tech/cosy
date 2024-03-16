@@ -28,7 +28,8 @@ func TestInternalListHook(t *testing.T) {
 
 	expected := Core[User](c).
 		SetFussy("school_id", "name", "gender", "title", "college", "direction", "office_number", "email", "phone").
-		SetIn("status")
+		SetIn("status").
+		SetBetween("employed_at")
 
 	actual := Core[User](c)
 
@@ -43,6 +44,7 @@ func TestInternalListHook(t *testing.T) {
 	assert.Equal(t, expected.orEq, actual.orEq)
 	assert.Equal(t, expected.orFussy, actual.orFussy)
 	assert.Equal(t, expected.search, actual.search)
+	assert.Equal(t, expected.between, actual.between)
 
 	expected2 := Core[Product](c).
 		SetFussy("name", "description", "price").

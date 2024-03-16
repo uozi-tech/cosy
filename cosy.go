@@ -44,6 +44,7 @@ type Ctx[T any] struct {
 	orFussy                  []string
 	preload                  []string
 	search                   []string
+	between                  []string
 }
 
 func Core[T any](c *gin.Context) *Ctx[T] {

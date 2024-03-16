@@ -44,7 +44,7 @@ type User struct {
 	Email              string     `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"type:varchar(255);uniqueIndex"`
 	Phone              string     `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
 	Status             int        `json:"status" cosy:"add:min=0,max=1;update:omitempty,min=0,max=1;list:in" gorm:"default:1"`
-	EmployedAt         *time.Time `json:"employed_at" cosy:"add:required;update:omitempty"`
+	EmployedAt         *time.Time `json:"employed_at" cosy:"add:required;update:omitempty;list:between"`
 	LastActive         *time.Time `json:"last_active"`
 }
 

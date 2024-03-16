@@ -58,6 +58,14 @@ func (c *Ctx[T]) SetOrEqual(keys ...string) *Ctx[T] {
 	return c
 }
 
+func (c *Ctx[T]) SetBetween(keys ...string) *Ctx[T] {
+	c.between = append(c.between, keys...)
+	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
+		return QueryToBetweenSearch(c.Context, tx, keys...)
+	})
+	return c
+}
+
 func (c *Ctx[T]) SetOrIn(keys ...string) *Ctx[T] {
 	c.orIn = append(c.orIn, keys...)
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
@@ -208,6 +216,28 @@ func QueryToOrFussySearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB 
 			}
 
 			db = db.Or(sb.String(), sbValue.String())
+		}
+	}
+	return db
+}
+
+func QueryToBetweenSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
+	for _, v := range keys {
+		queryArray := c.QueryArray(v + "[]")
+		if len(queryArray) == 0 {
+			queryArray = c.QueryArray(v)
+		}
+		if len(queryArray) <= 1 {
+			continue
+		}
+		if len(queryArray) == 2 && queryArray[0] != "" && queryArray[1] != "" {
+			var builder strings.Builder
+			stmt := db.Statement
+
+			stmt.QuoteTo(&builder, clause.Column{Table: stmt.Table, Name: v})
+			builder.WriteString(" BETWEEN ? AND ?")
+
+			db = db.Where(builder.String(), queryArray[0], queryArray[1])
 		}
 	}
 	return db

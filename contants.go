@@ -9,4 +9,5 @@ const (
 	OrEqual = "or_eq"
 	OrFussy = "or_fussy"
 	Preload = "preload"
+	Between = "between"
 )

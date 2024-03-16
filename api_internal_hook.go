@@ -1,6 +1,8 @@
 package cosy
 
-import "git.uozi.org/uozi/cosy/model"
+import (
+	"git.uozi.org/uozi/cosy/model"
+)
 
 func getHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()
@@ -34,6 +36,7 @@ func getListHook[T any]() func(core *Ctx[T]) {
 			orFussy []string
 			preload []string
 			search  []string
+			between []string
 		)
 
 		for _, field := range resolved.OrderedFields {
@@ -57,6 +60,8 @@ func getListHook[T any]() func(core *Ctx[T]) {
 					preload = append(preload, field.Name)
 				case Search:
 					search = append(search, field.JsonTag)
+				case Between:
+					between = append(between, field.JsonTag)
 				}
 			}
 		}
@@ -84,6 +89,9 @@ func getListHook[T any]() func(core *Ctx[T]) {
 		}
 		if len(search) > 0 {
 			core.SetSearchFussyKeys(search...)
+		}
+		if len(between) > 0 {
+			core.SetBetween(between...)
 		}
 	}
 }
