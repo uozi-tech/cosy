@@ -11,8 +11,7 @@ func (c *Ctx[T]) resolvePreload() {
 	for _, v := range c.preloads {
 		t := v
 		c.GormScope(func(tx *gorm.DB) *gorm.DB {
-			tx = tx.Preload(t)
-			return tx
+			return tx.Preload(t)
 		})
 	}
 }
