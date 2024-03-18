@@ -9,13 +9,20 @@ import (
 	"time"
 )
 
-var db *gorm.DB
+var (
+	db            *gorm.DB
+	beforeMigrate []func(*gorm.DB) error
+)
 
 type Model struct {
 	ID        int             `gorm:"primary_key" json:"id"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 	DeletedAt *gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+func BeforeMigrate(f func(*gorm.DB) error) {
+	beforeMigrate = append(beforeMigrate, f)
 }
 
 func logMode() gormlogger.Interface {
@@ -44,6 +51,15 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 
 	if err != nil {
 		logger.Fatal(err)
+	}
+
+	if len(beforeMigrate) > 0 {
+		for _, f := range beforeMigrate {
+			err = f(db)
+			if err != nil {
+				logger.Fatal(err)
+			}
+		}
 	}
 
 	err = db.AutoMigrate(GenerateAllModel()...)
