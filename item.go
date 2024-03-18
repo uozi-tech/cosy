@@ -27,8 +27,9 @@ func (c *Ctx[T]) Get() {
 	}
 
 	c.handleTable()
-	c.resolvePreload()
-	c.applyGormScopes(db)
+	for _, v := range c.preloads {
+		db = db.Preload(v)
+	}
 
 	// scan into custom struct
 	if c.scan != nil {
