@@ -205,7 +205,18 @@ func (c *Curd[T]) Modify() (h []gin.HandlerFunc) {
 		validMap := make(gin.H)
 		for _, field := range resolved.Fields {
 			dirs := field.CosyTag.GetUpdate()
-			validMap[field.JsonTag] = dirs
+			key := field.JsonTag
+			// like password field we don't need to response it to client,
+			// but we need to validate it
+			if key == "-" {
+				if field.CosyTag.GetJson() != "" {
+					key = field.CosyTag.GetJson()
+				} else {
+					continue
+				}
+			}
+
+			validMap[key] = dirs
 		}
 		core.SetValidRules(validMap)
 		if c.modifyHook != nil {
