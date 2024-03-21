@@ -35,7 +35,7 @@ func (c *Ctx[T]) combineStdSelectorRequest() {
 
 	c.GormScope(func(tx *gorm.DB) *gorm.DB {
 		var sb strings.Builder
-		_, err := fmt.Fprintf(&sb, "`%s` IN ?", c.itemKey)
+		_, err := fmt.Fprintf(&sb, "%s IN ?", c.itemKey)
 		if err != nil {
 			logger.Error(err)
 			return tx
