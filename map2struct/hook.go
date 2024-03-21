@@ -1,6 +1,7 @@
 package map2struct
 
 import (
+	"github.com/jackc/pgtype"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
@@ -72,9 +73,33 @@ func ToDecimalHookFunc() mapstructure.DecodeHookFunc {
 			}
 
 			if input := data.(string); input != "" {
-				return decimal.NewFromString(data.(string))
+				return decimal.NewFromString(input)
 			}
 			return decimal.Decimal{}, nil
+		}
+
+		return data, nil
+	}
+}
+
+func ToPgDateHook() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf(pgtype.Date{}) {
+			date := pgtype.Date{}
+			_ = date.Set(data)
+			return date, nil
+		}
+
+		return data, nil
+	}
+}
+
+func ToPgDatePtrHook() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf(&pgtype.Date{}) {
+			date := &pgtype.Date{}
+			_ = date.Set(data)
+			return date, nil
 		}
 
 		return data, nil

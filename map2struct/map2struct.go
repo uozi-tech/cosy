@@ -14,6 +14,8 @@ func WeakDecode(input, output interface{}) error {
 			ToNullableStringHookFunc(),
 			ToTimeHookFunc(),
 			ToTimePtrHookFunc(),
+			ToPgDateHook(),
+			ToPgDatePtrHook(),
 		),
 		TagName: "json",
 	}

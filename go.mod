@@ -9,6 +9,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.2.5
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/google/uuid v1.6.0
+	github.com/jackc/pgtype v1.12.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/samber/lo v1.39.0
@@ -35,6 +36,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
 	github.com/jackc/pgx/v5 v5.5.4 // indirect
