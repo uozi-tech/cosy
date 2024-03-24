@@ -328,19 +328,19 @@ func testGetList(t *testing.T) {
 func testModify(t *testing.T) {
 	client := &http.Client{}
 	body := map[string]interface{}{
-		"school_id":           "0281876",
+		"school_id":           "0281876-1",
 		"avatar":              "",
-		"name":                "张三",
-		"password":            "123457887",
-		"age":                 20,
-		"title":               "助理教授",
+		"name":                "张三-1",
+		"password":            "123457887-1",
+		"age":                 21,
+		"title":               "助理教授-1",
 		"bio":                 "",
 		"college":             "大数据与互联网学院",
 		"direction":           "大数据与人工智能",
 		"teacher_certificate": "/xx/xx.pdf",
 		"contract":            "/xx/xx.pdf",
 		"task_agreement":      "/xx/xx.pdf",
-		"office_number":       "208",
+		"office_number":       "208-1",
 		"email":               "12345@aa.com",
 		"phone":               "13125372516",
 		"user_group_id":       1,
@@ -374,18 +374,18 @@ func testModify(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, "0281876", data.SchoolID)
+	assert.Equal(t, "0281876-1", data.SchoolID)
 	assert.Equal(t, "", data.Avatar)
-	assert.Equal(t, "张三", data.Name)
-	assert.Equal(t, 20, data.Age)
-	assert.Equal(t, "助理教授", data.Title)
+	assert.Equal(t, "张三-1", data.Name)
+	assert.Equal(t, 21, data.Age)
+	assert.Equal(t, "助理教授-1", data.Title)
 	assert.Equal(t, "", data.Bio)
 	assert.Equal(t, "大数据与互联网学院", data.College)
 	assert.Equal(t, "大数据与人工智能", data.Direction)
 	assert.Equal(t, "/xx/xx.pdf", data.TeacherCertificate)
 	assert.Equal(t, "/xx/xx.pdf", data.Contract)
 	assert.Equal(t, "/xx/xx.pdf", data.TaskAgreement)
-	assert.Equal(t, "208", data.OfficeNumber)
+	assert.Equal(t, "208-1", data.OfficeNumber)
 	assert.Equal(t, "", data.Password)
 	assert.Equal(t, "12345@aa.com", data.Email)
 	assert.Equal(t, "13125372516", data.Phone)

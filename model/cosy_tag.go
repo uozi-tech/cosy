@@ -1,6 +1,8 @@
 package model
 
-import "strings"
+import (
+	"strings"
+)
 
 type CosyTag struct {
 	all    string
@@ -72,7 +74,7 @@ func (c *CosyTag) GetAdd() string {
 }
 
 func (c *CosyTag) GetUpdate() string {
-	if c.add == "" {
+	if c.all == "" {
 		return c.update
 	}
 	var sb strings.Builder

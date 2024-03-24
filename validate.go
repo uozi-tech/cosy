@@ -20,7 +20,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 
 	_ = c.ShouldBindJSON(&c.Payload)
 
-	//	logger.Debug(c.Payload, c.rules)
+	// logger.Debug(c.Payload, c.rules)
 
 	errs = validate.ValidateMap(c.Payload, c.rules)
 
