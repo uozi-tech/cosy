@@ -30,9 +30,7 @@ func (c *Ctx[T]) Destroy() {
 		result = result.Unscoped()
 	}
 
-	if len(c.gormScopes) > 0 {
-		result = result.Scopes(c.gormScopes...)
-	}
+	c.applyGormScopes(result)
 
 	var err error
 	session := result.Session(&gorm.Session{})
@@ -73,9 +71,7 @@ func (c *Ctx[T]) Recover() {
 	db := model.UseDB()
 
 	result := db.Unscoped()
-	if len(c.gormScopes) > 0 {
-		result = result.Scopes(c.gormScopes...)
-	}
+	c.applyGormScopes(result)
 
 	var err error
 	session := result.Session(&gorm.Session{})

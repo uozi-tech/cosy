@@ -53,7 +53,7 @@ steps:
         Password =
         DB = 0
         Prefix = cosy' > app.ini
-      - go test -v -p 1 ./...
+      - go test -v -p 1 -failfast ./...
     volumes:
       - name: go_cache
         path: /go/pkg

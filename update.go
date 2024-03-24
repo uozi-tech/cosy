@@ -32,9 +32,8 @@ func (c *Ctx[T]) Modify() {
 	db := model.UseDB()
 
 	result := db
-	if len(c.gormScopes) > 0 {
-		result = result.Scopes(c.gormScopes...)
-	}
+
+	c.applyGormScopes(result)
 
 	err := result.Session(&gorm.Session{}).First(&c.OriginModel, c.ID).Error
 
