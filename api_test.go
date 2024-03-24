@@ -36,10 +36,10 @@ type User struct {
 	Bio                string     `json:"bio" cosy:"update:omitempty"`
 	College            string     `json:"college" cosy:"add:required;update:omitempty;list:fussy"`
 	Direction          string     `json:"direction" cosy:"add:required;update:omitempty;list:fussy"`
-	TeacherCertificate string     `json:"teacher_certificate" cosy:"update:omitempty"`
-	Contract           string     `json:"contract" cosy:"update:omitempty"`
-	TaskAgreement      string     `json:"task_agreement" cosy:"update:omitempty"`
-	OfficeNumber       string     `json:"office_number" cosy:"update:omitempty;list:fussy"`
+	TeacherCertificate string     `json:"teacher_certificate" cosy:"all:omitempty"`
+	Contract           string     `json:"contract" cosy:"all:omitempty"`
+	TaskAgreement      string     `json:"task_agreement" cosy:"all:omitempty"`
+	OfficeNumber       string     `json:"office_number" cosy:"all:omitempty;list:fussy"`
 	Password           string     `json:"-" cosy:"json:password;add:required;update:omitempty"` // hide password
 	Email              string     `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"type:varchar(255);uniqueIndex"`
 	Phone              string     `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`

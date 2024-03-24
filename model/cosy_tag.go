@@ -62,8 +62,10 @@ func (c *CosyTag) GetAdd() string {
 	if c.add != "" {
 		sb.WriteString(c.add)
 	}
-	if c.add != "" {
+	if c.add != "" && c.all != "" {
 		sb.WriteString(",")
+	}
+	if c.all != "" {
 		sb.WriteString(c.all)
 	}
 	return sb.String()
@@ -77,8 +79,10 @@ func (c *CosyTag) GetUpdate() string {
 	if c.update != "" {
 		sb.WriteString(c.update)
 	}
-	if c.all != "" {
+	if c.update != "" && c.all != "" {
 		sb.WriteString(",")
+	}
+	if c.all != "" {
 		sb.WriteString(c.all)
 	}
 	return sb.String()

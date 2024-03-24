@@ -173,6 +173,9 @@ func (c *Curd[T]) Create() (h []gin.HandlerFunc) {
 		validMap := make(gin.H)
 		for _, field := range resolved.Fields {
 			dirs := field.CosyTag.GetAdd()
+			if dirs == "" {
+				continue
+			}
 			key := field.JsonTag
 			// like password field we don't need to response it to client,
 			// but we need to validate it
@@ -205,6 +208,9 @@ func (c *Curd[T]) Modify() (h []gin.HandlerFunc) {
 		validMap := make(gin.H)
 		for _, field := range resolved.Fields {
 			dirs := field.CosyTag.GetUpdate()
+			if dirs == "" {
+				continue
+			}
 			key := field.JsonTag
 			// like password field we don't need to response it to client,
 			// but we need to validate it

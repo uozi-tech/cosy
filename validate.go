@@ -20,6 +20,8 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 
 	_ = c.ShouldBindJSON(&c.Payload)
 
+	//	logger.Debug(c.Payload, c.rules)
+
 	errs = validate.ValidateMap(c.Payload, c.rules)
 
 	if len(errs) > 0 {
