@@ -2,6 +2,7 @@ package model
 
 import (
 	"reflect"
+	"strings"
 )
 
 var collection []any
@@ -44,10 +45,18 @@ func ResolvedModels() {
 
 		for i := 0; i < m.NumField(); i++ {
 			field := m.Field(i)
+			jsonTag := field.Tag.Get("json")
+			jsonTags := strings.Split(jsonTag, ",")
+			if len(jsonTags) > 0 {
+				jsonTag = jsonTags[0]
+			} else {
+				jsonTag = ""
+			}
+
 			resolvedField := &resolvedModelField{
 				Name:    field.Name,
 				Type:    field.Type.String(),
-				JsonTag: field.Tag.Get("json"),
+				JsonTag: jsonTag,
 				CosyTag: NewCosyTag(field.Tag.Get("cosy")),
 			}
 			// out-of-order
