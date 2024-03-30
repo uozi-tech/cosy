@@ -39,7 +39,6 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 			validated[k] = v
 		}
 	}
-
 	c.Payload = validated
 
 	return
@@ -67,7 +66,7 @@ func BindAndValid(c *gin.Context, target interface{}) bool {
 			var path []string
 
 			namespace := strings.Split(value.StructNamespace(), ".")
-			logger.Debug(t.Name(), namespace)
+			// logger.Debug(t.Name(), namespace)
 			if t.Name() != "" && len(namespace) > 1 {
 				namespace = namespace[1:]
 			}

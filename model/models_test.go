@@ -7,13 +7,17 @@ import (
 	"time"
 )
 
+type TestEmbed struct {
+	Avatar string `json:"avatar" cosy:"all:omitempty"`
+}
+
 type User struct {
 	Model
-	Name       string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
-	Password   string     `json:"-" cosy:"add:required;update:omitempty"` // hide password
-	Email      string     `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"uniqueIndex"`
-	Phone      string     `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
-	Avatar     string     `json:"avatar" cosy:"all:omitempty"`
+	Name     string `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
+	Password string `json:"-" cosy:"add:required;update:omitempty"` // hide password
+	Email    string `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"uniqueIndex"`
+	Phone    string `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
+	TestEmbed
 	LastActive *time.Time `json:"last_active"`
 	Power      int        `json:"power" cosy:"add:required;update:omitempty;list:in" gorm:"default:1;index"`
 	Status     int        `json:"status" cosy:"add:required;update:omitempty;list:in" gorm:"default:1;index"`
@@ -40,9 +44,27 @@ func TestResolvedModels(t *testing.T) {
 			Name: "User",
 			OrderedFields: []*resolvedModelField{
 				{
-					Name:    "Model",
-					Type:    "model.Model",
-					JsonTag: "",
+					Name:    "ID",
+					Type:    "int",
+					JsonTag: "id",
+					CosyTag: CosyTag{},
+				},
+				{
+					Name:    "CreatedAt",
+					Type:    "time.Time",
+					JsonTag: "created_at",
+					CosyTag: CosyTag{},
+				},
+				{
+					Name:    "UpdatedAt",
+					Type:    "time.Time",
+					JsonTag: "updated_at",
+					CosyTag: CosyTag{},
+				},
+				{
+					Name:    "DeletedAt",
+					Type:    "*gorm.DeletedAt",
+					JsonTag: "deleted_at",
 					CosyTag: CosyTag{},
 				},
 				{
@@ -105,9 +127,27 @@ func TestResolvedModels(t *testing.T) {
 			Name: "Product",
 			OrderedFields: []*resolvedModelField{
 				{
-					Name:    "Model",
-					Type:    "model.Model",
-					JsonTag: "",
+					Name:    "ID",
+					Type:    "int",
+					JsonTag: "id",
+					CosyTag: CosyTag{},
+				},
+				{
+					Name:    "CreatedAt",
+					Type:    "time.Time",
+					JsonTag: "created_at",
+					CosyTag: CosyTag{},
+				},
+				{
+					Name:    "UpdatedAt",
+					Type:    "time.Time",
+					JsonTag: "updated_at",
+					CosyTag: CosyTag{},
+				},
+				{
+					Name:    "DeletedAt",
+					Type:    "*gorm.DeletedAt",
+					JsonTag: "deleted_at",
 					CosyTag: CosyTag{},
 				},
 				{

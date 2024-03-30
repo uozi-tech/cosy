@@ -27,7 +27,7 @@ func TestInternalListHook(t *testing.T) {
 	c := &gin.Context{}
 
 	expected := Core[User](c).
-		SetFussy("school_id", "name", "gender", "title", "college", "direction", "office_number", "email", "phone").
+		SetFussy("school_id", "title", "name", "gender", "college", "direction", "office_number", "email", "phone").
 		SetIn("status").
 		SetBetween("employed_at")
 

@@ -25,14 +25,18 @@ func init() {
 
 type Gender = string
 
+type TestEmbed struct {
+	Avatar string `json:"avatar" cosy:"all:omitempty"`
+	Title  string `json:"title" cosy:"add:required;update:omitempty;list:fussy"`
+}
+
 type User struct {
 	model.Model
-	SchoolID           string     `json:"school_id" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
-	Avatar             string     `json:"avatar" cosy:"all:omitempty"`
+	SchoolID           string `json:"school_id" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
+	TestEmbed          `json:",squash"`
 	Name               string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
 	Gender             Gender     `json:"gender" cosy:"add:min=0;update:omitempty;list:fussy"`
 	Age                int        `json:"age" cosy:"add:required;update:omitempty"`
-	Title              string     `json:"title" cosy:"add:required;update:omitempty;list:fussy"`
 	Bio                string     `json:"bio" cosy:"update:omitempty"`
 	College            string     `json:"college" cosy:"add:required;update:omitempty;list:fussy"`
 	Direction          string     `json:"direction" cosy:"add:required;update:omitempty;list:fussy"`
@@ -100,6 +104,7 @@ func TestApi(t *testing.T) {
 			t.Log("before create")
 			context.Set("test", "test")
 			context.Next()
+
 		}).CreateHook(func(c *Ctx[User]) {
 			t.Log("create hook")
 			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
