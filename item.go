@@ -29,9 +29,8 @@ func (c *Ctx[T]) Get() {
 	}
 
 	c.handleTable()
-	for _, v := range c.preloads {
-		db = db.Preload(v)
-	}
+	db = c.resolvePreload(db)
+	db = c.resolveJoins(db)
 
 	// scan into custom struct
 	if c.scan != nil {

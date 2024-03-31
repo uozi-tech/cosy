@@ -45,7 +45,8 @@ func (c *Ctx[T]) combineStdSelectorRequest() {
 }
 
 func (c *Ctx[T]) result() (*gorm.DB, bool) {
-	c.resolvePreload()
+	c.resolvePreloadWithScope()
+	c.resolveJoinsWithScopes()
 
 	c.beforeExecuteHook()
 

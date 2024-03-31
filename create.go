@@ -53,9 +53,8 @@ func (c *Ctx[T]) Create() {
 	}
 
 	tx := db.Preload(clause.Associations)
-	for _, v := range c.preloads {
-		tx = tx.Preload(v)
-	}
+	tx = c.resolvePreload(tx)
+	tx = c.resolveJoins(tx)
 	tx.Table(c.table, c.tableArgs...).First(&c.Model)
 
 	if c.nextHandler != nil {

@@ -30,6 +30,7 @@ type Ctx[T any] struct {
 	executedHookFunc         []func(ctx *Ctx[T])
 	gormScopes               []func(tx *gorm.DB) *gorm.DB
 	preloads                 []string
+	joins                    []string
 	scan                     func(tx *gorm.DB) any
 	transformer              func(*T) any
 	permanentlyDelete        bool
@@ -78,6 +79,11 @@ func (c *Ctx[T]) SetValidRules(rules gin.H) *Ctx[T] {
 
 func (c *Ctx[T]) SetPreloads(args ...string) *Ctx[T] {
 	c.preloads = append(c.preloads, args...)
+	return c
+}
+
+func (c *Ctx[T]) SetJoins(args ...string) *Ctx[T] {
+	c.joins = append(c.joins, args...)
 	return c
 }
 
