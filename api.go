@@ -18,24 +18,24 @@ type ICurd[T any] interface {
 	BeforeGetList(...gin.HandlerFunc) ICurd[T]
 	BeforeDestroy(...gin.HandlerFunc) ICurd[T]
 	BeforeRecover(...gin.HandlerFunc) ICurd[T]
-	GetHook(func(*Ctx[T]))
-	GetListHook(func(*Ctx[T]))
-	CreateHook(func(*Ctx[T]))
-	ModifyHook(func(*Ctx[T]))
-	DestroyHook(func(*Ctx[T]))
-	RecoverHook(func(*Ctx[T]))
+	GetHook(...func(*Ctx[T]))
+	GetListHook(...func(*Ctx[T]))
+	CreateHook(...func(*Ctx[T]))
+	ModifyHook(...func(*Ctx[T]))
+	DestroyHook(...func(*Ctx[T]))
+	RecoverHook(...func(*Ctx[T]))
 	InitRouter(*gin.RouterGroup, ...gin.HandlerFunc)
 }
 
 type Curd[T any] struct {
 	ICurd[T]
 	baseUrl       string
-	getHook       func(*Ctx[T])
-	getListHook   func(*Ctx[T])
-	createHook    func(*Ctx[T])
-	modifyHook    func(*Ctx[T])
-	destroyHook   func(*Ctx[T])
-	recoverHook   func(*Ctx[T])
+	getHook       []func(*Ctx[T])
+	getListHook   []func(*Ctx[T])
+	createHook    []func(*Ctx[T])
+	modifyHook    []func(*Ctx[T])
+	destroyHook   []func(*Ctx[T])
+	recoverHook   []func(*Ctx[T])
 	beforeCreate  []gin.HandlerFunc
 	beforeModify  []gin.HandlerFunc
 	beforeGet     []gin.HandlerFunc
@@ -53,68 +53,68 @@ func Api[T any](baseUrl string) ICurd[T] {
 
 // BeforeCreate registers a hook function to be called before the creating action
 func (c *Curd[T]) BeforeCreate(hooks ...gin.HandlerFunc) ICurd[T] {
-	c.beforeCreate = hooks
+	c.beforeCreate = append(c.beforeCreate, hooks...)
 	return c
 }
 
 // BeforeModify registers a hook function to be called before the modifying action
 func (c *Curd[T]) BeforeModify(hooks ...gin.HandlerFunc) ICurd[T] {
-	c.beforeModify = hooks
+	c.beforeModify = append(c.beforeModify, hooks...)
 	return c
 }
 
 // BeforeGet registers a hook function to be called before the getting action
 func (c *Curd[T]) BeforeGet(hooks ...gin.HandlerFunc) ICurd[T] {
-	c.beforeGet = hooks
+	c.beforeGet = append(c.beforeGet, hooks...)
 	return c
 }
 
 // BeforeGetList registers a hook function to be called before the getting list action
 func (c *Curd[T]) BeforeGetList(hooks ...gin.HandlerFunc) ICurd[T] {
-	c.beforeGetList = hooks
+	c.beforeGetList = append(c.beforeGetList, hooks...)
 	return c
 }
 
 // BeforeDestroy registers a hook function to be called before the deleting action
 func (c *Curd[T]) BeforeDestroy(hooks ...gin.HandlerFunc) ICurd[T] {
-	c.beforeDestroy = hooks
+	c.beforeDestroy = append(c.beforeDestroy, hooks...)
 	return c
 }
 
 // BeforeRecover registers a hook function to be called before the recovering action
 func (c *Curd[T]) BeforeRecover(hooks ...gin.HandlerFunc) ICurd[T] {
-	c.beforeRecover = hooks
+	c.beforeRecover = append(c.beforeRecover, hooks...)
 	return c
 }
 
-// GetHook registers a hook function to be called before the get action
-func (c *Curd[T]) GetHook(hook func(*Ctx[T])) {
-	c.getHook = hook
+// GetHook registers a hook function to the queen, and it will be called before the get action
+func (c *Curd[T]) GetHook(hook ...func(*Ctx[T])) {
+	c.getHook = append(c.getHook, hook...)
 }
 
-// GetListHook registers a hook function to be called before the get list action
-func (c *Curd[T]) GetListHook(hook func(*Ctx[T])) {
-	c.getListHook = hook
+// GetListHook registers a hook function to the queen, and it will be called before the get list action
+func (c *Curd[T]) GetListHook(hook ...func(*Ctx[T])) {
+	c.getListHook = append(c.getListHook, hook...)
 }
 
-// CreateHook registers a hook function to be called before the 'create' action
-func (c *Curd[T]) CreateHook(hook func(*Ctx[T])) {
-	c.createHook = hook
+// CreateHook registers a hook function to the queen, and it will be called before the 'create' action
+func (c *Curd[T]) CreateHook(hook ...func(*Ctx[T])) {
+	c.createHook = append(c.createHook, hook...)
 }
 
-// ModifyHook registers a hook function to be called before the modify action
-func (c *Curd[T]) ModifyHook(hook func(*Ctx[T])) {
-	c.modifyHook = hook
+// ModifyHook registers a hook function to the queen, and it will be called before the modify action
+func (c *Curd[T]) ModifyHook(hook ...func(*Ctx[T])) {
+	c.modifyHook = append(c.modifyHook, hook...)
 }
 
-// DestroyHook registers a hook function to be called before the delete action
-func (c *Curd[T]) DestroyHook(hook func(*Ctx[T])) {
-	c.destroyHook = hook
+// DestroyHook registers a hook function to the queen, and it will be called before the delete action
+func (c *Curd[T]) DestroyHook(hook ...func(*Ctx[T])) {
+	c.destroyHook = append(c.destroyHook, hook...)
 }
 
-// RecoverHook registers a hook function to be called before the recover action
-func (c *Curd[T]) RecoverHook(hook func(*Ctx[T])) {
-	c.recoverHook = hook
+// RecoverHook registers a hook function to the queen, and it will be called before the recover action
+func (c *Curd[T]) RecoverHook(hook ...func(*Ctx[T])) {
+	c.recoverHook = append(c.recoverHook, hook...)
 }
 
 // InitRouter registers the CRUD routes to the gin router
@@ -140,7 +140,9 @@ func (c *Curd[T]) Get() (h []gin.HandlerFunc) {
 		core := Core[T](ginCtx)
 		hook(core)
 		if c.getHook != nil {
-			c.getHook(core)
+			for _, v := range c.getHook {
+				v(core)
+			}
 		}
 		core.Get()
 	})
@@ -157,7 +159,9 @@ func (c *Curd[T]) GetList() (h []gin.HandlerFunc) {
 		core := Core[T](ginCtx)
 		hook(core)
 		if c.getListHook != nil {
-			c.getListHook(core)
+			for _, v := range c.getListHook {
+				v(core)
+			}
 		}
 		core.PagingList()
 	})
@@ -191,7 +195,9 @@ func (c *Curd[T]) Create() (h []gin.HandlerFunc) {
 		}
 		core.SetValidRules(validMap)
 		if c.createHook != nil {
-			c.createHook(core)
+			for _, v := range c.createHook {
+				v(core)
+			}
 		}
 		core.Create()
 	})
@@ -226,7 +232,9 @@ func (c *Curd[T]) Modify() (h []gin.HandlerFunc) {
 		}
 		core.SetValidRules(validMap)
 		if c.modifyHook != nil {
-			c.modifyHook(core)
+			for _, v := range c.modifyHook {
+				v(core)
+			}
 		}
 		core.Modify()
 	})
@@ -239,7 +247,9 @@ func (c *Curd[T]) Destroy() (h []gin.HandlerFunc) {
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
 		if c.destroyHook != nil {
-			c.destroyHook(core)
+			for _, v := range c.destroyHook {
+				v(core)
+			}
 		}
 		core.Destroy()
 	})
@@ -252,7 +262,9 @@ func (c *Curd[T]) Recover() (h []gin.HandlerFunc) {
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
 		if c.recoverHook != nil {
-			c.recoverHook(core)
+			for _, v := range c.recoverHook {
+				v(core)
+			}
 		}
 		core.Recover()
 	})
