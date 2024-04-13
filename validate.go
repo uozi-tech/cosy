@@ -3,12 +3,30 @@ package cosy
 import (
 	"errors"
 	"git.uozi.org/uozi/cosy/logger"
+	"git.uozi.org/uozi/cosy/valid"
 	"github.com/gin-gonic/gin"
-	val "github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 	"reflect"
 	"strings"
 )
+
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New()
+
+	err := validate.RegisterValidation("date", valid.IsDate)
+
+	if err != nil {
+		logger.Fatal(err)
+	}
+}
+
+// GetValidator returns the validator instance
+func GetValidator() *validator.Validate {
+	return validate
+}
 
 type ValidError struct {
 	Key     string
@@ -49,7 +67,7 @@ func BindAndValid(c *gin.Context, target interface{}) bool {
 	if err != nil {
 		logger.Error("bind err", err)
 
-		var verrs val.ValidationErrors
+		var verrs validator.ValidationErrors
 		ok := errors.As(err, &verrs)
 
 		if !ok {

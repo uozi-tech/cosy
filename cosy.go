@@ -2,16 +2,9 @@ package cosy
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 )
-
-var validate *validator.Validate
-
-func init() {
-	validate = validator.New()
-}
 
 type Ctx[T any] struct {
 	*gin.Context
