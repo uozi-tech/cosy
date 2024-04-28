@@ -11,6 +11,10 @@ type TestEmbed struct {
 	Avatar string `json:"avatar" cosy:"all:omitempty"`
 }
 
+type TestEmbedPtr struct {
+	AuditStatus int `json:"audit_status" cosy:"all:omitempty"`
+}
+
 type User struct {
 	Model
 	Name     string `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
@@ -18,6 +22,7 @@ type User struct {
 	Email    string `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"uniqueIndex"`
 	Phone    string `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
 	TestEmbed
+	*TestEmbedPtr
 	LastActive *time.Time `json:"last_active"`
 	Power      int        `json:"power" cosy:"add:required;update:omitempty;list:in" gorm:"default:1;index"`
 	Status     int        `json:"status" cosy:"add:required;update:omitempty;list:in" gorm:"default:1;index"`
@@ -95,6 +100,12 @@ func TestResolvedModels(t *testing.T) {
 					Name:    "Avatar",
 					Type:    "string",
 					JsonTag: "avatar",
+					CosyTag: NewCosyTag("all:omitempty"),
+				},
+				{
+					Name:    "AuditStatus",
+					Type:    "int",
+					JsonTag: "audit_status",
 					CosyTag: NewCosyTag("all:omitempty"),
 				},
 				{

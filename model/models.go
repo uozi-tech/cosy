@@ -35,10 +35,20 @@ var resolvedModelMap = make(map[string]*ResolvedModel)
 func deepResolve(r *ResolvedModel, m reflect.Type) {
 	for i := 0; i < m.NumField(); i++ {
 		field := m.Field(i)
-		if field.Type.Kind() == reflect.Struct && field.Anonymous {
-			deepResolve(r, field.Type)
+		fieldType := field.Type
+
+		// Check if the field is a pointer to a struct
+		if fieldType.Kind() == reflect.Ptr && fieldType.Elem().Kind() == reflect.Struct {
+			// If it is, we want to resolve the struct it points to
+			fieldType = fieldType.Elem()
+		}
+
+		// Continue with the existing logic for anonymous structs
+		if fieldType.Kind() == reflect.Struct && field.Anonymous {
+			deepResolve(r, fieldType)
 			continue
 		}
+
 		jsonTag := field.Tag.Get("json")
 		jsonTags := strings.Split(jsonTag, ",")
 		if len(jsonTags) > 0 {
