@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -82,7 +83,6 @@ func BindAndValid(c *gin.Context, target interface{}) bool {
 		errorsMap := make(map[string]interface{})
 		for _, value := range verrs {
 			var path []string
-
 			namespace := strings.Split(value.StructNamespace(), ".")
 			// logger.Debug(t.Name(), namespace)
 			if t.Name() != "" && len(namespace) > 1 {
@@ -107,12 +107,29 @@ func BindAndValid(c *gin.Context, target interface{}) bool {
 
 // findField recursively finds the field in a nested struct
 func getJsonPath(t reflect.Type, fields []string, path *[]string) {
-	f, ok := t.FieldByName(fields[0])
+	field := fields[0]
+	// used in case of array
+	var index string
+	if field[len(field)-1] == ']' {
+		re := regexp.MustCompile(`(\w+)\[(\d+)\]`)
+		matches := re.FindStringSubmatch(field)
+
+		if len(matches) > 2 {
+			field = matches[1]
+			index = matches[2]
+		}
+	}
+
+	f, ok := t.FieldByName(field)
 	if !ok {
 		return
 	}
 
 	*path = append(*path, f.Tag.Get("json"))
+
+	if index != "" {
+		*path = append(*path, index)
+	}
 
 	if len(fields) > 1 {
 		subFields := fields[1:]

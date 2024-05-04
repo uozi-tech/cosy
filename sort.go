@@ -9,6 +9,10 @@ import (
 )
 
 func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
+	if c.itemKey == "" {
+		return db
+	}
+
 	order := c.DefaultQuery("order", "desc")
 	if order != "desc" && order != "asc" {
 		order = "desc"
