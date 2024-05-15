@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
+	"strings"
 )
 
 // DbUnique checks if the value is unique in the table of the database
@@ -22,7 +23,7 @@ func DbUnique[T any](payload gin.H, columns []string) (conflicts []string, err e
 		}
 	}
 	result := map[string]interface{}{}
-	err = db.Unscoped().First(&result).Error
+	err = db.Unscoped().Select(strings.Join(append([]string{"id"}, columns...), ", ")).First(&result).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
