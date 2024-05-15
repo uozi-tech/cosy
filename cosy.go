@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type Ctx[T any] struct {
@@ -41,6 +42,7 @@ type Ctx[T any] struct {
 	search                   []string
 	between                  []string
 	betweenWithKey           map[string]string
+	unique                   []string
 }
 
 func Core[T any](c *gin.Context) *Ctx[T] {
@@ -69,7 +71,20 @@ func (c *Ctx[T]) SetItemKey(key string) *Ctx[T] {
 func (c *Ctx[T]) SetValidRules(rules gin.H) *Ctx[T] {
 	c.rules = rules
 
+	for k, rule := range rules {
+		rule := cast.ToString(rule)
+		if strings.Contains(rule, "db_unique") {
+			c.unique = append(c.unique, k)
+			rules[k] = strings.ReplaceAll(rule, "db_unique", "")
+			rules[k] = strings.TrimRight(rule, ",")
+		}
+	}
+
 	return c
+}
+
+func (c *Ctx[T]) SetUnique(keys ...string) {
+	c.unique = append(c.unique, keys...)
 }
 
 func (c *Ctx[T]) SetPreloads(args ...string) *Ctx[T] {

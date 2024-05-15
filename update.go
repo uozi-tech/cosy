@@ -19,6 +19,7 @@ func (c *Ctx[T]) Modify() {
 		return
 	}
 	c.ID = c.GetParamID()
+
 	errs := c.validate()
 
 	if len(errs) > 0 {
@@ -26,6 +27,10 @@ func (c *Ctx[T]) Modify() {
 			"message": "Requested with wrong parameters",
 			"errors":  errs,
 		})
+		return
+	}
+
+	if c.abort {
 		return
 	}
 

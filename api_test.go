@@ -32,7 +32,7 @@ type TestEmbed struct {
 
 type User struct {
 	model.Model
-	SchoolID           string `json:"school_id" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
+	SchoolID           string `json:"school_id" cosy:"add:required;update:omitempty;list:fussy" gorm:"uniqueIndex"`
 	TestEmbed          `json:",squash"`
 	Name               string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
 	Gender             Gender     `json:"gender" cosy:"add:min=0;update:omitempty;list:fussy"`
@@ -162,6 +162,7 @@ func TestApi(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	// test curd
 	testCreate(t)
+	testConflict(t)
 	testGet(t)
 	testGetList(t)
 	testModify(t)
@@ -444,4 +445,58 @@ func testRecover(t *testing.T) {
 	}
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func testConflict(t *testing.T) {
+	client := &http.Client{}
+	body := map[string]interface{}{
+		"school_id":           "0281876",
+		"avatar":              "",
+		"gender":              0,
+		"name":                "张三",
+		"password":            "123457887",
+		"age":                 20,
+		"title":               "助理教授",
+		"bio":                 "",
+		"college":             "大数据与互联网学院",
+		"direction":           "大数据与人工智能",
+		"teacher_certificate": "/xx/xx.pdf",
+		"contract":            "/xx/xx.pdf",
+		"task_agreement":      "/xx/xx.pdf",
+		"office_number":       "208",
+		"email":               "12345@aa.com",
+		"phone":               "13125372516",
+		"user_group_id":       1,
+		"status":              1,
+		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
+	}
+
+	bodyBytes, _ := json.Marshal(body)
+
+	req, err := http.NewRequest("POST", "http://127.0.0.1:8080/users", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	logger.Info(string(respBody))
+
+	var data gin.H
+	err = json.Unmarshal(respBody, &data)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	assert.Equal(t, "db_unique", data["errors"].(map[string]interface{})["email"])
 }

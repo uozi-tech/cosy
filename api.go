@@ -192,6 +192,10 @@ func (c *Curd[T]) Create() (h []gin.HandlerFunc) {
 			}
 
 			validMap[key] = dirs
+
+			if field.Unique {
+				core.SetUnique(key)
+			}
 		}
 		core.SetValidRules(validMap)
 		if c.createHook != nil {
@@ -229,6 +233,10 @@ func (c *Curd[T]) Modify() (h []gin.HandlerFunc) {
 			}
 
 			validMap[key] = dirs
+
+			if field.Unique {
+				core.SetUnique(key)
+			}
 		}
 		core.SetValidRules(validMap)
 		if c.modifyHook != nil {

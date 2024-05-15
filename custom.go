@@ -20,6 +20,10 @@ func (c *Ctx[T]) Custom(fx func(ctx *Ctx[T])) {
 		return
 	}
 
+	if c.abort {
+		return
+	}
+
 	c.beforeDecodeHook()
 
 	for k := range c.Payload {

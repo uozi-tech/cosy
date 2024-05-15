@@ -20,6 +20,10 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
+	if c.abort {
+		return
+	}
+
 	db := model.UseDB()
 
 	if c.beforeDecodeHook() {

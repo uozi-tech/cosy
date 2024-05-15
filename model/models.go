@@ -22,6 +22,7 @@ type resolvedModelField struct {
 	Type    string
 	JsonTag string
 	CosyTag CosyTag
+	Unique  bool
 }
 
 type ResolvedModel struct {
@@ -62,6 +63,12 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 			Type:    field.Type.String(),
 			JsonTag: jsonTag,
 			CosyTag: NewCosyTag(field.Tag.Get("cosy")),
+		}
+
+		if field.Tag.Get("gorm") != "" {
+			if strings.Contains(field.Tag.Get("gorm"), "unique") {
+				resolvedField.Unique = true
+			}
 		}
 
 		// out-of-order

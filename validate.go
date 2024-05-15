@@ -41,15 +41,32 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 
 	// logger.Debug(c.Payload, c.rules)
 
+	c.Payload["id"] = c.ID
+
 	errs = validate.ValidateMap(c.Payload, c.rules)
 
 	if len(errs) > 0 {
-		logger.Debug(errs)
+		// logger.Debug(errs)
 		for k := range errs {
 			errs[k] = c.rules[k]
 		}
 		return
 	}
+
+	if len(c.unique) > 0 {
+		conflicts, err := valid.DbUnique[T](c.Payload, c.unique)
+		if err != nil {
+			c.AbortWithError(err)
+			return
+		}
+		if len(conflicts) > 0 {
+			for _, v := range conflicts {
+				errs[v] = "db_unique"
+			}
+			return
+		}
+	}
+
 	// Make sure that the key in c.Payload is also the key of rules
 	validated := make(map[string]interface{})
 
