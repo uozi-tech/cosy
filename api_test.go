@@ -12,6 +12,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"testing"
@@ -96,9 +97,18 @@ func TestApi(t *testing.T) {
 			context.Next()
 		}).GetHook(func(c *Ctx[User]) {
 			t.Log("get hook")
+			var a = 1
 			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
 				assert.Equal(t, "test", ctx.MustGet("test"))
 			})
+			if c.Query("test_gorm_scope") == "true" {
+				c.GormScope(func(tx *gorm.DB) *gorm.DB {
+					a = 2
+					return tx.Where("id = ?", 2)
+				}).ExecutedHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, 2, a)
+				})
+			}
 		})
 		c.BeforeCreate(func(context *gin.Context) {
 			t.Log("before create")
@@ -168,6 +178,7 @@ func TestApi(t *testing.T) {
 	testModify(t)
 	testDestroy(t)
 	testRecover(t)
+	testGormScope(t)
 }
 
 func testCreate(t *testing.T) {
@@ -499,4 +510,14 @@ func testConflict(t *testing.T) {
 	}
 
 	assert.Equal(t, "db_unique", data["errors"].(map[string]interface{})["email"])
+}
+
+func testGormScope(t *testing.T) {
+	resp, err := http.Get("http://127.0.0.1:8080/users/1?test_gorm_scope=true")
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }

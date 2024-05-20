@@ -22,7 +22,7 @@ func (c *Ctx[T]) Get() {
 
 	db := model.UseDB()
 
-	c.applyGormScopes(db)
+	db = c.applyGormScopes(db)
 
 	if c.table != "" {
 		db = db.Table(c.table)
