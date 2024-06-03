@@ -46,6 +46,18 @@ func Set(key string, value interface{}, exp time.Duration) error {
 	return rdb.Set(ctx, buildKey(key), value, exp).Err()
 }
 
+func SetEx(key string, value interface{}, exp time.Duration) error {
+	return rdb.SetEx(ctx, buildKey(key), value, exp).Err()
+}
+
+func SetNx(key string, value interface{}, exp time.Duration) error {
+	return rdb.SetNX(ctx, buildKey(key), value, exp).Err()
+}
+
+func TTL(key string) time.Duration {
+	return rdb.TTL(ctx, buildKey(key)).Val()
+}
+
 func Del(key ...string) error {
 	for i := range key {
 		key[i] = buildKey(key[i])

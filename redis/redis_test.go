@@ -4,13 +4,14 @@ import (
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestRedis(t *testing.T) {
 	settings.Init("../app.ini")
 	Init()
 
-	err := Set("test", "test", 0)
+	err := Set("test", "test", 10*time.Second)
 	if err != nil {
 		t.Error(err)
 	}
@@ -19,6 +20,7 @@ func TestRedis(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, "test", v)
+	assert.LessOrEqual(t, 10*time.Second, TTL("test"))
 
 	inc, err := Incr("test_incr")
 	if err != nil {
@@ -56,4 +58,26 @@ func TestRedis(t *testing.T) {
 	assert.Equal(t, "", v)
 	v, _ = Get("test_incr")
 	assert.Equal(t, "", v)
+
+	err = SetEx("test", "test", 10*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	v, _ = Get("test")
+	assert.Equal(t, "test", v)
+
+	err = SetNx("test1", "test1", 10*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	v, _ = Get("test1")
+	assert.Equal(t, "test1", v)
+
+	err = SetNx("test1", "test2", 10*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	v, _ = Get("test1")
+	assert.Equal(t, "test1", v)
+
 }
