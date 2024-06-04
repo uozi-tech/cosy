@@ -46,7 +46,7 @@ a **C**omfortable **O**bject-oriented **S**implified framework for **Y**ou
 
 Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于 Gin 框架并使用 Gorm 作为 ORM 的 Web API 的创建、更新和列出数据库记录的过程。
 
-## 我们的团队
+## 开发成员
 
 <VPTeamMembers size="small" :members="members" />
 
