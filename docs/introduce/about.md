@@ -33,7 +33,7 @@ const members = [
     name: 'Akino',
     title: '开发者',
     links: [
-      { icon: 'github', link: 'https://github.com/Akino' },
+      { icon: 'github', link: 'https://github.com/akinocccc' },
       { icon: { svg: blogIcon }, link: 'https://akino.icu' }
     ]
   }, 
