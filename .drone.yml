@@ -58,6 +58,60 @@ steps:
       - name: go_cache
         path: /go/pkg
 
+  - name: restore cache
+    image: drillster/drone-volume-cache
+    pull: if-not-exists
+    volumes:
+      - name: cache
+        path: /cache  # fixed, can't be change
+    settings:
+      restore: true
+      mount: # list of folders or files to cache
+        - ./.pnpm-store
+
+  - name: install dependencies
+    image: node:latest
+    pull: if-not-exists
+    commands:
+      - corepack enable
+      - corepack prepare pnpm@latest --activate
+      - pnpm config set store-dir .pnpm-store
+      - pnpm install
+
+  - name: rebuild cache
+    image: drillster/drone-volume-cache
+    pull: if-not-exists
+    volumes:
+      - name: cache
+        path: /cache
+    settings:
+      rebuild: true
+      mount:
+        - ./.pnpm-store
+
+  - name: build docs
+    image: node:latest
+    pull: if-not-exists
+    commands:
+      - corepack enable
+      - corepack prepare pnpm@latest --activate
+      - pnpm config set store-dir .pnpm-store
+      - pnpm docs:build
+
+  - name: deploy docs
+    image: drillster/drone-rsync
+    pull: if-not-exists
+    settings:
+      hosts:
+        from_secret: ssh_host_uozi_hk
+      user:
+        from_secret: ssh_username
+      key:
+        from_secret: ssh_key_uozi_hk
+      source: ./docs/.vitepress/dist/*
+      target: /var/www/cosy-docs
+      delete: true
+
   - name: notify
     image: fifsky/drone-wechat-work
     pull: always
@@ -91,6 +145,10 @@ services:
     image: redis:latest
 
 volumes:
+  - name: cache
+    host:
+      path: /tmp/pnpm_cache  # host volume absolute path
+
   - name: go_cache
     host:
       path: /tmp/go_cache  # host volume absolute path
