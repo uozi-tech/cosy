@@ -1,3 +1,5 @@
 app.ini
 app.testing.ini
 .DS_Store
+docs/.vitepress/cache
+node_modules

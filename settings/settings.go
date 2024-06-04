@@ -76,11 +76,9 @@ func reflectFrom(section string, v any) {
 
 // Save the settings
 func Save() (err error) {
-
 	for _, s := range sections {
 		reflectFrom(s.Name, s.Ptr)
 	}
-
 	err = Conf.SaveTo(ConfPath)
 	if err != nil {
 		return

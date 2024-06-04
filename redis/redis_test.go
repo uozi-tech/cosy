@@ -40,6 +40,12 @@ func TestRedis(t *testing.T) {
 	}
 	assert.Equal(t, int64(2), inc)
 
+	decr, err := Decr("test_incr")
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, int64(1), decr)
+
 	keys, err := Keys("test*")
 	if err != nil {
 		t.Error(err)

@@ -42,6 +42,10 @@ func Incr(key string) (int64, error) {
 	return rdb.Incr(ctx, buildKey(key)).Result()
 }
 
+func Decr(key string) (int64, error) {
+	return rdb.Decr(ctx, buildKey(key)).Result()
+}
+
 func Set(key string, value interface{}, exp time.Duration) error {
 	return rdb.Set(ctx, buildKey(key), value, exp).Err()
 }
