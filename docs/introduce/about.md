@@ -26,7 +26,7 @@ const members = [
     title: '开发者',
     links: [
       { icon: 'github', link: 'https://github.com/thahao' },
-      { icon: { svg: blogIcon }, link: 'https://github.com/thahao' }
+      { icon: { svg: blogIcon }, link: 'https://blog.2huo.tech' }
     ]
   }, {
     avatar: 'https://github.com/akinocccc.png',
