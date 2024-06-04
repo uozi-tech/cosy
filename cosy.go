@@ -32,7 +32,6 @@ type Ctx[T any] struct {
 	itemKey                  string
 	columnWhiteList          map[string]bool
 	in                       []string
-	inWithKey                map[string]string
 	eq                       []string
 	fussy                    []string
 	orIn                     []string
@@ -41,7 +40,6 @@ type Ctx[T any] struct {
 	preload                  []string
 	search                   []string
 	between                  []string
-	betweenWithKey           map[string]string
 	unique                   []string
 }
 

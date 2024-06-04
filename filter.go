@@ -43,7 +43,6 @@ func (c *Ctx[T]) SetIn(keys ...string) *Ctx[T] {
 }
 
 func (c *Ctx[T]) SetInWithKey(value string, key string) *Ctx[T] {
-	c.inWithKey[key] = value
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
 		return QueryToInSearch(c.Context, tx, value, key)
 	})
@@ -75,7 +74,6 @@ func (c *Ctx[T]) SetBetween(keys ...string) *Ctx[T] {
 }
 
 func (c *Ctx[T]) SetBetweenWithKey(value string, key string) *Ctx[T] {
-	c.betweenWithKey[key] = value
 	c.gormScopes = append(c.gormScopes, func(tx *gorm.DB) *gorm.DB {
 		return QueryToBetweenSearch(c.Context, tx, value, key)
 	})
