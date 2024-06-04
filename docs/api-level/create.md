@@ -26,6 +26,10 @@ func GetUser(c *gin.Context) {
 6. **Executed** (Hook)
 7. 返回响应
 
+<div style="display: flex;justify-content: center;">
+    <img src="/assets/create.png" alt="create" style="max-width: 600px"/>
+</div>
+
 在上述生命周期中，我们提供了三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。
 
 | 钩子名称              | ctx.OriginModel | ctx.Model | ctx.Payload |

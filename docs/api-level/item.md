@@ -104,6 +104,10 @@ func GetUser(c *gin.Context) {
 3. **Executed**
 4. 返回响应
 
+<div style="display: flex;justify-content: center;">
+    <img src="/assets/item.png" alt="item" style="max-width: 400px"/>
+</div>
+
 ## 响应示例
 
 ::: tip 提示

@@ -17,6 +17,10 @@ func GetList() {
 3. **Executed**
 4. 返回响应
 
+<div style="display: flex;justify-content: center;">
+    <img src="/assets/item.png" alt="list" style="max-width: 400px"/>
+</div>
+
 ## 筛选方法
 
 ::: tip 提示
@@ -57,7 +61,7 @@ Query 请求参数说明
 - SetTable(table string)
 - SetTransformer(fx func(user *model.User) any)
 - SetScan(fx func(tx *gorm.DB) any)
-- SetGormScope(fx func(tx *gorm.DB) *gorm.DB)
+- GormScope(fx func(tx *gorm.DB) *gorm.DB)
 
 ## 响应示例
 

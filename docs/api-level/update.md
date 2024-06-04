@@ -28,6 +28,10 @@ func ModifyUser(c *gin.Context) {
 7. **Executed** (Hook)
 8. 返回响应
 
+<div style="display: flex;justify-content: center;">
+    <img src="/assets/update.png" alt="update" style="max-width: 600px"/>
+</div>
+
 与**创建**接口类似，我们提供三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。
 
 | 钩子名称              | ctx.OriginModel | ctx.Model | ctx.Payload |

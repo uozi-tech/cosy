@@ -18,6 +18,10 @@ func DestroyUser(c *gin.Context) {
 - 执行删除操作
 - **Executed** (Hook)
 
+<div style="display: flex;justify-content: center;">
+    <img src="/assets/delete.png" alt="delete" style="max-width: 300px"/>
+</div>
+
 如果执行成功，将会响应 StatusCode = 204，body 为空。
 
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。

@@ -31,6 +31,10 @@ func DestroyUser(c *gin.Context) {
 - 执行删除操作
 - **Executed** (Hook)
 
+<div style="display: flex;justify-content: center;">
+    <img src="/assets/delete.png" alt="delete" style="max-width: 300px"/>
+</div>
+
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。
 
 你可以在 `BeforeExecuteHook` 中设置删除条件
