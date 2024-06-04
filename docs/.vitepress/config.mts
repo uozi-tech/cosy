@@ -21,7 +21,7 @@ export default defineConfig({
       {
         text: '接口级简化',
         items: [
-          { text: '模型定义', link: '/api-level/define-model.md' },
+          { text: '模型定义', link: '/api-level/define-model' },
           { text: '单个记录', link: '/api-level/item' },
           { text: '列表', link: '/api-level/list' },
           { text: '创建', link: '/api-level/create' },
