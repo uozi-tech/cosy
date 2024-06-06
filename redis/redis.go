@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/redis/go-redis/v9"
@@ -79,4 +80,29 @@ func Keys(pattern string) ([]string, error) {
 		return item[len(settings.RedisSettings.Prefix)+1:]
 	})
 	return result, nil
+}
+
+func Do(command string, args ...interface{}) (interface{}, error) {
+	argsSlice := append([]interface{}{command}, args...)
+
+	return rdb.Do(ctx, argsSlice...).Result()
+}
+
+func Eval(script string, numKeys int, keys []string, args []interface{}) (interface{}, error) {
+	if numKeys < 0 {
+		return nil, errors.New("numKeys must be a non-negative number")
+	}
+
+	var slices = []interface{}{script, numKeys}
+	if len(keys) > 0 {
+		for _, k := range keys {
+			slices = append(slices, k)
+		}
+	}
+
+	if args != nil {
+		slices = append(slices, args...)
+	}
+
+	return Do("Eval", slices...)
 }
