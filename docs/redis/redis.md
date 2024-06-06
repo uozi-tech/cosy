@@ -52,3 +52,15 @@ func TTL(key string) (time.Duration, error)
 ```go
 func Keys(pattern string) ([]string, error)
 ```
+
+## Do
+执行指定命令。
+```go
+func Do(command string, args ...interface{}) (interface{}, error)
+```
+
+## Eval
+执行 `Lua` 脚本。
+```go
+func Eval(script string, numKeys int64, keys []string, args []interface{}) (interface{}, error)
+```
