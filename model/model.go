@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 	"time"
 )
 
@@ -15,7 +16,7 @@ var (
 )
 
 type Model struct {
-	ID        int             `gorm:"primary_key" json:"id"`
+	ID        uint64          `gorm:"primary_key" json:"id"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 	DeletedAt *gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -47,6 +48,9 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 		Logger:                                   logMode(),
 		PrepareStmt:                              true,
 		DisableForeignKeyConstraintWhenMigrating: true,
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix: settings.DataBaseSettings.TablePrefix,
+		},
 	})
 
 	if err != nil {

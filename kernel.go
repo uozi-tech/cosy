@@ -10,6 +10,7 @@ import (
 	"git.uozi.org/uozi/cosy/redis"
 	"git.uozi.org/uozi/cosy/router"
 	"git.uozi.org/uozi/cosy/settings"
+	"git.uozi.org/uozi/cosy/sonyflake"
 	"github.com/gin-gonic/gin"
 	"net"
 	"net/http"
@@ -39,6 +40,9 @@ func Boot(confPath string) {
 	if settings.RedisSettings.Addr != "" {
 		redis.Init()
 	}
+
+	// Initialize sonyflake
+	sonyflake.Init()
 
 	// Start cron
 	cron.Start()

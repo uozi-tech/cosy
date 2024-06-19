@@ -67,6 +67,7 @@ func TestApi(t *testing.T) {
 	// prepare testing env
 	settings.Init("app.ini")
 	model.RegisterModels(User{})
+	settings.DataBaseSettings.TablePrefix = "api_test_"
 	model.Init(postgres.Open(settings.DataBaseSettings))
 	logger.Init("debug")
 

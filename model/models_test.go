@@ -50,7 +50,7 @@ func TestResolvedModels(t *testing.T) {
 			OrderedFields: []*resolvedModelField{
 				{
 					Name:    "ID",
-					Type:    "int",
+					Type:    "uint64",
 					JsonTag: "id",
 					CosyTag: CosyTag{},
 				},
@@ -139,7 +139,7 @@ func TestResolvedModels(t *testing.T) {
 			OrderedFields: []*resolvedModelField{
 				{
 					Name:    "ID",
-					Type:    "int",
+					Type:    "uint64",
 					JsonTag: "id",
 					CosyTag: CosyTag{},
 				},

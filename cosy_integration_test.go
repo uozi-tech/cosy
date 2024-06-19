@@ -13,6 +13,7 @@ import (
 func TestCosyIntegration(t *testing.T) {
 	model.RegisterModels(User{})
 	kernel.RegisterAsyncFunc(func() {
+		settings.DataBaseSettings.TablePrefix = "cosy_integration_test_"
 		model.Init(postgres.Open(settings.DataBaseSettings))
 
 		r := router.GetEngine()

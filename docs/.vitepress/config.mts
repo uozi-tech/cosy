@@ -63,6 +63,12 @@ export default defineConfig({
         ]
       },
       {
+        text: 'Sonyflake',
+        items: [
+          { text: '接口参考', link: '/sonyflake/sonyflake' },
+        ]
+      },
+      {
         text: '设置',
         items: [
           { text: '集成', link: '/settings/start' },

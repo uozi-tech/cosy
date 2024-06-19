@@ -18,6 +18,7 @@ type User struct {
 func TestDbUnique(t *testing.T) {
 	model.RegisterModels(User{})
 	settings.Init("../app.ini")
+	settings.DataBaseSettings.TablePrefix = "db_unique_test_"
 	db := model.Init(postgres.Open(settings.DataBaseSettings))
 
 	defer func() {

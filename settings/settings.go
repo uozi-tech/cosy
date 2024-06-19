@@ -32,6 +32,10 @@ var sections = []section{
 		Name: "redis",
 		Ptr:  RedisSettings,
 	},
+	{
+		Name: "sonyflake",
+		Ptr:  SonyflakeSettings,
+	},
 }
 
 // Register the setting, this should be called before Init

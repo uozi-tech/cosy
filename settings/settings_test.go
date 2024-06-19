@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestIntegration(t *testing.T) {
@@ -37,6 +38,9 @@ func TestIntegration(t *testing.T) {
 	RedisSettings.Addr = "127.0.0.1:6379"
 	RedisSettings.Password = jwtSecret
 
+	SonyflakeSettings.MachineID = 1
+	SonyflakeSettings.StartTime = time.Date(2024, 6, 19, 0, 0, 0, 0, time.UTC)
+
 	err = Save()
 	if err != nil {
 		t.Fatal(err)
@@ -59,4 +63,7 @@ func TestIntegration(t *testing.T) {
 	assert.Equal(0, RedisSettings.DB)
 	assert.Equal("127.0.0.1:6379", RedisSettings.Addr)
 	assert.Equal(jwtSecret, RedisSettings.Password)
+
+	assert.Equal(time.Date(2024, 6, 19, 0, 0, 0, 0, time.UTC), SonyflakeSettings.StartTime)
+	assert.Equal(uint16(1), SonyflakeSettings.MachineID)
 }

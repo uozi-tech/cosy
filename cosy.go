@@ -9,7 +9,7 @@ import (
 
 type Ctx[T any] struct {
 	*gin.Context
-	ID                       int
+	ID                       uint64
 	rules                    gin.H
 	Payload                  map[string]interface{}
 	Model                    T
@@ -105,8 +105,8 @@ func (c *Ctx[T]) SetTransformer(t func(m *T) any) *Ctx[T] {
 	return c
 }
 
-func (c *Ctx[T]) GetParamID() int {
-	return cast.ToInt(c.Param("id"))
+func (c *Ctx[T]) GetParamID() uint64 {
+	return cast.ToUint64(c.Param("id"))
 }
 
 func (c *Ctx[T]) AddColWhiteList(cols ...string) *Ctx[T] {
