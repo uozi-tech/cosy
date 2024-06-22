@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
+	"reflect"
 )
 
 func (c *Ctx[T]) SetNextHandler(handler gin.HandlerFunc) *Ctx[T] {
@@ -71,15 +72,20 @@ func (c *Ctx[T]) Modify() {
 	if c.table != "" {
 		db = db.Table(c.table, c.tableArgs...)
 	}
-	err = db.Model(&c.OriginModel).Select(selectedFields).Updates(&c.Model).Error
 
+	v := reflect.ValueOf(&c.Model).Elem()
+	idField := v.FieldByName("ID")
+	if idField.IsValid() && idField.CanSet() {
+		idField.Set(reflect.ValueOf(c.ID))
+	}
+
+	err = db.Select(selectedFields).Save(&c.Model).Error
 	if err != nil {
 		c.AbortWithError(err)
 		return
 	}
 
 	err = db.Preload(clause.Associations).First(&c.Model, c.ID).Error
-
 	if err != nil {
 		c.AbortWithError(err)
 		return
