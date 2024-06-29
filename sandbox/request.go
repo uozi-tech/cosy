@@ -5,20 +5,13 @@ import (
 	"net/http"
 )
 
-// Client return a sandbox client
-func (t *Instance) Client() *Client {
-	return &Client{
-		Header: make(map[string]string),
-	}
-}
-
 // AddHeader add header
 func (c *Client) AddHeader(key, value string) {
 	c.Header[key] = value
 }
 
 // attachHeader attach header to the given request
-func (c *Client) attachHeader(req *http.Response) {
+func (c *Client) attachHeader(req *http.Request) {
 	for k, v := range c.Header {
 		req.Header.Set(k, v)
 	}

@@ -12,6 +12,13 @@ type Client struct {
 	Header map[string]string
 }
 
+// NewClient create a new client instance
+func NewClient() *Client {
+	return &Client{
+		Header: make(map[string]string),
+	}
+}
+
 // Request send a request and get response
 func (c *Client) Request(method string, uri string, body any) (r *Response, err error) {
 	buf, err := json.Marshal(body)
@@ -25,6 +32,7 @@ func (c *Client) Request(method string, uri string, body any) (r *Response, err 
 	} else {
 		req = httptest.NewRequest(method, uri, bytes.NewBuffer(buf))
 	}
+	c.attachHeader(req)
 
 	w := httptest.NewRecorder()
 	router.GetEngine().ServeHTTP(w, req)

@@ -16,15 +16,11 @@ func NewResponse(statusCode int, body io.ReadCloser) (r *Response, err error) {
 	if err != nil {
 		return nil, err
 	}
+	defer body.Close()
 	return &Response{
 		StatusCode: statusCode,
 		body:       b,
 	}, nil
-}
-
-// GetStringBody return the body as string
-func (r *Response) GetStringBody() string {
-	return string(r.body)
 }
 
 // To decode the body to the given dest

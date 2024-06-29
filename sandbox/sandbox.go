@@ -10,6 +10,7 @@ import (
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/model"
 	"git.uozi.org/uozi/cosy/redis"
+	"git.uozi.org/uozi/cosy/router"
 	"git.uozi.org/uozi/cosy/settings"
 	"git.uozi.org/uozi/cosy/sonyflake"
 	"github.com/gin-gonic/gin"
@@ -95,6 +96,9 @@ func (t *Instance) setUp() {
 	case "sqlite":
 		model.Init(sqlite.Open("", settings.DataBaseSettings))
 	}
+
+	// Initialize router
+	router.Init()
 }
 
 func (t *Instance) cleanUp() {
