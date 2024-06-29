@@ -17,6 +17,11 @@ func RegisterModels(models ...any) {
 	collection = append(collection, models...)
 }
 
+// ClearCollection clear collection for testing purpose
+func ClearCollection() {
+	collection = make([]any, 0)
+}
+
 type resolvedModelField struct {
 	Name    string
 	Type    string

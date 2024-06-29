@@ -25,6 +25,10 @@ func Init() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+	err = Del("Hello")
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
 
 func buildKey(key string) string {
