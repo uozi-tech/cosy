@@ -130,8 +130,6 @@ steps:
     when:
       event:
         - tag
-      branch:
-        - main
 
   - name: notify
     image: fifsky/drone-wechat-work
