@@ -23,7 +23,6 @@ type Json struct {
 }
 
 func TestBindAndValid(t *testing.T) {
-
 	logger.Init("debug")
 
 	r := gin.New()

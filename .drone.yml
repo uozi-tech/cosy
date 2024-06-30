@@ -5,7 +5,7 @@ name: default
 steps:
   - name: start
     image: fifsky/drone-wechat-work
-    pull: always
+    pull: if-not-exists
     settings:
       url:
         from_secret: wecom_bot_url
@@ -22,17 +22,23 @@ steps:
         > [点击查看](${DRONE_BUILD_LINK})
 
   - name: postgres healthcheck
+    pull: if-not-exists
     image: postgres:latest
     commands:
       - while ! pg_isready -h postgres-server -U drone --quiet; do sleep 1; done
 
   - name: redis healthcheck
+    pull: if-not-exists
     image: redis:latest
     commands:
       - while ! redis-cli -h redis-server ping; do sleep 1; done
 
-  - name: test
+  - name: go test
     image: golang:latest
+    pull: if-not-exists
+    depends_on:
+      - postgres healthcheck
+      - redis healthcheck
     commands:
       - |
         echo '[app]
@@ -74,6 +80,8 @@ steps:
   - name: install dependencies
     image: node:latest
     pull: if-not-exists
+    depends_on:
+      - restore cache
     commands:
       - corepack enable
       - corepack prepare pnpm@latest --activate
@@ -83,6 +91,8 @@ steps:
   - name: rebuild cache
     image: drillster/drone-volume-cache
     pull: if-not-exists
+    depends_on:
+      - install dependencies
     volumes:
       - name: cache
         path: /cache
@@ -94,6 +104,8 @@ steps:
   - name: build docs
     image: node:latest
     pull: if-not-exists
+    depends_on:
+      - install dependencies
     commands:
       - corepack enable
       - corepack prepare pnpm@latest --activate
@@ -103,6 +115,8 @@ steps:
   - name: deploy docs
     image: drillster/drone-rsync
     pull: if-not-exists
+    depends_on:
+      - build docs
     settings:
       hosts:
         from_secret: ssh_host_uozi_hk
@@ -116,7 +130,12 @@ steps:
 
   - name: notify
     image: fifsky/drone-wechat-work
-    pull: always
+    pull: if-not-exists
+    depends_on:
+      - start
+      - rebuild cache
+      - go test
+      - deploy docs
     settings:
       url:
         from_secret: wecom_bot_url
@@ -137,6 +156,7 @@ steps:
 
 services:
   - name: postgres-server
+    pull: if-not-exists
     image: postgres:latest
     environment:
       POSTGRES_DB: drone
@@ -144,6 +164,7 @@ services:
       POSTGRES_PASSWORD: drone
 
   - name: redis-server
+    pull: if-not-exists
     image: redis:latest
 
 volumes:

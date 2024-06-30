@@ -28,6 +28,8 @@ type Instance struct {
 	// databaseType
 	// is the type of database, currently support mysql, pgsql, sqlite
 	databaseType string
+
+	client *Client
 }
 
 func NewInstance(configPath, databaseType string) *Instance {
@@ -35,6 +37,7 @@ func NewInstance(configPath, databaseType string) *Instance {
 		scope:        uuid.NewString(),
 		confPath:     configPath,
 		databaseType: databaseType,
+		client:       newClient(),
 	}
 }
 
@@ -131,4 +134,8 @@ func (t *Instance) cleanUp() {
 			logger.Error("failed to delete redis key: %v", err)
 		}
 	}
+}
+
+func (t *Instance) GetClient() *Client {
+	return t.client
 }

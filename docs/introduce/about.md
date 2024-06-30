@@ -29,7 +29,7 @@ const members = [
       { icon: { svg: blogIcon }, link: 'https://blog.2huo.tech' }
     ]
   }, {
-    avatar: 'https://github.com/akinocccc.png',
+    avatar: 'https://github.com/akinoccc.png',
     name: 'Akino',
     title: '开发者',
     links: [

@@ -13,7 +13,7 @@ type Client struct {
 }
 
 // NewClient create a new client instance
-func NewClient() *Client {
+func newClient() *Client {
 	return &Client{
 		Header: make(map[string]string),
 	}

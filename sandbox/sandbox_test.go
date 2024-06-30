@@ -87,6 +87,77 @@ func TestInstance(t *testing.T) {
 					r.OPTIONS("/test", func(c *gin.Context) {
 						c.JSON(http.StatusOK, nil)
 					})
+
+					c := instance.GetClient()
+					c.AddHeader("Token", "test")
+					resp, err := c.Get("/test")
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, http.StatusOK, resp.StatusCode)
+					var body gin.H
+					err = resp.To(&body)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, "Hello, world!", body["message"])
+					assert.Equal(t, "test", body["token"])
+
+					resp, err = c.Post("/test", gin.H{
+						"school_id": "school_id1",
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					body = gin.H{}
+					err = resp.To(&body)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, "school_id1", body["school_id"])
+
+					resp, err = c.Put("/test", gin.H{
+						"school_id": "school_id1",
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					body = gin.H{}
+					err = resp.To(&body)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, "school_id1", body["school_id"])
+
+					resp, err = c.Patch("/test", gin.H{
+						"school_id": "school_id1",
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					body = gin.H{}
+					err = resp.To(&body)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, "school_id1", body["school_id"])
+
+					resp, err = c.Delete("/test", nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+					resp, err = c.Options("/test", gin.H{
+						"school_id": "school_id1",
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, http.StatusOK, resp.StatusCode)
 				})
 			var tables []string
 			db := model.UseDB()
@@ -98,77 +169,6 @@ func TestInstance(t *testing.T) {
 
 			keys, _ := redis.Keys("*")
 			assert.Equal(t, 0, len(keys))
-
-			c := NewClient()
-			c.AddHeader("Token", "test")
-			resp, err := c.Get("/test")
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			var body gin.H
-			err = resp.To(&body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, "Hello, world!", body["message"])
-			assert.Equal(t, "test", body["token"])
-
-			resp, err = c.Post("/test", gin.H{
-				"school_id": "school_id1",
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			body = gin.H{}
-			err = resp.To(&body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, "school_id1", body["school_id"])
-
-			resp, err = c.Put("/test", gin.H{
-				"school_id": "school_id1",
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			body = gin.H{}
-			err = resp.To(&body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, "school_id1", body["school_id"])
-
-			resp, err = c.Patch("/test", gin.H{
-				"school_id": "school_id1",
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			body = gin.H{}
-			err = resp.To(&body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, "school_id1", body["school_id"])
-
-			resp, err = c.Delete("/test", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-			resp, err = c.Option("/test", gin.H{
-				"school_id": "school_id1",
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	}
 }

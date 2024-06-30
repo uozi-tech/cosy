@@ -42,7 +42,7 @@ func (c *Client) Delete(uri string, body gin.H) (r *Response, err error) {
 	return c.Request(http.MethodDelete, uri, body)
 }
 
-// Option send a option request
-func (c *Client) Option(uri string, body gin.H) (r *Response, err error) {
+// Options send a option request
+func (c *Client) Options(uri string, body gin.H) (r *Response, err error) {
 	return c.Request(http.MethodOptions, uri, body)
 }
