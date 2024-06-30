@@ -127,6 +127,9 @@ steps:
       source: ./docs/.vitepress/dist/*
       target: /var/www/cosy-docs
       delete: true
+    when:
+      branch:
+        - main
 
   - name: notify
     image: fifsky/drone-wechat-work
@@ -135,6 +138,7 @@ steps:
       - start
       - rebuild cache
       - go test
+      - build docs
       - deploy docs
     settings:
       url:
