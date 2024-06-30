@@ -15,7 +15,6 @@ import (
 	"git.uozi.org/uozi/cosy/sonyflake"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"runtime"
 	"sync"
 )
 
@@ -49,13 +48,6 @@ func (t *Instance) RegisterModels(models ...any) *Instance {
 func (t *Instance) Run(f func(*Instance)) {
 	mutex.Lock()
 	defer logger.Sync()
-	defer func() {
-		if err := recover(); err != nil {
-			buf := make([]byte, 1024)
-			runtime.Stack(buf, false)
-			logger.Errorf("%s\n%s", err, buf)
-		}
-	}()
 	defer t.cleanUp()
 	defer mutex.Unlock()
 
