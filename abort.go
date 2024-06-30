@@ -1,7 +1,7 @@
 package cosy
 
 func (c *Ctx[T]) AbortWithError(err error) {
-	c.abort = true
+	c.Abort()
 	errHandler(c.Context, err)
 }
 

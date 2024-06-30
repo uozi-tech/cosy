@@ -21,8 +21,9 @@ import (
 
 var TCPAddr *net.TCPAddr
 
+// Boot the server
 func Boot(confPath string) {
-	// Create context that listens for the interrupt signal from the OS.
+	// Create a context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 

@@ -1,19 +1,18 @@
 package cosy
 
 import (
-	"bytes"
-	"encoding/json"
-	"git.uozi.org/uozi/cosy-driver-postgres"
+	"fmt"
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/map2struct"
 	"git.uozi.org/uozi/cosy/model"
+	"git.uozi.org/uozi/cosy/router"
+	"git.uozi.org/uozi/cosy/sandbox"
 	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
-	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -64,126 +63,110 @@ type Product struct {
 }
 
 func TestApi(t *testing.T) {
-	// prepare testing env
-	settings.Init("app.ini")
-	model.RegisterModels(User{})
-	settings.DataBaseSettings.TablePrefix = "api_test_"
-	model.Init(postgres.Open(settings.DataBaseSettings))
-	logger.Init("debug")
-
-	defer func() {
-		// clear testing env
-		err := model.UseDB().Migrator().DropTable(&User{})
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-
-	go func() {
-		r := gin.New()
-
-		err := r.SetTrustedProxies([]string{"127.0.0.1"})
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		g := r.Group("/")
-
-		c := Api[User]("users")
-
-		c.BeforeGet(func(context *gin.Context) {
-			t.Log("before get")
-			context.Set("test", "test")
-			context.Next()
-		}).GetHook(func(c *Ctx[User]) {
-			t.Log("get hook")
-			var a = 1
-			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
-				assert.Equal(t, "test", ctx.MustGet("test"))
-			})
-			if c.Query("test_gorm_scope") == "true" {
-				c.GormScope(func(tx *gorm.DB) *gorm.DB {
-					a = 2
-					return tx.Where("id = ?", 2)
-				}).ExecutedHook(func(ctx *Ctx[User]) {
-					assert.Equal(t, 2, a)
-				})
+	sandbox.NewInstance("app.ini", "pgsql").
+		RegisterModels(User{}).
+		Run(func(instance *sandbox.Instance) {
+			r := router.GetEngine()
+			err := r.SetTrustedProxies([]string{"127.0.0.1"})
+			if err != nil {
+				t.Error(err)
+				return
 			}
-		})
-		c.BeforeCreate(func(context *gin.Context) {
-			t.Log("before create")
-			context.Set("test", "test")
-			context.Next()
 
-		}).CreateHook(func(c *Ctx[User]) {
-			t.Log("create hook")
-			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
-				assert.Equal(t, "test", ctx.MustGet("test"))
-			})
-		})
-		c.BeforeModify(func(context *gin.Context) {
-			t.Log("before modify")
-			context.Set("test", "test")
-			context.Next()
-		}).ModifyHook(func(c *Ctx[User]) {
-			t.Log("modify hook")
-			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
-				assert.Equal(t, "test", ctx.MustGet("test"))
-			})
-		})
-		c.BeforeGetList(func(context *gin.Context) {
-			t.Log("before get list")
-			context.Set("test", "test")
-			context.Next()
-		}).GetListHook(func(c *Ctx[User]) {
-			t.Log("get list hook")
-			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
-				assert.Equal(t, "test", ctx.MustGet("test"))
-			})
-		})
-		c.BeforeDestroy(func(context *gin.Context) {
-			t.Log("before destroy")
-			context.Set("test", "test")
-			context.Next()
-		}).DestroyHook(func(c *Ctx[User]) {
-			t.Log("destroy hook")
-			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
-				assert.Equal(t, "test", ctx.MustGet("test"))
-			})
-		})
-		c.BeforeRecover(func(context *gin.Context) {
-			t.Log("before recover")
-			context.Set("test", "test")
-			context.Next()
-		}).RecoverHook(func(c *Ctx[User]) {
-			t.Log("recover hook")
-			c.BeforeExecuteHook(func(ctx *Ctx[User]) {
-				assert.Equal(t, "test", ctx.MustGet("test"))
-			})
-		})
+			g := r.Group("/")
 
-		c.InitRouter(g)
+			c := Api[User]("users")
 
-		err = r.Run("127.0.0.1:8080")
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-	time.Sleep(1 * time.Second)
-	// test curd
-	testCreate(t)
-	testConflict(t)
-	testGet(t)
-	testGetList(t)
-	testModify(t)
-	testDestroy(t)
-	testRecover(t)
-	testGormScope(t)
+			c.BeforeGet(func(context *gin.Context) {
+				t.Log("before get")
+				context.Set("test", "test")
+				context.Next()
+			}).GetHook(func(c *Ctx[User]) {
+				t.Log("get hook")
+				var a = 1
+				c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, "test", ctx.MustGet("test"))
+				})
+				if c.Query("test_gorm_scope") == "true" {
+					c.GormScope(func(tx *gorm.DB) *gorm.DB {
+						a = 2
+						return tx.Where("id = ?", 2)
+					}).ExecutedHook(func(ctx *Ctx[User]) {
+						assert.Equal(t, 2, a)
+					})
+				}
+				if c.Query("test_abort_error") == "true" {
+					c.AbortWithError(fmt.Errorf("test error"))
+				}
+			})
+			c.BeforeCreate(func(context *gin.Context) {
+				t.Log("before create")
+				context.Set("test", "test")
+				context.Next()
+
+			}).CreateHook(func(c *Ctx[User]) {
+				t.Log("create hook")
+				c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, "test", ctx.MustGet("test"))
+				})
+			})
+			c.BeforeModify(func(context *gin.Context) {
+				t.Log("before modify")
+				context.Set("test", "test")
+				context.Next()
+			}).ModifyHook(func(c *Ctx[User]) {
+				t.Log("modify hook")
+				c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, "test", ctx.MustGet("test"))
+				})
+			})
+			c.BeforeGetList(func(context *gin.Context) {
+				t.Log("before get list")
+				context.Set("test", "test")
+				context.Next()
+			}).GetListHook(func(c *Ctx[User]) {
+				t.Log("get list hook")
+				c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, "test", ctx.MustGet("test"))
+				})
+			})
+			c.BeforeDestroy(func(context *gin.Context) {
+				t.Log("before destroy")
+				context.Set("test", "test")
+				context.Next()
+			}).DestroyHook(func(c *Ctx[User]) {
+				t.Log("destroy hook")
+				c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, "test", ctx.MustGet("test"))
+				})
+			})
+			c.BeforeRecover(func(context *gin.Context) {
+				t.Log("before recover")
+				context.Set("test", "test")
+				context.Next()
+			}).RecoverHook(func(c *Ctx[User]) {
+				t.Log("recover hook")
+				c.BeforeExecuteHook(func(ctx *Ctx[User]) {
+					assert.Equal(t, "test", ctx.MustGet("test"))
+				})
+			})
+
+			c.InitRouter(g)
+
+			// test curd
+			testCreate(t, instance)
+			testConflict(t, instance)
+			testGet(t, instance)
+			testGetList(t, instance)
+			testModify(t, instance)
+			testDestroy(t, instance)
+			testRecover(t, instance)
+			testGormScope(t, instance)
+			testAbortWithError(t, instance)
+		})
 }
 
-func testCreate(t *testing.T) {
-	client := &http.Client{}
+func testCreate(t *testing.T, instance *sandbox.Instance) {
 	body := map[string]interface{}{
 		"school_id":           "0281876",
 		"avatar":              "",
@@ -206,30 +189,18 @@ func testCreate(t *testing.T) {
 		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
-	bodyBytes, _ := json.Marshal(body)
+	c := instance.GetClient()
 
-	req, err := http.NewRequest("POST", "http://127.0.0.1:8080/users", bytes.NewBuffer(bodyBytes))
+	resp, err := c.Post("/users", body)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	logger.Info(string(respBody))
 
 	var data User
-	err = json.Unmarshal(respBody, &data)
+	err = resp.To(&data)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
 
@@ -252,26 +223,21 @@ func testCreate(t *testing.T) {
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
-func testGet(t *testing.T) {
-	resp, err := http.Get("http://127.0.0.1:8080/users/1")
+func testGet(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+	resp, err := c.Get("/users/1")
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	logger.Info(string(respBody))
 
 	var data User
-	err = json.Unmarshal(respBody, &data)
+	err = resp.To(&data)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
+
 	assert.Equal(t, "0281876", data.SchoolID)
 	assert.Equal(t, "", data.Avatar)
 	assert.Equal(t, "张三", data.Name)
@@ -291,24 +257,18 @@ func testGet(t *testing.T) {
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
-func testGetList(t *testing.T) {
-	resp, err := http.Get("http://127.0.0.1:8080/users")
+func testGetList(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+	resp, err := c.Get("/users")
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	logger.Info(string(respBody))
 
 	var data model.DataList
-	err = json.Unmarshal(respBody, &data)
+	err = resp.To(&data)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
 
@@ -343,8 +303,9 @@ func testGetList(t *testing.T) {
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *user.EmployedAt)
 }
 
-func testModify(t *testing.T) {
-	client := &http.Client{}
+func testModify(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+
 	body := map[string]interface{}{
 		"school_id":           "0281876-1",
 		"avatar":              "",
@@ -366,29 +327,15 @@ func testModify(t *testing.T) {
 		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
-	bodyBytes, _ := json.Marshal(body)
-
-	req, err := http.NewRequest("POST", "http://127.0.0.1:8080/users/1", bytes.NewBuffer(bodyBytes))
+	resp, err := c.Post("/users/1", body)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	logger.Info(string(respBody))
 	var data User
-	err = json.Unmarshal(respBody, &data)
+	err = resp.To(&data)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
 
@@ -411,56 +358,41 @@ func testModify(t *testing.T) {
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
-func testDestroy(t *testing.T) {
-	client := &http.Client{}
-	req, err := http.NewRequest("DELETE", "http://127.0.0.1:8080/users/1", nil)
+func testDestroy(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+	resp, err := c.Delete("/users/1", nil)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	defer resp.Body.Close()
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	resp, err = http.Get("http://127.0.0.1:8080/users/1")
+	resp, err = c.Get("/users/1")
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	defer resp.Body.Close()
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
-func testRecover(t *testing.T) {
-	client := &http.Client{}
-	req, err := http.NewRequest("PATCH", "http://127.0.0.1:8080/users/1", nil)
+func testRecover(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+	resp, err := c.Patch("/users/1", nil)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	defer resp.Body.Close()
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	resp, err = http.Get("http://127.0.0.1:8080/users/1")
+	resp, err = c.Get("/users/1")
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func testConflict(t *testing.T) {
-	client := &http.Client{}
+func testConflict(t *testing.T, instance *sandbox.Instance) {
 	body := map[string]interface{}{
 		"school_id":           "0281876",
 		"avatar":              "",
@@ -483,42 +415,40 @@ func testConflict(t *testing.T) {
 		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
-	bodyBytes, _ := json.Marshal(body)
+	c := instance.GetClient()
 
-	req, err := http.NewRequest("POST", "http://127.0.0.1:8080/users", bytes.NewBuffer(bodyBytes))
+	resp, err := c.Post("/users", body)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	logger.Info(string(respBody))
 
 	var data gin.H
-	err = json.Unmarshal(respBody, &data)
+	err = resp.To(&data)
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
 
 	assert.Equal(t, "db_unique", data["errors"].(map[string]interface{})["email"])
 }
 
-func testGormScope(t *testing.T) {
-	resp, err := http.Get("http://127.0.0.1:8080/users/1?test_gorm_scope=true")
+func testGormScope(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+	resp, err := c.Get("/users/1?test_gorm_scope=true")
 	if err != nil {
-		logger.Error(err)
+		t.Error(err)
 		return
 	}
-	defer resp.Body.Close()
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func testAbortWithError(t *testing.T, instance *sandbox.Instance) {
+	c := instance.GetClient()
+	resp, err := c.Get("/users/1?test_abort_error=true")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 }
