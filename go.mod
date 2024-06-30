@@ -14,7 +14,7 @@ require (
 	github.com/jackc/pgtype v1.14.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/redis/go-redis/v9 v9.5.3
-	github.com/samber/lo v1.43.0
+	github.com/samber/lo v1.44.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake v1.2.0
 	github.com/spf13/cast v1.6.0

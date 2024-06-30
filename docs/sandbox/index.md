@@ -46,58 +46,62 @@ func TestSandbox(t *testing.T) {
 
 ## Sandbox 接口参考
 
-- 新建实例
+### 新建实例
 ```go
 func NewInstance(configPath, databaseType string) *Instance
 ```
+databaseType 可选值：
+  * mysql
+  * pgsql
+  * sqlite
 
-- 注册模型
+### 注册模型
 ```go
 func (instance *Instance) RegisterModels(models ...interface{}) *Instance
 ```
 
-- 运行测试用例
+### 运行测试用例
 ```go
 func (instance *Instance) Run(f func(instance *Instance))
 ```
 
-- 获取测试请求客户端
+### 获取测试请求客户端
 ```go
 func (instance *Instance) GetClient() *Client
 ```
 
 ## Client 接口参考
-- 添加请求 Header
+### 添加请求 Header
 ```go
 func (c *Client) AddHeader(key, value string)
 ```
 
-- 发送 GET 请求
+### 发送 GET 请求
 ```go
 func (c *Client) Get(url string) (*Response, error)
 ```
 
-- 发送 POST 请求
+### 发送 POST 请求
 ```go
 func (c *Client) Post(url string, body any) (*Response, error)
 ```
 
-- 发送 PUT 请求
+### 发送 PUT 请求
 ```go
 func (c *Client) Put(url string, body any) (*Response, error)
 ```
 
-- 发送 DELETE 请求
+### 发送 DELETE 请求
 ```go
 func (c *Client) Delete(url string) (*Response, error)
 ```
 
-- 发送 PATCH 请求
+### 发送 PATCH 请求
 ```go
 func (c *Client) Patch(url string, body any) (*Response, error)
 ```
 
-- 发送 OPTIONS 请求
+### 发送 OPTIONS 请求
 ```go
 func (c *Client) Options(url string) (*Response, error)
 ```
@@ -110,7 +114,7 @@ type Response struct {
 }
 ```
 
-- 将响应体解码为 JSON
+### 将响应体解码为 JSON
 ```go
 func (r *Response) To(dest any) error
 ```
