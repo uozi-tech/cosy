@@ -45,7 +45,8 @@ export default defineConfig({
         items: [
           { text: '连接', link: '/redis/start' },
           { text: '基本函数参考', link: '/redis/redis' },
-          { text: '发布与订阅', link: '/redis/pub_sub' },
+          { text: '发布与订阅', link: '/redis/pub-sub' },
+          { text: '分布式锁', link: '/redis/distributed-lock' },
         ]
       },
       {
