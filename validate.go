@@ -5,6 +5,7 @@ import (
 	"git.uozi.org/uozi/cosy/logger"
 	"git.uozi.org/uozi/cosy/valid"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"net/http"
 	"reflect"
@@ -15,10 +16,18 @@ import (
 var validate *validator.Validate
 
 func init() {
-	validate = validator.New()
+	var ok bool
+	validate, ok = binding.Validator.Engine().(*validator.Validate)
+	if !ok {
+		logger.Fatal("failed to initialize binding validator engine")
+	}
 
 	err := validate.RegisterValidation("date", valid.IsDate)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
+	err = validate.RegisterValidation("safety_text", valid.SafetyText)
 	if err != nil {
 		logger.Fatal(err)
 	}

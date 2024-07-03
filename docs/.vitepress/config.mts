@@ -81,6 +81,7 @@ export default defineConfig({
           { text: '集成', link: '/settings/start' },
           { text: '注册设置', link: '/settings/register' },
           { text: '热更新', link: '/settings/update' },
+          { text: '保护性填充', link: '/settings/protected-fill' },
         ]
       }
     ],

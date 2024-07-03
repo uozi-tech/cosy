@@ -3,6 +3,7 @@ package settings
 import (
 	"gopkg.in/ini.v1"
 	"log"
+	"reflect"
 )
 
 var (
@@ -75,6 +76,20 @@ func reflectFrom(section string, v any) {
 	err := Conf.Section(section).ReflectFrom(v)
 	if err != nil {
 		log.Fatalf("Cfg.ReflectFrom %s err: %v", section, err)
+	}
+}
+
+// ProtectedFill fill the target settings with new settings
+func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
+	s := reflect.TypeOf(targetSettings).Elem()
+	vt := reflect.ValueOf(targetSettings).Elem()
+	vn := reflect.ValueOf(newSettings).Elem()
+
+	// copy the values from new to target settings if it is not protected
+	for i := 0; i < s.NumField(); i++ {
+		if s.Field(i).Tag.Get("protected") != "true" {
+			vt.Field(i).Set(vn.Field(i))
+		}
 	}
 }
 
