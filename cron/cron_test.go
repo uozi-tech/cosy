@@ -28,8 +28,7 @@ func TestStart(t *testing.T) {
 	testJobName := "testJob"
 	testJobFunc := func(s gocron.Scheduler) {
 		_, err := s.NewJob(
-			gocron.DurationJob(
-				1*time.Second),
+			gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()),
 			gocron.NewTask(func() {
 				test++
 			}),
@@ -43,7 +42,7 @@ func TestStart(t *testing.T) {
 	// Call the function we want to test
 	Start()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	// Check if the job was executed
 	assert.Equal(t, 1, test, "testJobFunc was not executed")

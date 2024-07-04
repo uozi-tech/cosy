@@ -86,7 +86,14 @@ func (c *Ctx[T]) Recover() {
 		return
 	}
 
-	err = result.Model(&c.Model).Update("deleted_at", nil).Error
+	resolvedModel := model.GetResolvedModel[T]()
+	if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
+		(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
+		err = result.Model(&c.Model).Update("deleted_at", nil).Error
+	} else {
+		err = result.Model(&c.Model).Update("deleted_at", 0).Error
+	}
+
 	if err != nil {
 		errHandler(c.Context, err)
 		return
