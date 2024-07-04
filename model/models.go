@@ -23,11 +23,12 @@ func ClearCollection() {
 }
 
 type resolvedModelField struct {
-	Name    string
-	Type    string
-	JsonTag string
-	CosyTag CosyTag
-	Unique  bool
+	Name         string
+	Type         string
+	JsonTag      string
+	CosyTag      CosyTag
+	Unique       bool
+	DefaultValue string
 }
 
 type ResolvedModel struct {
@@ -70,9 +71,21 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 			CosyTag: NewCosyTag(field.Tag.Get("cosy")),
 		}
 
-		if field.Tag.Get("gorm") != "" {
-			if strings.Contains(field.Tag.Get("gorm"), "unique") {
-				resolvedField.Unique = true
+		gormTags := field.Tag.Get("gorm")
+		// gorm:"uniqueIndex;type:varchar(255);default:0"
+		if gormTags != "" {
+			tags := strings.Split(gormTags, ";")
+			for _, tag := range tags {
+				if strings.Contains(tag, "default") {
+					defaultValueTag := strings.Split(tag, ":")
+					if len(defaultValueTag) != 2 {
+						continue
+					}
+					resolvedField.DefaultValue = defaultValueTag[1]
+				}
+				if strings.Contains(tag, "unique") {
+					resolvedField.Unique = true
+				}
 			}
 		}
 
