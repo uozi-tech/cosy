@@ -65,7 +65,13 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 			tableName = stmt.Schema.Table
 		}
 
-		result = result.Unscoped().Where(tableName + ".deleted_at IS NOT NULL")
+		resolvedModel := model.GetResolvedModel[T]()
+		if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
+			(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
+			result = result.Unscoped().Where(tableName + ".deleted_at IS NOT NULL")
+		} else {
+			result = result.Unscoped().Where(tableName + ".deleted_at != 0")
+		}
 	}
 
 	result = result.Model(&dbModel)
