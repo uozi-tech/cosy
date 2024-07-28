@@ -52,14 +52,14 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
-	if c.executedHook() {
-		return
-	}
-
 	tx := db.Preload(clause.Associations)
 	tx = c.resolvePreload(tx)
 	tx = c.resolveJoins(tx)
 	tx.Table(c.table, c.tableArgs...).First(&c.Model)
+
+	if c.executedHook() {
+		return
+	}
 
 	if c.nextHandler != nil {
 		(*c.nextHandler)(c.Context)
