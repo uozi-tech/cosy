@@ -53,6 +53,12 @@ func TTL(key string) (time.Duration, error)
 func Keys(pattern string) ([]string, error)
 ```
 
+## Exists
+判断指定键是否存在。
+```go
+func Exists(key string) (bool, error)
+```
+
 ## Do
 执行指定命令。
 ```go
