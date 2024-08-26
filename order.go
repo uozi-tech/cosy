@@ -8,9 +8,9 @@ import (
 
 func (c *Ctx[T]) UpdateOrder() {
 	var json struct {
-		TargetID    int   `json:"target_id"`
-		Direction   int   `json:"direction" binding:"oneof=-1 1"`
-		AffectedIDs []int `json:"affected_ids"`
+		TargetID    string   `json:"target_id"`
+		Direction   int      `json:"direction" binding:"oneof=-1 1"`
+		AffectedIDs []string `json:"affected_ids"`
 	}
 
 	if !BindAndValid(c.Context, &json) {
@@ -26,7 +26,8 @@ func (c *Ctx[T]) UpdateOrder() {
 	}
 
 	// update target
-	err := db.Model(&c.Model).Where("id = ?", json.TargetID).Update("order_id", gorm.Expr("order_id + ?", affectedLen*(-json.Direction))).Error
+	err := db.Model(&c.Model).Where("id = ?", json.TargetID).
+		Update("order_id", gorm.Expr("order_id + ?", affectedLen*(-json.Direction))).Error
 
 	if err != nil {
 		errHandler(c.Context, err)
@@ -34,7 +35,8 @@ func (c *Ctx[T]) UpdateOrder() {
 	}
 
 	// update affected
-	err = db.Model(&c.Model).Where("id in ?", json.AffectedIDs).Update("order_id", gorm.Expr("order_id + ?", json.Direction)).Error
+	err = db.Model(&c.Model).Where("id in ?", json.AffectedIDs).
+		Update("order_id", gorm.Expr("order_id + ?", json.Direction)).Error
 
 	if err != nil {
 		errHandler(c.Context, err)
