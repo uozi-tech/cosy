@@ -29,3 +29,11 @@ jobs:
           corepack enable
           corepack prepare pnpm@latest --activate
           pnpm docs:build
+
+      - name: Deploy to server
+        if: github.event_name != 'pull_request'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy "docs/.vitepress/dist/" --branch=main --commit-dirty=true --project-name=cosy-docs

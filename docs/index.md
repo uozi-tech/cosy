@@ -11,8 +11,8 @@ hero:
       text: 立即启动
       link: /introduce/about
     - theme: alt
-      text: 在 Github 上查看（暂不可用）
-      link: /introduce/about
+      text: 在 Github 上查看
+      link: https://github.com/uozi-tech/cosy
 
 features:
   -   icon: 🔗
