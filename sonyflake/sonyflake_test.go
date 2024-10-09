@@ -1,9 +1,9 @@
 package sonyflake
 
 import (
-	"git.uozi.org/uozi/cosy/logger"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/settings"
 	"testing"
 	"time"
 )

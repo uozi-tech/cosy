@@ -1,8 +1,8 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/router"
-	"git.uozi.org/uozi/cosy/sandbox"
+	"github.com/uozi-tech/cosy/router"
+	"github.com/uozi-tech/cosy/sandbox"
 	"testing"
 )
 

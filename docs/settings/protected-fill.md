@@ -18,9 +18,9 @@ ProtectedFill 并不会对设置的值进行转义，因此您需要确保传入
 package settings
 
 import (
-    "git.uozi.org/uozi/cosy"
-    "git.uozi.org/uozi/cosy/logger"
-    "git.uozi.org/uozi/cosy/settings"
+    "github.com/uozi-tech/cosy"
+    "github.com/uozi-tech/cosy/logger"
+    "github.com/uozi-tech/cosy/settings"
     "github.com/gin-gonic/gin"
     "net/http"
 )

@@ -64,13 +64,13 @@ Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于
 
 ## 数据库驱动支持
 
-- [MySQL](https://git.uozi.org/uozi/cosy-driver-mysql)
-- [Postgres](https://git.uozi.org/uozi/cosy-driver-postgres)
-- [Sqlite](https://git.uozi.org/uozi/cosy-driver-sqlite)
+- [MySQL](https://github.com/uozi-tech/cosy-driver-mysql)
+- [Postgres](https://github.com/uozi-tech/cosy-driver-postgres)
+- [Sqlite](https://github.com/uozi-tech/cosy-driver-sqlite)
 
 ## 在项目中使用
 ```shell
-go get -u git.uozi.org/uozi/cosy
+go get -u github.com/uozi-tech/cosy
 ```
 
 ## 版权

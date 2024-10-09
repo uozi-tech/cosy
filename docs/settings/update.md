@@ -8,8 +8,8 @@
 package main
 
 import (
-    "git.uozi.org/uozi/cosy/logger"
-    "git.uozi.org/uozi/cosy/settings"
+    "github.com/uozi-tech/cosy/logger"
+    "github.com/uozi-tech/cosy/settings"
 )
 
 func main() {

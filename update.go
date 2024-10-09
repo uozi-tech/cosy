@@ -1,9 +1,9 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/map2struct"
-	"git.uozi.org/uozi/cosy/model"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/map2struct"
+	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"

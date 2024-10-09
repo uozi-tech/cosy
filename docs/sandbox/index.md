@@ -14,8 +14,8 @@ Sandbox 是 Cosy 的优化测试方案，可以有效简化您的测试代码，
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/router"
-	"git.uozi.org/uozi/cosy/sandbox"
+	"github.com/uozi-tech/cosy/router"
+	"github.com/uozi-tech/cosy/sandbox"
 	"testing"
 )
 

@@ -1,8 +1,8 @@
 package redis
 
 import (
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/settings"
 	"sync"
 	"testing"
 	"time"

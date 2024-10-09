@@ -13,7 +13,7 @@ func Register(name string, ptr any)
 ```go
 package settings
 
-import "git.uozi.org/uozi/cosy/settings"
+import "github.com/uozi-tech/cosy/settings"
 
 type Minio struct {
 	Endpoint        string

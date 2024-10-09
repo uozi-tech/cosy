@@ -2,11 +2,11 @@ package cosy
 
 import (
 	"errors"
-	"git.uozi.org/uozi/cosy/logger"
-	"git.uozi.org/uozi/cosy/valid"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/valid"
 	"net/http"
 	"reflect"
 	"regexp"

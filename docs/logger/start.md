@@ -7,7 +7,7 @@
 ```go
 
 import (
-    "git.uozi.org/uozi/cosy/logger"
+    "github.com/uozi-tech/cosy/logger"
 )
 
 func main() {

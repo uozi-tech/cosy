@@ -1,8 +1,8 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/router"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/router"
 )
 
 // GetEngine returns the gin engine

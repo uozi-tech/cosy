@@ -2,11 +2,11 @@ package cosy
 
 import (
 	"fmt"
-	"git.uozi.org/uozi/cosy/logger"
-	"git.uozi.org/uozi/cosy/model"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
+	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/model"
+	"github.com/uozi-tech/cosy/settings"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"

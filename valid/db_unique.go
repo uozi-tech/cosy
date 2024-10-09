@@ -2,9 +2,9 @@ package valid
 
 import (
 	"errors"
-	"git.uozi.org/uozi/cosy/model"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
+	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 	"strings"
 )

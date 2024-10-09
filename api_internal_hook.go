@@ -1,7 +1,7 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/model"
+	"github.com/uozi-tech/cosy/model"
 )
 
 func getHook[T any]() func(core *Ctx[T]) {

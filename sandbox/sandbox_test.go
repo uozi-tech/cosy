@@ -1,13 +1,13 @@
 package sandbox
 
 import (
-	"git.uozi.org/uozi/cosy/model"
-	"git.uozi.org/uozi/cosy/redis"
-	"git.uozi.org/uozi/cosy/router"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/model"
+	"github.com/uozi-tech/cosy/redis"
+	"github.com/uozi-tech/cosy/router"
+	"github.com/uozi-tech/cosy/settings"
 	"net/http"
 	"testing"
 	"time"

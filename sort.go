@@ -1,7 +1,7 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/logger"
+	"github.com/uozi-tech/cosy/logger"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"strings"

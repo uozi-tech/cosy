@@ -1,8 +1,8 @@
 package cron
 
 import (
-	"git.uozi.org/uozi/cosy/logger"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/uozi-tech/cosy/logger"
 )
 
 var s gocron.Scheduler

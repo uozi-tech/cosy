@@ -6,7 +6,7 @@
 package router
 
 import (
-	"git.uozi.org/uozi/cosy"
+	"github.com/uozi-tech/cosy"
 )
 
 func InitRouter() {

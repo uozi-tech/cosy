@@ -1,8 +1,8 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/cron"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/uozi-tech/cosy/cron"
 )
 
 // RegisterCronJob registers a cron job

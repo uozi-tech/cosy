@@ -2,9 +2,9 @@ package cosy
 
 import (
 	"encoding/json"
-	"git.uozi.org/uozi/cosy/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/logger"
 	"io"
 	"net/http"
 	"net/http/httptest"

@@ -3,10 +3,10 @@ package redis
 import (
 	"context"
 	"errors"
-	"git.uozi.org/uozi/cosy/logger"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
+	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/settings"
 	"strings"
 	"time"
 )

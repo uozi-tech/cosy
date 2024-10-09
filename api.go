@@ -1,8 +1,8 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/model"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/model"
 )
 
 type ICurd[T any] interface {

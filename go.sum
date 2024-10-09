@@ -1,11 +1,11 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-git.uozi.org/uozi/cosy-driver-mysql v0.1.0 h1:JDFAcvXUdSt2y4fUD5n3FW+YZwPGEYD3cxQfzbWqmbk=
-git.uozi.org/uozi/cosy-driver-mysql v0.1.0/go.mod h1:ysu80shTtX+bncZPZ0dIjUN2icUs2U+T/GwQcBSFbPI=
-git.uozi.org/uozi/cosy-driver-postgres v0.1.0 h1:ZUxRMH70cDgq17fJcxLIPyWVJ2t659ZYqRo8gycjsYY=
-git.uozi.org/uozi/cosy-driver-postgres v0.1.0/go.mod h1:8oVnaCxgu8hmdNI6uo44nEaclix6q7wrlylMlH7On/8=
-git.uozi.org/uozi/cosy-driver-sqlite v0.0.0-20240629030345-d59555021622 h1:rAaLfLsVAbhYoosyswumQrfyVa+RkxZTzGGMNksjm5c=
-git.uozi.org/uozi/cosy-driver-sqlite v0.0.0-20240629030345-d59555021622/go.mod h1:2L3AvpsyzPIC+LmZyLCYilot4EAxDhmredbgY51REyo=
+github.com/uozi-tech/cosy-driver-mysql v0.1.0 h1:JDFAcvXUdSt2y4fUD5n3FW+YZwPGEYD3cxQfzbWqmbk=
+github.com/uozi-tech/cosy-driver-mysql v0.1.0/go.mod h1:ysu80shTtX+bncZPZ0dIjUN2icUs2U+T/GwQcBSFbPI=
+github.com/uozi-tech/cosy-driver-postgres v0.1.0 h1:ZUxRMH70cDgq17fJcxLIPyWVJ2t659ZYqRo8gycjsYY=
+github.com/uozi-tech/cosy-driver-postgres v0.1.0/go.mod h1:8oVnaCxgu8hmdNI6uo44nEaclix6q7wrlylMlH7On/8=
+github.com/uozi-tech/cosy-driver-sqlite v0.0.0-20240629030345-d59555021622 h1:rAaLfLsVAbhYoosyswumQrfyVa+RkxZTzGGMNksjm5c=
+github.com/uozi-tech/cosy-driver-sqlite v0.0.0-20240629030345-d59555021622/go.mod h1:2L3AvpsyzPIC+LmZyLCYilot4EAxDhmredbgY51REyo=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

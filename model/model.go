@@ -1,9 +1,9 @@
 package model
 
 import (
-	"git.uozi.org/uozi/cosy/logger"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/settings"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"

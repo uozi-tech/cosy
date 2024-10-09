@@ -1,11 +1,11 @@
-module git.uozi.org/uozi/cosy
+module github.com/uozi-tech/cosy
 
 go 1.22
 
 require (
-	git.uozi.org/uozi/cosy-driver-mysql v0.1.0
-	git.uozi.org/uozi/cosy-driver-postgres v0.1.0
-	git.uozi.org/uozi/cosy-driver-sqlite v0.0.0-20240629030345-d59555021622
+	github.com/uozi-tech/cosy-driver-mysql v0.1.0
+	github.com/uozi-tech/cosy-driver-postgres v0.1.0
+	github.com/uozi-tech/cosy-driver-sqlite v0.0.0-20240629030345-d59555021622
 	github.com/fatih/color v1.17.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-co-op/gocron/v2 v2.7.1

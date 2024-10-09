@@ -38,7 +38,7 @@ func NextID() uint64
 package main
 
 import (
-	"git.uozi.org/uozi/cosy/sonyflake"
+	"github.com/uozi-tech/cosy/sonyflake"
 	"log"
 )
 

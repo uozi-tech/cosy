@@ -14,7 +14,7 @@ import (
   "log"
   "time"
 
-  "git.uozi.org/uozi/cosy/redis"
+  "github.com/uozi-tech/cosy/redis"
   "github.com/bsm/redislock"
   "github.com/redis/go-redis/v9"
 )

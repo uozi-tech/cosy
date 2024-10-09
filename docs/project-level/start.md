@@ -22,9 +22,9 @@
 package main
 
 import (
-	"git.uozi.org/uozi/cosy"
-	"git.uozi.org/uozi/cosy-driver-mysql"
-	"git.uozi.org/uozi/cosy/settings"
+	"github.com/uozi-tech/cosy"
+	"github.com/uozi-tech/cosy-driver-mysql"
+	"github.com/uozi-tech/cosy/settings"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 安装
 
 ```bash
-go get -u git.uozi.org/uozi/cosy-driver-mysql
+go get -u github.com/uozi-tech/cosy-driver-mysql
 ```
 
 调用
@@ -55,7 +55,7 @@ mysql.Open(settings.DataBaseSettings)
 安装
 
 ```bash
-go get -u git.uozi.org/uozi/cosy-driver-postgres
+go get -u github.com/uozi-tech/cosy-driver-postgres
 ```
 
 调用
@@ -69,7 +69,7 @@ postgres.Open(settings.DataBaseSettings)
 安装
 
 ```bash
-go get -u git.uozi.org/uozi/cosy-driver-sqlite
+go get -u github.com/uozi-tech/cosy-driver-sqlite
 ```
 
 调用
@@ -85,9 +85,9 @@ package main
 
 import (
 	"flag"
-	"git.uozi.org/uozi/cosy"
-	"git.uozi.org/uozi/cosy-driver-mysql"
-	"git.uozi.org/uozi/cosy/settings"
+	"github.com/uozi-tech/cosy"
+	"github.com/uozi-tech/cosy-driver-mysql"
+	"github.com/uozi-tech/cosy/settings"
 	"github.com/0xJacky/store/internal/analytic"
 	"github.com/0xJacky/store/model"
 	"github.com/0xJacky/store/query"

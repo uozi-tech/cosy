@@ -3,7 +3,7 @@ package sandbox
 import (
 	"bytes"
 	"encoding/json"
-	"git.uozi.org/uozi/cosy/router"
+	"github.com/uozi-tech/cosy/router"
 	"net/http"
 	"net/http/httptest"
 )

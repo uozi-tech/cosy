@@ -3,7 +3,7 @@
 对于使用 Cosy 接口级简化的项目，由于没有使用 Cosy 的内核，所以需要启动 Redis 服务，并在配置文件中设置连接信息。
 ```go
 import (
-    "git.uozi.org/uozi/cosy/redis"
+    "github.com/uozi-tech/cosy/redis"
 )
 
 func main() {

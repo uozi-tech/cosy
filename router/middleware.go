@@ -1,8 +1,8 @@
 package router
 
 import (
-	"git.uozi.org/uozi/cosy/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/logger"
 	"net/http"
 	"runtime"
 )

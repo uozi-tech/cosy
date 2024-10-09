@@ -2,11 +2,11 @@ package redis
 
 import (
 	"context"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/settings"
 	"testing"
 	"time"
 )

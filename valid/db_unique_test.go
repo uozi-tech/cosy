@@ -1,11 +1,11 @@
 package valid
 
 import (
-	"git.uozi.org/uozi/cosy-driver-postgres"
-	"git.uozi.org/uozi/cosy/model"
-	"git.uozi.org/uozi/cosy/settings"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy-driver-postgres"
+	"github.com/uozi-tech/cosy/model"
+	"github.com/uozi-tech/cosy/settings"
 	"testing"
 )
 

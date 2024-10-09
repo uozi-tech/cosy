@@ -2,8 +2,8 @@ package cosy
 
 import (
 	"errors"
-	"git.uozi.org/uozi/cosy/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/logger"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"

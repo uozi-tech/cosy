@@ -66,7 +66,7 @@ Cosy CURD 提供了 6 个钩子，这些钩子函数将会在 Model Cosy Tag 设
 package admin
 
 import (
-	"git.uozi.org/uozi/cosy"
+	"github.com/uozi-tech/cosy"
 	"github.com/0xJacky/store/model"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

@@ -1,9 +1,9 @@
 package cosy
 
 import (
-	"git.uozi.org/uozi/cosy/model"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/model"
 	"testing"
 )
 

@@ -2,9 +2,9 @@ package cosy
 
 import (
 	"fmt"
-	"git.uozi.org/uozi/cosy/logger"
-	"git.uozi.org/uozi/cosy/model"
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strings"

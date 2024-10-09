@@ -13,7 +13,7 @@ func Subscribe(channel string) *redis.PubSub
 package redis
 
 import (
-	"git.uozi.org/uozi/cosy/settings"
+	"github.com/uozi-tech/cosy/settings"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"

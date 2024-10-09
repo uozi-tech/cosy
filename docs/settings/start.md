@@ -7,7 +7,7 @@ package main
 
 import (
 	"flag"
-	"git.uozi.org/uozi/cosy/settings"
+	"github.com/uozi-tech/cosy/settings"
 )
 
 func main() {
