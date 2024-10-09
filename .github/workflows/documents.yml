@@ -4,7 +4,28 @@ on:
   push:
     branches:
       - main
-
+    paths:
+      - "docs/**/*.ts"
+      - "docs/**/*.vue"
+      - "docs/**/*.mts"
+      - "docs/**/*.css"
+      - "docs/**/*.md"
+      - "docs/assets/*"
+      - "public/*"
+      - "package.json"
+      - ".github/workflows/doc*.yml"
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    paths:
+      - "docs/**/*.ts"
+      - "docs/**/*.vue"
+      - "docs/**/*.mts"
+      - "docs/**/*.css"
+      - "docs/**/*.md"
+      - "docs/assets/*"
+      - "public/*"
+      - "package.json"
+      - ".github/workflows/doc*.yml"
 jobs:
   documents:
     runs-on: macos-14
