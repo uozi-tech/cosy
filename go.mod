@@ -19,8 +19,8 @@ require (
 	github.com/sony/sonyflake v1.2.0
 	github.com/spf13/cast v1.7.0
 	github.com/stretchr/testify v1.9.0
-	github.com/uozi-tech/cosy-driver-mysql v0.2.0
-	github.com/uozi-tech/cosy-driver-postgres v0.2.0
+	github.com/uozi-tech/cosy-driver-mysql v0.2.2
+	github.com/uozi-tech/cosy-driver-postgres v0.2.1
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.0
 	go.uber.org/zap v1.27.0
 	gopkg.in/guregu/null.v4 v4.0.0

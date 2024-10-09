@@ -222,10 +222,10 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
 github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
-github.com/uozi-tech/cosy-driver-mysql v0.2.0 h1:xraJTxj7eIfIUtdMZzjSmXpDZfA/TBGVzzTAa25OzEE=
-github.com/uozi-tech/cosy-driver-mysql v0.2.0/go.mod h1:EZnRIbSj1V5U0gEeTobrXai/d1SV11lkl4zP9NFEmyE=
-github.com/uozi-tech/cosy-driver-postgres v0.2.0 h1:rRibeBm7CsOLzGYksdaLhkV79s6ZpUqMQ/8adfRl6Sc=
-github.com/uozi-tech/cosy-driver-postgres v0.2.0/go.mod h1:eAy1A89yHbAEfjkhNAifaJQk172NqrNoRyRtFcZc9Go=
+github.com/uozi-tech/cosy-driver-mysql v0.2.2 h1:22S/XNIvuaKGqxQPsYPXN8TZ8hHjCQdcJKVQ83Vzxoo=
+github.com/uozi-tech/cosy-driver-mysql v0.2.2/go.mod h1:EZnRIbSj1V5U0gEeTobrXai/d1SV11lkl4zP9NFEmyE=
+github.com/uozi-tech/cosy-driver-postgres v0.2.1 h1:OICakGuT+omva6QOJCxTJ5Lfr7CGXLmk/zD+aS51Z2o=
+github.com/uozi-tech/cosy-driver-postgres v0.2.1/go.mod h1:eAy1A89yHbAEfjkhNAifaJQk172NqrNoRyRtFcZc9Go=
 github.com/uozi-tech/cosy-driver-sqlite v0.2.0 h1:eTpIMyGoFUK4JcaiKfJHD5AyiM6vtCwN98c7Bz5n25o=
 github.com/uozi-tech/cosy-driver-sqlite v0.2.0/go.mod h1:87a6mzn5IuEtIR4z7U4Ey8eKLGfNEOSkv7kPQlbNQgM=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
