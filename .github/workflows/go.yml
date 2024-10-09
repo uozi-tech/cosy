@@ -1,0 +1,66 @@
+name: Code Check
+
+on:
+  push:
+    branches:
+      - main
+      - '**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: drone
+          POSTGRES_USER: drone
+          POSTGRES_PASSWORD: drone
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U drone" --health-interval=5s --health-timeout=5s --health-retries=5
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=5s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Configure environment
+        run: |
+          echo '[app]
+          PageSize = 20
+          JwtSecret = c87047ba-f40b-447f-8da5-24ca617dca9a
+          [server]
+          Host = 127.0.0.1
+          Port = 0
+          RunMode = debug
+          [database]
+          User = drone
+          Password = drone
+          Host = 127.0.0.1
+          Port = 5432
+          Name = drone
+          [redis]
+          Addr = 127.0.0.1:6379
+          Password =
+          DB = 0
+          Prefix = cosy' > app.ini
+
+      - name: Run tests
+        run: |
+          go test -coverprofile=coverage.out ./...
+
+      - name: Display test coverage
+        run: go tool cover -func=coverage.out

@@ -1,0 +1,56 @@
+name: Notify
+
+on:
+  workflow_run:
+    workflows: ['Code Check', 'Documents']
+    types:
+      - requested
+      - completed
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Commit/PR Info
+        id: info
+        run: |
+          if [ "${{ github.event.workflow_run.event }}" == "push" ]; then
+            echo "EVENT_TYPE=push" >> $GITHUB_ENV
+            echo "Author=${{ github.event.workflow_run.actor.login }}" >> $GITHUB_ENV
+            echo "MESSAGE=${{ github.event.workflow_run.head_commit.message }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.workflow_run.event }}" == "pull_request" ]; then
+            echo "EVENT_TYPE=pull_request" >> $GITHUB_ENV
+            echo "Author=${{ github.event.workflow_run.event.pull_request.user.login }}" >> $GITHUB_ENV
+            echo "MESSAGE=${{ github.event.workflow_run.event.pull_request.title }}" >> $GITHUB_ENV
+          fi
+          echo "WORKFLOW_NAME=${{ github.event.workflow_run.name }}" >> $GITHUB_ENV
+
+      - name: Set Notification Title
+        id: set_title
+        run: |
+          if [ "${{ github.event.workflow_run.status }}" == "queued" ] || [ "${{ github.event.workflow_run.status }}" == "in_progress" ]; then
+            echo "TITLE=🕐 ${{ env.WORKFLOW_NAME }} Started" >> $GITHUB_ENV
+          elif [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+            echo "TITLE=🎉 ${{ env.WORKFLOW_NAME }} Passed" >> $GITHUB_ENV
+          else
+            echo "TITLE=❌ ${{ env.WORKFLOW_NAME }} Failed" >> $GITHUB_ENV
+          fi
+
+      - name: Send WeCom Bot Notification
+        uses: amazing-actions/wecom-bot-notify@main
+        with:
+          type: markdown
+          key: ${{ secrets.WECOM_COSY_BOT_KEY }}
+          content: |
+            **${{ env.TITLE }}** 
+            
+            > Repository: **${{ github.repository }}**
+            > Event: ${{ env.EVENT_TYPE }}
+            > Branch: ${{ github.event.workflow_run.head_branch }}
+            > Author: ${{ env.Author }}
+            > Message: ${{ env.MESSAGE }}
+            > Detail: [查看详情](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})
