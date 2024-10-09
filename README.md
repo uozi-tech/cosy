@@ -18,8 +18,7 @@ Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于
     - 数据库执行时的钩子 `GormScope(hook func(tx *gorm.DB) *gorm.DB) *Ctx[T]`
     - 数据库执行后的钩子 `ExecutedHook(hook ...func(ctx *Ctx[T])) *Ctx[T]`
     - 钩子的设置函数可以被多次调用，将会按照调用顺序执行
-4. **接口级性能**：只涉及到泛型，Cosy 层面上没有使用 reflect
-5. **路由级性能**：仅在程序初始化阶段使用 reflect，并对模型的反射结果缓存到 map 中
+4. **性能**：尽最大努力优化，减少反射使用
 
 ## 数据库驱动支持
 
