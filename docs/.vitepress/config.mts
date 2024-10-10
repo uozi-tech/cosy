@@ -90,7 +90,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/uozi/cosy' }
+      { icon: 'github', link: 'https://github.com/uozi-tech/cosy' }
     ]
   }
 })
