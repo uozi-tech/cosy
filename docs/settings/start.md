@@ -38,11 +38,6 @@ Host    = 127.0.0.1
 Port    = 0
 RunMode = debug
 
-[server]
-Host    = 127.0.0.1
-Port    = 8080
-RunMode = debug
-
 [database]
 User = postgres
 Password =
