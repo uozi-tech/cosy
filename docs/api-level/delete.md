@@ -32,7 +32,7 @@ func DestroyUser(c *gin.Context) {
 - **Executed** (Hook)
 
 <div style="display: flex;justify-content: center;">
-    <img src="/assets/delete.png" alt="delete" style="max-width: 300px"/>
+    <img src="/assets/delete.png" alt="delete" style="max-width: 500px;width: 95%"/>
 </div>
 
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。

@@ -27,7 +27,7 @@ func GetUser(c *gin.Context) {
 7. 返回响应
 
 <div style="display: flex;justify-content: center;">
-    <img src="/assets/create.png" alt="create" style="max-width: 600px"/>
+    <img src="/assets/create.png" alt="create" style="max-width: 500px;width: 95%"/>
 </div>
 
 在上述生命周期中，我们提供了三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。

@@ -36,8 +36,8 @@ type User struct {
     //nolint:staticcheck
     TestEmbed          `json:",squash"`
     Name               string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
-    Gender             Gender     `json:"gender" cosy:"add:min=0;update:omitempty;list:fussy"`
-    Age                int        `json:"age" cosy:"add:required;update:omitempty"`
+    Gender             Gender     `json:"gender" cosy:"add:min=0;update:omitempty;list:fussy;batch"`
+    Age                int        `json:"age" cosy:"add:required;update:omitempty;batch"`
     Bio                string     `json:"bio" cosy:"update:omitempty"`
     College            string     `json:"college" cosy:"add:required;update:omitempty;list:fussy"`
     Direction          string     `json:"direction" cosy:"add:required;update:omitempty;list:fussy"`
@@ -75,7 +75,6 @@ func TestApi(t *testing.T) {
                 }
 
                 g := r.Group("/")
-
                 c := Api[User]("users")
 
                 c.BeforeGet(func(context *gin.Context) {

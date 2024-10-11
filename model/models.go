@@ -89,8 +89,10 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
             }
         }
 
-        // out-of-order
+        // out-of-order, CamelCase as the key
         r.Fields[field.Name] = resolvedField
+        // out-of-order, jsonTagName as the key
+        r.Fields[jsonTag] = resolvedField
         // sorted
         r.OrderedFields = append(r.OrderedFields, resolvedField)
     }

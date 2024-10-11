@@ -11,6 +11,7 @@ type CosyTag struct {
     item   string
     list   []string
     json   string
+    batch  bool
 }
 
 // NewCosyTag creates a new CosyTag from a tag string
@@ -37,7 +38,7 @@ func NewCosyTag(tag string) (c CosyTag) {
         // ["json", "password"]
 
         switch directives[0] {
-        // for add, update, item directives, we only need the right side
+        // for "add", "update", "item" directives, we only need the right side
         case "all":
             c.all = directives[1]
         case "add":
@@ -51,6 +52,9 @@ func NewCosyTag(tag string) (c CosyTag) {
             c.list = strings.Split(directives[1], ",")
         case "json":
             c.json = directives[1]
+            // for batch directives, we only need the left side
+        case "batch":
+            c.batch = true
         }
     }
 
@@ -106,4 +110,9 @@ func (c *CosyTag) GetList() []string {
 // GetJson returns the JSON directive
 func (c *CosyTag) GetJson() string {
     return c.json
+}
+
+// GetBatch returns the batch directive
+func (c *CosyTag) GetBatch() bool {
+    return c.batch
 }

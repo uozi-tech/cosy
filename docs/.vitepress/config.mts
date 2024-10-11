@@ -25,7 +25,8 @@ export default defineConfig({
           { text: '单个记录', link: '/api-level/item' },
           { text: '列表', link: '/api-level/list' },
           { text: '创建', link: '/api-level/create' },
-          { text: '编辑', link: '/api-level/update' },
+          { text: '修改', link: '/api-level/update' },
+          { text: '批量修改', link: '/api-level/batch-update' },
           { text: '删除', link: '/api-level/delete' },
           { text: '恢复', link: '/api-level/recover' },
           { text: '自定义', link: '/api-level/custom' },
@@ -91,6 +92,10 @@ export default defineConfig({
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/uozi-tech/cosy' }
-    ]
+    ],
+
+    search: {
+      provider: 'local'
+    }
   }
 })

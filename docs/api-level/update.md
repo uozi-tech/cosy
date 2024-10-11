@@ -1,4 +1,4 @@
-# 更新
+# 修改
 
 ```go
 func ModifyUser(c *gin.Context) {
@@ -29,7 +29,7 @@ func ModifyUser(c *gin.Context) {
 8. 返回响应
 
 <div style="display: flex;justify-content: center;">
-    <img src="/assets/update.png" alt="update" style="max-width: 600px"/>
+    <img src="/assets/update.png" alt="update" style="max-width: 500px;width: 95%"/>
 </div>
 
 与**创建**接口类似，我们提供三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。

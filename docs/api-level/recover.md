@@ -19,7 +19,7 @@ func DestroyUser(c *gin.Context) {
 - **Executed** (Hook)
 
 <div style="display: flex;justify-content: center;">
-    <img src="/assets/delete.png" alt="delete" style="max-width: 300px"/>
+    <img src="/assets/delete.png" alt="delete" style="max-width: 500px;width: 95%"/>
 </div>
 
 如果执行成功，将会响应 StatusCode = 204，body 为空。
