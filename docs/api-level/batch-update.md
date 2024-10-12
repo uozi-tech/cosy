@@ -20,6 +20,26 @@ func ModifyUser(c *gin.Context) {
 }
 ```
 
+::: warning 提示
+由于安全原因，允许批量修改的字段需要在字段的 `cosy` Tag 中添加 `batch` 指令。
+:::
+
+```go
+package model
+
+type User struct {
+    Model
+
+    Name       string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
+    Password   string     `json:"-" cosy:"json:password;add:required;update:omitempty"` // hide password
+    Email      string     `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"type:varchar(255);uniqueIndex"`
+    Phone      string     `json:"phone" cosy:"add:required;update:omitempty;list:fussy" gorm:"index"`
+    Avatar     string     `json:"avatar" cosy:"all:omitempty"`
+    LastActive *time.Time `json:"last_active"`
+    Power      int        `json:"power" cosy:"add:oneof=1 1000;update:omitempty,oneof=1 1000;list:in;batch" gorm:"default:1"`
+    Status     int        `json:"status" cosy:"add:oneof=1 2 3;update:omitempty,oneof=1 2 3;list:in;batch" gorm:"default:1"`
+}
+```
 
 ## 生命周期
 
@@ -40,5 +60,5 @@ func ModifyUser(c *gin.Context) {
 | 钩子名称              | ctx.OriginModel | ctx.Model | ctx.Payload |
 |-------------------|-----------------|-----------|-------------|
 | BeforeDecodeHook  | 空结构体            | 空结构体      | 客户端提交的数据    |
-| BeforeExecuteHook | 空结构体            | 空结构体      | 客户端提交的数据    |
-| ExecutedHook      | 空结构体            | 空结构体      | 客户端提交的数据    |
+| BeforeExecuteHook | 空结构体            | 准备更新的数据   | 客户端提交的数据    |
+| ExecutedHook      | 空结构体            | 准备更新的数据   | 客户端提交的数据    |
