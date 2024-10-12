@@ -43,3 +43,17 @@ func ModifyUser(c *gin.Context) {
 注意，该接口在更新项目后，会再次查询数据库并使用 `Preload(clause.Associations)` 预加载所有的关联。
 
 默认情况下，该接口会返回更新后的记录，如果需要直接跳转到下一个 Gin Handler Func，请使用 `SetNextHandler(c *gin.Context)` 方法。
+
+## 字段保护
+Cosy 会自动过滤掉 ValidRules 中不存在的字段，并且数据库更新时只会使用过滤后的字段列表作为限制条件，
+如果你在 BeforeExecuteHook 中修改了 ctx.Model 的字段，但这些字段不在 ValidRules 中，那么这些字段将不会被更新。
+
+如果需要更新这些字段，请在 BeforeExecuteHook 中使用
+```go
+ctx.AddSelectedFields(fields ...string)
+```
+
+如需获取选定的字段，请在 BeforeExecuteHook 中使用 
+```go
+ctx.GetSelectedFields() string
+```

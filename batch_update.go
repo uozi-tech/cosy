@@ -38,7 +38,6 @@ func (c *Ctx[T]) BatchModify() {
 		return
 	}
 
-	var selectedFields []string
 	resolvedModel := model.GetResolvedModel[T]()
 	for k := range c.Payload["data"].(map[string]interface{}) {
 		// check if the field is allowed to be batch updated
@@ -46,7 +45,7 @@ func (c *Ctx[T]) BatchModify() {
 			!resolvedModel.Fields[k].CosyTag.GetBatch() {
 			continue
 		}
-		selectedFields = append(selectedFields, k)
+		c.AddSelectedFields(k)
 	}
 
 	var batchUpdate batchUpdateStruct[T]
@@ -68,7 +67,7 @@ func (c *Ctx[T]) BatchModify() {
 	}
 
 	err = db.Model(&c.Model).Where("id IN ?", batchUpdate.IDs).
-		Select(selectedFields).Updates(&c.Model).Error
+		Select(c.GetSelectedFields()).Updates(&c.Model).Error
 	if err != nil {
 		errHandler(c.Context, err)
 		return

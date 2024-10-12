@@ -1,101 +1,99 @@
 package cosy
 
 import (
-    "github.com/gin-gonic/gin"
-    "github.com/uozi-tech/cosy/map2struct"
-    "github.com/uozi-tech/cosy/model"
-    "gorm.io/gorm"
-    "gorm.io/gorm/clause"
-    "net/http"
-    "reflect"
+	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/map2struct"
+	"github.com/uozi-tech/cosy/model"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"net/http"
+	"reflect"
 )
 
 func (c *Ctx[T]) SetNextHandler(handler gin.HandlerFunc) *Ctx[T] {
-    c.nextHandler = &handler
-    return c
+	c.nextHandler = &handler
+	return c
 }
 
 func (c *Ctx[T]) Modify() {
-    if c.abort {
-        return
-    }
-    c.ID = c.GetParamID()
+	if c.abort {
+		return
+	}
+	c.ID = c.GetParamID()
 
-    errs := c.validate()
+	errs := c.validate()
 
-    if len(errs) > 0 {
-        c.JSON(http.StatusNotAcceptable, gin.H{
-            "message": "Requested with wrong parameters",
-            "errors":  errs,
-        })
-        return
-    }
+	if len(errs) > 0 {
+		c.JSON(http.StatusNotAcceptable, gin.H{
+			"message": "Requested with wrong parameters",
+			"errors":  errs,
+		})
+		return
+	}
 
-    if c.abort {
-        return
-    }
+	if c.abort {
+		return
+	}
 
-    db := model.UseDB()
+	db := model.UseDB()
 
-    result := db
+	result := db
 
-    c.applyGormScopes(result)
+	c.applyGormScopes(result)
 
-    err := result.Session(&gorm.Session{}).First(&c.OriginModel, c.ID).Error
-    if err != nil {
-        c.AbortWithError(err)
-        return
-    }
+	err := result.Session(&gorm.Session{}).First(&c.OriginModel, c.ID).Error
+	if err != nil {
+		c.AbortWithError(err)
+		return
+	}
 
-    if c.beforeDecodeHook() {
-        return
-    }
+	if c.beforeDecodeHook() {
+		return
+	}
 
-    var selectedFields []string
+	for k := range c.Payload {
+		c.AddSelectedFields(k)
+	}
 
-    for k := range c.Payload {
-        selectedFields = append(selectedFields, k)
-    }
+	err = map2struct.WeakDecode(c.Payload, &c.Model)
+	if err != nil {
+		errHandler(c.Context, err)
+		return
+	}
 
-    err = map2struct.WeakDecode(c.Payload, &c.Model)
-    if err != nil {
-        errHandler(c.Context, err)
-        return
-    }
+	if c.beforeExecuteHook() {
+		return
+	}
 
-    if c.beforeExecuteHook() {
-        return
-    }
+	if c.table != "" {
+		db = db.Table(c.table, c.tableArgs...)
+	}
 
-    if c.table != "" {
-        db = db.Table(c.table, c.tableArgs...)
-    }
+	v := reflect.ValueOf(&c.Model).Elem()
+	idField := v.FieldByName("ID")
+	if idField.IsValid() && idField.CanSet() {
+		idField.Set(reflect.ValueOf(c.ID))
+	}
 
-    v := reflect.ValueOf(&c.Model).Elem()
-    idField := v.FieldByName("ID")
-    if idField.IsValid() && idField.CanSet() {
-        idField.Set(reflect.ValueOf(c.ID))
-    }
+	err = db.Select(c.GetSelectedFields()).Save(&c.Model).Error
+	if err != nil {
+		c.AbortWithError(err)
+		return
+	}
 
-    err = db.Select(selectedFields).Save(&c.Model).Error
-    if err != nil {
-        c.AbortWithError(err)
-        return
-    }
+	err = db.Preload(clause.Associations).First(&c.Model, c.ID).Error
+	if err != nil {
+		c.AbortWithError(err)
+		return
+	}
 
-    err = db.Preload(clause.Associations).First(&c.Model, c.ID).Error
-    if err != nil {
-        c.AbortWithError(err)
-        return
-    }
+	if c.executedHook() {
+		return
+	}
 
-    if c.executedHook() {
-        return
-    }
-
-    if c.nextHandler != nil {
-        (*c.nextHandler)(c.Context)
-    } else {
-        c.JSON(http.StatusOK, c.Model)
-    }
+	if c.nextHandler != nil {
+		(*c.nextHandler)(c.Context)
+	} else {
+		c.JSON(http.StatusOK, c.Model)
+	}
 }
