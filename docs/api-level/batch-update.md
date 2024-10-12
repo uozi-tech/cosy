@@ -76,3 +76,10 @@ ctx.AddSelectedFields(fields ...string)
 ```go
 ctx.GetSelectedFields() string
 ```
+
+## BatchUpdateEffectedIDs
+前端传递的需要修改的 ID 列表，可以在 BeforeExecuteHook 和 ExecutedHook 中使用。
+
+```go
+ctx.BatchUpdateEffectedIDs []uint64
+```
