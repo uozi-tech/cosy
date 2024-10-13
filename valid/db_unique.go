@@ -31,7 +31,7 @@ func DbUnique[T any](payload gin.H, columns []string) (conflicts []string, err e
 		return nil, err
 	}
 
-	// for modify, if the id is the same, we don't need to check for conflicts
+	// for "modify", if the id is the same, we don't need to check for conflicts
 	id, ok := payload["id"]
 	if ok && id == result["id"] {
 		return nil, nil

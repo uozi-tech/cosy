@@ -12,6 +12,7 @@ type CosyTag struct {
 	list   []string
 	json   string
 	batch  bool
+	unique bool
 }
 
 // NewCosyTag creates a new CosyTag from a tag string
@@ -27,7 +28,7 @@ func NewCosyTag(tag string) (c CosyTag) {
 		// we need to get the right side of :
 		directives := strings.Split(group, ":")
 
-		// fix for cosy:"batch"
+		// fix for cosy:"batch", cosy:"db_unique"
 		if len(directives) == 1 {
 			directives = append(directives, "")
 		}
@@ -60,6 +61,8 @@ func NewCosyTag(tag string) (c CosyTag) {
 			// for batch directives, we only need the left side
 		case "batch":
 			c.batch = true
+		case "db_unique":
+			c.unique = true
 		}
 	}
 
