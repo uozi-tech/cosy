@@ -222,7 +222,7 @@ func (c *Curd[T]) Modify() (h []gin.HandlerFunc) {
 				continue
 			}
 			key := field.JsonTag
-			// like password field we don't need to response it to client,
+			// like password field, we don't need to response it to the client,
 			// but we need to validate it
 			if key == "-" {
 				if field.CosyTag.GetJson() != "" {

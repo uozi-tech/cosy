@@ -56,6 +56,9 @@ func Boot(confPath string) {
     // Start cron
     cron.Start()
 
+    // Gin router initialization
+    router.Init()
+
     // Kernel boot
     kernel.Boot()
 

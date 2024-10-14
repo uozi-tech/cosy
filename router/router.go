@@ -7,10 +7,6 @@ import (
 
 var r *gin.Engine
 
-func init() {
-	Init()
-}
-
 // Init initializes the router, expose this function to be able to reset the testing router
 func Init() {
 	r = gin.New()
