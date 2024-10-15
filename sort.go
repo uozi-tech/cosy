@@ -34,8 +34,7 @@ func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
 	return db.Order(sb.String())
 }
 
-func (c *Ctx[T]) orderAndPaginate(db *gorm.DB) *gorm.DB {
-	db = c.sortOrder(db)
+func (c *Ctx[T]) paginate(db *gorm.DB) *gorm.DB {
 	_, offset, pageSize := GetPagingParams(c.Context)
 	return db.Offset(offset).Limit(pageSize)
 }

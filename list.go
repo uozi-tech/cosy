@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// GetPagingParams get paging params
 func GetPagingParams(c *gin.Context) (page, offset, pageSize int) {
 	page = cast.ToInt(c.Query("page"))
 	if page == 0 {
@@ -26,6 +27,7 @@ func GetPagingParams(c *gin.Context) (page, offset, pageSize int) {
 	return
 }
 
+// combineStdSelectorRequest combine std selector request
 func (c *Ctx[T]) combineStdSelectorRequest() {
 	StdSelectorInitID := c.QueryArray("id[]")
 
@@ -44,6 +46,7 @@ func (c *Ctx[T]) combineStdSelectorRequest() {
 	})
 }
 
+// result get result
 func (c *Ctx[T]) result() (*gorm.DB, bool) {
 	c.resolvePreloadWithScope()
 	c.resolveJoinsWithScopes()
@@ -67,7 +70,7 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 
 		resolvedModel := model.GetResolvedModel[T]()
 		if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
-			(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
+				(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
 			result = result.Unscoped().Where(tableName + ".deleted_at IS NOT NULL")
 		} else {
 			result = result.Unscoped().Where(tableName + ".deleted_at != 0")
@@ -85,6 +88,7 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 	return result, true
 }
 
+// resolveData resolve data
 func (c *Ctx[T]) resolveData(result *gorm.DB) (data any) {
 	// has scanner
 	if c.scan != nil {
@@ -107,24 +111,31 @@ func (c *Ctx[T]) resolveData(result *gorm.DB) (data any) {
 	return transformed
 }
 
+// ListAllData return list all data
 func (c *Ctx[T]) ListAllData() (data any, ok bool) {
 	result, ok := c.result()
 	if !ok {
 		return nil, false
 	}
-
-	result = result.Scopes(c.sortOrder)
+	if !c.disableSortOrder {
+		result = result.Scopes(c.sortOrder)
+	}
 	data = c.resolveData(result)
 	return data, true
 }
 
+// PagingListData return paging list data
 func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
 	result, ok := c.result()
 	if !ok {
 		return nil, false
 	}
 
-	scopesResult := result.Scopes(c.orderAndPaginate)
+	scopesResult := result.Scopes(c.paginate)
+	if !c.disableSortOrder {
+		scopesResult = scopesResult.Scopes(c.sortOrder)
+	}
+
 	data := &model.DataList{}
 	data.Data = c.resolveData(scopesResult)
 
@@ -152,6 +163,7 @@ func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
 	return data, true
 }
 
+// PagingList return paging list
 func (c *Ctx[T]) PagingList() {
 	data, ok := c.PagingListData()
 	if ok {

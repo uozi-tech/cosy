@@ -54,6 +54,8 @@ Query 请求参数说明
 可以调用 `AddColWhiteList(cols ...string)` 方法，将这些字段加入白名单。
 :::
 
+如果您需要使用自己的逻辑进行排序，请使用 `func WithoutSortOrder() *Ctx[T]` 方法禁用默认的排序逻辑。
+
 ## 其他方法
 
 以下方法的使用与获取**单个记录**的方式相同

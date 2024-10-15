@@ -58,6 +58,14 @@ type User struct {
 |---------|--------------|
 | preload | SetPreload() |
 
+### batch
+允许字段进行批量修改。
+
+### db_unique
+在创建和更新时，对字段进行唯一性校验。
+
 ### json
 
 当 Json Tag 被设置为 `-` 时，如果用到了验证规则，需要在 Cosy Tag 中指定 json 字段名称，否则请求会出错。
+
+如 `cosy:"json:password"`

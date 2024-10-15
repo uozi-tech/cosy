@@ -32,6 +32,7 @@ type Ctx[T any] struct {
 	selectedFields           map[string]bool
 	itemKey                  string
 	columnWhiteList          map[string]bool
+	disableSortOrder         bool
 	in                       []string
 	eq                       []string
 	fussy                    []string
@@ -130,4 +131,10 @@ func (c *Ctx[T]) GetSelectedFields() []string {
 		fields = append(fields, field)
 	}
 	return fields
+}
+
+// WithoutSortOrder disable sort order for "get list"
+func (c *Ctx[T]) WithoutSortOrder() *Ctx[T] {
+	c.disableSortOrder = true
+	return c
 }
