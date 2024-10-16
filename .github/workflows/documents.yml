@@ -11,7 +11,7 @@ on:
       - "docs/**/*.css"
       - "docs/**/*.md"
       - "docs/assets/*"
-      - "public/*"
+      - "public/**/*"
       - "package.json"
       - ".github/workflows/doc*.yml"
   pull_request:
@@ -23,7 +23,7 @@ on:
       - "docs/**/*.css"
       - "docs/**/*.md"
       - "docs/assets/*"
-      - "public/*"
+      - "public/**/*"
       - "package.json"
       - ".github/workflows/doc*.yml"
 jobs:
