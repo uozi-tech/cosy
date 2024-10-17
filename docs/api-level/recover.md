@@ -12,11 +12,11 @@ func DestroyUser(c *gin.Context) {
 
 ## 生命周期
 
-- **BeforeExecute** (Hook)
-- **GormScope** (Hook)
-- 查询原记录
-- 执行删除操作
-- **Executed** (Hook)
+1. **BeforeExecute** (Hook)
+2. **GormScope** (Hook)
+3. 查询原记录
+4. 执行删除操作
+5. **Executed** (Hook)
 
 <div style="display: flex;justify-content: center;">
     <img src="/assets/delete.png" alt="delete" style="max-width: 500px;width: 95%"/>

@@ -43,7 +43,7 @@ func (c *Ctx[T]) BatchModify() {
 	for k := range c.Payload["data"].(map[string]interface{}) {
 		// check if the field is allowed to be batch updated
 		if _, ok := resolvedModel.Fields[k]; !ok ||
-			!resolvedModel.Fields[k].CosyTag.GetBatch() {
+				!resolvedModel.Fields[k].CosyTag.GetBatch() {
 			continue
 		}
 		c.AddSelectedFields(k)
@@ -59,7 +59,7 @@ func (c *Ctx[T]) BatchModify() {
 
 	c.Model = batchUpdate.Data
 	for _, id := range batchUpdate.IDs {
-		c.BatchUpdateEffectedIDs = append(c.BatchUpdateEffectedIDs, cast.ToUint64(id))
+		c.BatchEffectedIDs = append(c.BatchEffectedIDs, cast.ToUint64(id))
 	}
 
 	if c.beforeExecuteHook() {

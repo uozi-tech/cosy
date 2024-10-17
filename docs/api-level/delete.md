@@ -25,11 +25,11 @@ func DestroyUser(c *gin.Context) {
 
 ## 生命周期
 
-- **BeforeExecute** (Hook)
-- **GormScope** (Hook)
-- 查询原记录
-- 执行删除操作
-- **Executed** (Hook)
+1. **BeforeExecute** (Hook)
+2. **GormScope** (Hook)
+3. 查询原记录
+4. 执行删除操作
+5. **Executed** (Hook)
 
 <div style="display: flex;justify-content: center;">
     <img src="/assets/delete.png" alt="delete" style="max-width: 500px;width: 95%"/>
@@ -37,8 +37,8 @@ func DestroyUser(c *gin.Context) {
 
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。
 
-你可以在 `BeforeExecuteHook` 中设置删除条件
+你可以在 `BeforeExecuteHook` 中设置删除条件，
 
-也可以在 `GormScope` 中限制 SQL 查询条件来阻止越权的删除操作
+也可以在 `GormScope` 中限制 SQL 查询条件来阻止越权的删除操作，
 
 在 `ExecutedHook` 中，`ctx.OriginModel` 是原记录，可以执行其他操作，比如发送邮件，记录日志等。

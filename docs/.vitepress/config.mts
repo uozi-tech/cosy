@@ -31,6 +31,8 @@ export default defineConfig(({mode}) => {
             {text: '批量修改', link: '/api-level/batch-update'},
             {text: '删除', link: '/api-level/delete'},
             {text: '恢复', link: '/api-level/recover'},
+            {text: '批量删除', link: '/api-level/batch-delete'},
+            {text: '批量恢复', link: '/api-level/batch-recover'},
             {text: '自定义', link: '/api-level/custom'},
           ]
         },

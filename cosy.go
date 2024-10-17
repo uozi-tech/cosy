@@ -14,7 +14,7 @@ type Ctx[T any] struct {
 	Payload                  map[string]interface{}
 	Model                    T
 	OriginModel              T
-	BatchUpdateEffectedIDs   []uint64
+	BatchEffectedIDs         []uint64
 	table                    string
 	tableArgs                []interface{}
 	abort                    bool
