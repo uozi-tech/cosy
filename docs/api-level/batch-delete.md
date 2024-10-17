@@ -12,7 +12,8 @@ type batchDeleteStruct[T] struct {
 }
 
 func BatchDestroy(c *gin.Context) {
-   core := cosy.Core[model.User](c).BatchDestroy()
+    core := cosy.Core[model.User](c).BatchDestroy()
+}
 ```
 如果默认情况下就想彻底删除记录，请使用下面的方法：
 

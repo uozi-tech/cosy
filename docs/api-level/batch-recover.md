@@ -10,7 +10,8 @@ type batchDeleteStruct[T] struct {
 }
 
 func BatchRecover(c *gin.Context) {
-   core := cosy.Core[model.User](c).Recover()
+    core := cosy.Core[model.User](c).Recover()
+}
 ```
 
 如果执行成功，将会响应 StatusCode = 204，body 为空。
