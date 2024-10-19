@@ -51,38 +51,37 @@ func Init(confPath string) {
 }
 
 // Load the settings
-func load() {
-	var err error
+func load() (err error) {
 	Conf, err = ini.LoadSources(ini.LoadOptions{
 		Loose:        true,
 		AllowShadows: true,
 	}, ConfPath)
 
-	if err != nil {
-		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
-	}
+	return
 }
 
 // Reload the settings
-func Reload() {
-	load()
+func Reload() error {
+	return load()
 }
 
 // Set up the settings
 func setup() {
-	load()
-
+	err := load()
+	if err != nil {
+		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
+	}
 	for _, s := range sections {
-		mapTo(s.Name, s.Ptr)
+		err = MapTo(s.Name, s.Ptr)
+		if err != nil {
+			log.Fatalf("setting.MapTo %s err: %v", s.Name, err)
+		}
 	}
 }
 
 // MapTo the settings
-func mapTo(section string, v any) {
-	err := Conf.Section(section).MapTo(v)
-	if err != nil {
-		log.Fatalf("setting.mapTo %s err: %v", section, err)
-	}
+func MapTo(section string, v any) error {
+	return Conf.Section(section).MapTo(v)
 }
 
 // ReflectFrom the settings
