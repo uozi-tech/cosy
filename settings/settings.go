@@ -50,13 +50,27 @@ func Init(confPath string) {
 	setup()
 }
 
-// Set up the settings
-func setup() {
+// Load the settings
+func load() {
 	var err error
-	Conf, err = ini.Load(ConfPath)
+	Conf, err = ini.LoadSources(ini.LoadOptions{
+		Loose:        true,
+		AllowShadows: true,
+	}, ConfPath)
+
 	if err != nil {
 		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
 	}
+}
+
+// Reload the settings
+func Reload() {
+	load()
+}
+
+// Set up the settings
+func setup() {
+	load()
 
 	for _, s := range sections {
 		mapTo(s.Name, s.Ptr)
@@ -72,7 +86,7 @@ func mapTo(section string, v any) {
 }
 
 // ReflectFrom the settings
-func reflectFrom(section string, v any) {
+func ReflectFrom(section string, v any) {
 	err := Conf.Section(section).ReflectFrom(v)
 	if err != nil {
 		log.Fatalf("Cfg.ReflectFrom %s err: %v", section, err)
@@ -96,7 +110,7 @@ func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
 // Save the settings
 func Save() (err error) {
 	for _, s := range sections {
-		reflectFrom(s.Name, s.Ptr)
+		ReflectFrom(s.Name, s.Ptr)
 	}
 	err = Conf.SaveTo(ConfPath)
 	if err != nil {
