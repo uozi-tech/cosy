@@ -11,37 +11,17 @@ var (
 	ConfPath string
 )
 
-type section struct {
-	Name string
-	Ptr  any
-}
-
-var sections = []section{
-	{
-		Name: "app",
-		Ptr:  AppSettings,
-	},
-	{
-		Name: "server",
-		Ptr:  ServerSettings,
-	},
-	{
-		Name: "database",
-		Ptr:  DataBaseSettings,
-	},
-	{
-		Name: "redis",
-		Ptr:  RedisSettings,
-	},
-	{
-		Name: "sonyflake",
-		Ptr:  SonyflakeSettings,
-	},
+var sections = map[string]interface{}{
+	"app":       AppSettings,
+	"server":    ServerSettings,
+	"database":  DataBaseSettings,
+	"redis":     RedisSettings,
+	"sonyflake": SonyflakeSettings,
 }
 
 // Register the setting, this should be called before Init
 func Register(name string, ptr any) {
-	sections = append(sections, section{name, ptr})
+	sections[name] = ptr
 }
 
 // Init the settings
@@ -71,10 +51,10 @@ func setup() {
 	if err != nil {
 		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
 	}
-	for _, s := range sections {
-		err = MapTo(s.Name, s.Ptr)
+	for name, ptr := range sections {
+		err = MapTo(name, ptr)
 		if err != nil {
-			log.Fatalf("setting.MapTo %s err: %v", s.Name, err)
+			log.Fatalf("setting.MapTo %s err: %v", name, err)
 		}
 	}
 }
@@ -108,8 +88,8 @@ func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
 
 // Save the settings
 func Save() (err error) {
-	for _, s := range sections {
-		ReflectFrom(s.Name, s.Ptr)
+	for name, ptr := range sections {
+		ReflectFrom(name, ptr)
 	}
 	err = Conf.SaveTo(ConfPath)
 	if err != nil {
@@ -117,4 +97,14 @@ func Save() (err error) {
 	}
 	setup()
 	return
+}
+
+// WithoutRedis remove the redis settings
+func WithoutRedis() {
+	delete(sections, "redis")
+}
+
+// WithoutSonyflake remove the sonyflake settings
+func WithoutSonyflake() {
+	delete(sections, "sonyflake")
 }
