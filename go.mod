@@ -6,6 +6,7 @@ toolchain go1.23.2
 
 require (
 	github.com/bsm/redislock v0.9.4
+	github.com/elliotchance/orderedmap/v2 v2.4.0
 	github.com/fatih/color v1.17.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-co-op/gocron/v2 v2.12.1

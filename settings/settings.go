@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"github.com/elliotchance/orderedmap/v2"
 	"gopkg.in/ini.v1"
 	"log"
 	"reflect"
@@ -11,17 +12,19 @@ var (
 	ConfPath string
 )
 
-var sections = map[string]interface{}{
-	"app":       AppSettings,
-	"server":    ServerSettings,
-	"database":  DataBaseSettings,
-	"redis":     RedisSettings,
-	"sonyflake": SonyflakeSettings,
+var sections = orderedmap.NewOrderedMap[string, any]()
+
+func init() {
+	sections.Set("app", AppSettings)
+	sections.Set("server", ServerSettings)
+	sections.Set("database", DataBaseSettings)
+	sections.Set("redis", RedisSettings)
+	sections.Set("sonyflake", SonyflakeSettings)
 }
 
 // Register the setting, this should be called before Init
 func Register(name string, ptr any) {
-	sections[name] = ptr
+	sections.Set(name, ptr)
 }
 
 // Init the settings
@@ -51,7 +54,7 @@ func setup() {
 	if err != nil {
 		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
 	}
-	for name, ptr := range sections {
+	for name, ptr := range sections.Iterator() {
 		err = MapTo(name, ptr)
 		if err != nil {
 			log.Fatalf("setting.MapTo %s err: %v", name, err)
@@ -88,7 +91,7 @@ func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
 
 // Save the settings
 func Save() (err error) {
-	for name, ptr := range sections {
+	for name, ptr := range sections.Iterator() {
 		ReflectFrom(name, ptr)
 	}
 	err = Conf.SaveTo(ConfPath)
@@ -101,10 +104,10 @@ func Save() (err error) {
 
 // WithoutRedis remove the redis settings
 func WithoutRedis() {
-	delete(sections, "redis")
+	sections.Delete("redis")
 }
 
 // WithoutSonyflake remove the sonyflake settings
 func WithoutSonyflake() {
-	delete(sections, "sonyflake")
+	sections.Delete("sonyflake")
 }
