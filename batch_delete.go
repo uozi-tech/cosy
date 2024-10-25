@@ -31,6 +31,10 @@ func (c *Ctx[T]) BatchDestroy() {
 		return
 	}
 
+	if c.abort {
+		return
+	}
+
 	if len(c.BatchEffectedIDs) == 0 {
 		c.JSON(http.StatusNoContent, nil)
 		return
@@ -71,6 +75,10 @@ func (c *Ctx[T]) BatchRecover() {
 	c.BatchEffectedIDs = batchDeleteData.IDs
 
 	if c.beforeExecuteHook() {
+		return
+	}
+
+	if c.abort {
 		return
 	}
 

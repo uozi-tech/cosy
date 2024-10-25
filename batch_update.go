@@ -63,6 +63,10 @@ func (c *Ctx[T]) BatchModify() {
 		return
 	}
 
+	if c.abort {
+		return
+	}
+
 	if c.table != "" {
 		db = db.Table(c.table, c.tableArgs...)
 	}
