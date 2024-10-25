@@ -87,7 +87,7 @@ func (c *Ctx[T]) BatchRecover() {
 	result := db.Unscoped()
 	c.applyGormScopes(result)
 
-	result = result.Where("id in ?", c.BatchEffectedIDs).Model(&c.Model)
+	result = result.Where(c.itemKey+" in ?", c.BatchEffectedIDs).Model(&c.Model)
 
 	var err error
 	resolvedModel := model.GetResolvedModel[T]()
