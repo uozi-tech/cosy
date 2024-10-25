@@ -71,7 +71,7 @@ func (c *Ctx[T]) BatchModify() {
 		db = db.Table(c.table, c.tableArgs...)
 	}
 
-	err = db.Model(&c.Model).Where(c.itemKey+" IN ?", batchUpdate.IDs).
+	err = db.Model(&c.Model).Where(c.itemKey+" IN ?", c.BatchEffectedIDs).
 		Select(c.GetSelectedFields()).Updates(&c.Model).Error
 	if err != nil {
 		errHandler(c.Context, err)
