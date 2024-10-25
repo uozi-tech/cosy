@@ -25,9 +25,7 @@ func (c *Ctx[T]) BatchDestroy() {
 		return
 	}
 
-	for _, id := range batchDeleteData.IDs {
-		c.BatchEffectedIDs = append(c.BatchEffectedIDs, cast.ToUint64(id))
-	}
+	c.BatchEffectedIDs = batchDeleteData.IDs
 
 	if c.beforeExecuteHook() {
 		return
@@ -70,9 +68,7 @@ func (c *Ctx[T]) BatchRecover() {
 		return
 	}
 
-	for _, id := range batchDeleteData.IDs {
-		c.BatchEffectedIDs = append(c.BatchEffectedIDs, cast.ToUint64(id))
-	}
+	c.BatchEffectedIDs = batchDeleteData.IDs
 
 	if c.beforeExecuteHook() {
 		return

@@ -2,7 +2,6 @@ package cosy
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy/map2struct"
 	"github.com/uozi-tech/cosy/model"
 	"net/http"
@@ -58,9 +57,7 @@ func (c *Ctx[T]) BatchModify() {
 	}
 
 	c.Model = batchUpdate.Data
-	for _, id := range batchUpdate.IDs {
-		c.BatchEffectedIDs = append(c.BatchEffectedIDs, cast.ToUint64(id))
-	}
+	c.BatchEffectedIDs = batchUpdate.IDs
 
 	if c.beforeExecuteHook() {
 		return
