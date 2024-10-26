@@ -5,4 +5,6 @@ type App struct {
 	JwtSecret string `json:"jwt_secret"`
 }
 
-var AppSettings = &App{}
+var AppSettings = &App{
+	PageSize: 20,
+}

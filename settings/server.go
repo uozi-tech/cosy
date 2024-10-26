@@ -6,4 +6,6 @@ type Server struct {
 	RunMode string `json:"run_mode"`
 }
 
-var ServerSettings = &Server{}
+var ServerSettings = &Server{
+	RunMode: "debug",
+}
