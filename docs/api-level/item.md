@@ -20,7 +20,7 @@ func GetUser(c *gin.Context) {
 使用链式方法来设置查询条件，例如可以 Preload 这个用户的用户组
 ```go
 func GetUser(c *gin.Context) {
-    cosy.Core[model.User](c).Preload("User").Get()
+    cosy.Core[model.User](c).SetPreloads("User").Get()
 }
 ```
 
