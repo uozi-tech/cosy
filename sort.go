@@ -20,6 +20,10 @@ func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
 
 	sortBy := c.DefaultQuery("sort_by", c.itemKey)
 
+	if sortBy == "" {
+		sortBy = c.itemKey
+	}
+
 	s, _ := schema.Parse(c.Model, &sync.Map{}, schema.NamingStrategy{})
 	if _, ok := s.FieldsByDBName[sortBy]; !ok && sortBy != c.itemKey {
 		logger.Error("invalid order field:", sortBy)
