@@ -97,6 +97,10 @@ func GetUser(c *gin.Context) {
 }
 ```
 
+::: warning 注意
+`setScan` 不能和 `setTransformer` 一起使用，若同时使用，将只执行 `setScan` 函数。
+:::
+
 ## 生命周期
 
 1. **BeforeExecute**
@@ -130,5 +134,5 @@ func GetUser(c *gin.Context) {
     "name": "Admin"
   },
   "group_name": "Admin"
-}    
+}
 ```
