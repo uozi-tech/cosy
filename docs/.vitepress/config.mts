@@ -72,6 +72,12 @@ export default defineConfig(({mode}) => {
           ]
         },
         {
+          text: '错误处理',
+          items: [
+            {text: '接口参考', link: '/error-handler'},
+          ]
+        },
+        {
           text: 'Sonyflake',
           items: [
             {text: '接口参考', link: '/sonyflake'},
