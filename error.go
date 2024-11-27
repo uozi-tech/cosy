@@ -10,7 +10,24 @@ import (
 	"net/http"
 )
 
+type ErrorScope struct {
+	scope string
+}
+
+func NewErrorScope(scope string) *ErrorScope {
+	return &ErrorScope{scope}
+}
+
+func (s *ErrorScope) New(code int32, message string) error {
+	return &Error{
+		Scope:   s.scope,
+		Code:    code,
+		Message: message,
+	}
+}
+
 type Error struct {
+	Scope   string `json:"scope,omitempty"`
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
 }

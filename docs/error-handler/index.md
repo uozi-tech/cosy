@@ -1,5 +1,7 @@
 # 错误处理
 
+
+## 基本使用
 在 `v1.10.0` 中，我们引入了新的错误类型 `cosy.Error` 并且实现了 `go error` 的接口。
 ```go
 type Error struct {
@@ -74,3 +76,45 @@ func ErrorHandler(c *gin.Context, err error)
   "message": "Server error"
 }
 ```
+
+## 作用域
+为了方便对错误码进行管理，我们建议使用作用域对错误码进行管理。
+
+在 `v1.11.0` 中，我们新增了一个 `cosy.NewErrorScope` 函数，用于创建一个错误码作用域。
+
+```go
+func NewErrorScope(scope string) *ErrorScope
+```
+
+接下来，您可以使用 `ErrorScope` 的 `New` 方法来创建一个错误。
+
+```go
+func (s *ErrorScope) New(code int32, message string) error
+```
+
+例如：
+
+```go
+package user
+
+import "github.com/uozi-tech/cosy"
+
+var (
+	e                             = cosy.NewErrorScope("user")
+	ErrMaxAttempts                = e.New(4291, "Too many requests")
+	ErrPasswordIncorrect          = e.New(4031, "Password incorrect")
+	ErrUserBanned                 = e.New(4033, "User banned")
+)
+```
+
+当 `cosy.ErrHandler` 处理由 `cosy.ErrorScope` 创建的错误时，将会响应以下结构的 JSON:
+
+```
+{
+  "scope": 作用域,
+  "code": 错误码,
+  "message": 错误信息,
+}
+```
+
+届时，前端可以根据获取到的 `scope` 和 `code` 来进行相应的处理。
