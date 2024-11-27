@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/uozi-tech/cosy/cron"
 	"github.com/uozi-tech/cosy/kernel"
 	"github.com/uozi-tech/cosy/logger"
+	"github.com/uozi-tech/cosy/model"
 	"github.com/uozi-tech/cosy/redis"
 	"github.com/uozi-tech/cosy/router"
 	"github.com/uozi-tech/cosy/settings"
@@ -106,12 +108,17 @@ func Boot(confPath string) {
 	logger.Info("Server exited")
 }
 
-// RegisterAsyncFunc Register async functions, this function should be called before kernel boot.
-func RegisterAsyncFunc(f ...func()) {
-	kernel.RegisterAsyncFunc(f...)
+// RegisterInitFunc Register init functions, this function should be called before kernel boot.
+func RegisterInitFunc(f ...func()) {
+	kernel.RegisterInitFunc(f...)
 }
 
-// RegisterSyncsFunc Register syncs functions, this function should be called before kernel boot.
-func RegisterSyncsFunc(f ...func()) {
-	kernel.RegisterSyncsFunc(f...)
+// RegisterGoroutine Register syncs functions, this function should be called before kernel boot.
+func RegisterGoroutine(f ...func()) {
+	kernel.RegisterGoroutine(f...)
+}
+
+// RegisterMigration Register a migration
+func RegisterMigration(m []*gormigrate.Migration) {
+	model.RegisterMigration(m)
 }

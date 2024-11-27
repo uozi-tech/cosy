@@ -9,10 +9,10 @@ import (
 var a = 1
 
 func TestBoot(t *testing.T) {
-	RegisterAsyncFunc(func() {
+	RegisterInitFunc(func() {
 		a = 2
 	})
-	RegisterSyncsFunc(func() {
+	RegisterGoroutine(func() {
 		a = 3
 	})
 	Boot()
