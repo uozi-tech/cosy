@@ -72,6 +72,12 @@ export default defineConfig(({mode}) => {
           ]
         },
         {
+          text: '数据库迁移',
+          items: [
+            {text: '接口参考', link: '/db-migration'},
+          ]
+        },
+        {
           text: '错误处理',
           items: [
             {text: '接口参考', link: '/error-handler'},
