@@ -118,3 +118,42 @@ var (
 ```
 
 届时，前端可以根据获取到的 `scope` 和 `code` 来进行相应的处理。
+
+## 附加参数
+在 `v1.12.0` 中，我们新增了一个 `cosy.NewErrorWithParams` 方法，用于在创建错误时附加额外的参数。
+
+```go
+func NewErrorWithParams(code int32, message string, params ...string) error
+```
+
+需要注意的是，message 的内容需要包含 `{index}` 作为参数的占位符，否则在控制台的打印中不能输出正确的错误信息，例如：
+
+```go
+e = cosy.NewErrorScope("tracking")
+
+cErr := e.NewWithParams(500, "跟踪信息 {0} 的错误是 {1}", "foo", "bar")
+```
+
+当使用 `logger` 打印时候，它将会输出：
+```
+跟踪信息 foo 的错误是 bar
+```
+
+使用 `cosy.Errhander` 处理时，会响应：
+```json
+{
+  "scope": "tracking",
+  "code": 500,
+  "message": "跟踪信息 {0} 的错误是 {1}",
+  "params": ["foo", "bar"]
+}
+```
+
+您也可以直接使用 `cosy.NewErrorWithParams` 来创建一个无作用域的错误，在使用 `cosy.ErrHandler` 处理时，会响应：
+```json
+{
+  "code": 500,
+  "message": "跟踪信息 {0} 的错误是 {1}",
+  "params": ["foo", "bar"]
+}
+```

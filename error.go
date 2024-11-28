@@ -2,12 +2,14 @@ package cosy
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/settings"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 )
 
 type ErrorScope struct {
@@ -18,6 +20,7 @@ func NewErrorScope(scope string) *ErrorScope {
 	return &ErrorScope{scope}
 }
 
+// New create a new error with scope
 func (s *ErrorScope) New(code int32, message string) error {
 	return &Error{
 		Scope:   s.scope,
@@ -26,20 +29,48 @@ func (s *ErrorScope) New(code int32, message string) error {
 	}
 }
 
+// NewWithParams create a new error with scope and params
+func (s *ErrorScope) NewWithParams(code int32, message string, params ...string) error {
+	return &Error{
+		Scope:   s.scope,
+		Code:    code,
+		Message: message,
+		Params:  params,
+	}
+}
+
 type Error struct {
-	Scope   string `json:"scope,omitempty"`
-	Code    int32  `json:"code"`
-	Message string `json:"message"`
+	Scope   string   `json:"scope,omitempty"`
+	Code    int32    `json:"code"`
+	Message string   `json:"message"`
+	Params  []string `json:"params,omitempty"`
 }
 
 func (e *Error) Error() string {
-	return e.Message
+	if len(e.Params) == 0 {
+		return e.Message
+	}
+	msg := e.Message
+	for index, param := range e.Params {
+		msg = strings.Replace(msg, fmt.Sprintf("{%d}", index), param, 1)
+	}
+	return msg
 }
 
+// NewError create a new error
 func NewError(code int32, message string) error {
 	return &Error{
 		Code:    code,
 		Message: message,
+	}
+}
+
+// NewErrorWithParams create a new error with params
+func NewErrorWithParams(code int32, message string, params ...string) error {
+	return &Error{
+		Code:    code,
+		Message: message,
+		Params:  params,
 	}
 }
 
