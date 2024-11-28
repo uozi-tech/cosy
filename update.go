@@ -24,10 +24,7 @@ func (c *Ctx[T]) Modify() {
 	errs := c.validate()
 
 	if len(errs) > 0 {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": "Requested with wrong parameters",
-			"errors":  errs,
-		})
+		c.JSON(http.StatusNotAcceptable, NewValidateError(errs))
 		return
 	}
 

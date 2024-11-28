@@ -7,6 +7,8 @@
 
 ```json
 {
+    "scope": "validate",
+    "code":  406,
     "errors": {
         "name": "required",
         "uid":  "db_unique",

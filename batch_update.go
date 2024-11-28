@@ -19,10 +19,7 @@ func (c *Ctx[T]) BatchModify() {
 
 	errs := validateBatchUpdate(c)
 	if len(errs) > 0 {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": "Requested with wrong parameters",
-			"errors":  errs,
-		})
+		c.JSON(http.StatusNotAcceptable, NewValidateError(errs))
 		return
 	}
 
@@ -42,7 +39,7 @@ func (c *Ctx[T]) BatchModify() {
 	for k := range c.Payload["data"].(map[string]interface{}) {
 		// check if the field is allowed to be batch updated
 		if _, ok := resolvedModel.Fields[k]; !ok ||
-				!resolvedModel.Fields[k].CosyTag.GetBatch() {
+			!resolvedModel.Fields[k].CosyTag.GetBatch() {
 			continue
 		}
 		c.AddSelectedFields(k)

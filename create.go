@@ -1,7 +1,6 @@
 package cosy
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/map2struct"
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm/clause"
@@ -13,10 +12,7 @@ func (c *Ctx[T]) Create() {
 	errs := c.validate()
 
 	if len(errs) > 0 {
-		c.JSON(http.StatusNotAcceptable, gin.H{
-			"message": "Requested with wrong parameters",
-			"errors":  errs,
-		})
+		c.JSON(http.StatusNotAcceptable, NewValidateError(errs))
 		return
 	}
 
