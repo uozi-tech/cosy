@@ -37,6 +37,7 @@ JwtSecret = 39B4F75C-8E51-4E9C-87F5-94E40447B0E0
 Host    = 127.0.0.1
 Port    = 0
 RunMode = debug
+BaseUrl = https://api.example.com
 
 [database]
 User = postgres
