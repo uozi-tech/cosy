@@ -1,16 +1,17 @@
 package cosy
 
 import (
+	"net/http"
+
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 func (c *Ctx[T]) UpdateOrder() {
 	var json struct {
-		TargetID    string   `json:"target_id"`
-		Direction   int      `json:"direction" binding:"oneof=-1 1"`
-		AffectedIDs []string `json:"affected_ids"`
+		TargetID    interface{}   `json:"target_id"`
+		Direction   int           `json:"direction" binding:"oneof=-1 1"`
+		AffectedIDs []interface{} `json:"affected_ids"`
 	}
 
 	if !BindAndValid(c.Context, &json) {
