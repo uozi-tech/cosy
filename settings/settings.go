@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"github.com/elliotchance/orderedmap/v2"
+	"github.com/elliotchance/orderedmap/v3"
 	"gopkg.in/ini.v1"
 	"log"
 	"reflect"
@@ -54,7 +54,7 @@ func setup() {
 	if err != nil {
 		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
 	}
-	for name, ptr := range sections.Iterator() {
+	for name, ptr := range sections.AllFromFront() {
 		err = MapTo(name, ptr)
 		if err != nil {
 			log.Fatalf("setting.MapTo %s err: %v", name, err)
@@ -91,7 +91,7 @@ func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
 
 // Save the settings
 func Save() (err error) {
-	for name, ptr := range sections.Iterator() {
+	for name, ptr := range sections.AllFromFront() {
 		ReflectFrom(name, ptr)
 	}
 	err = Conf.SaveTo(ConfPath)
