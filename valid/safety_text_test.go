@@ -24,6 +24,7 @@ func Test_safetyText(t *testing.T) {
 	assert.Nil(t, v.Var("gpt-4o", "safety_test"))
 	assert.Nil(t, v.Var("gpt-3.5", "safety_test"))
 	assert.Nil(t, v.Var("gpt-4-turbo-1106", "safety_test"))
+	assert.Nil(t, v.Var("qwen2.5:14b", "safety_test"))
 	assert.Error(t, v.Var("\"\"\"\\n\\r#test\\n\\r\\n[nginx]\\r\\nAccessLogPath = \\r\\nErrorLogPath  = "+
 		"\\r\\nConfigDir     = \\r\\nPIDPath       = \\r\\nTestConfigCmd = \"touch /tmp/testz\"\\r\\nReloadCmd"+
 		"     = \\r\\nRestartCmd    = "+

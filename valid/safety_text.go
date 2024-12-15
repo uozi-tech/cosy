@@ -6,7 +6,7 @@ import (
 )
 
 func SafetyText(fl val.FieldLevel) bool {
-	asciiPattern := `^[a-zA-Z0-9-_. ]*$`
+	asciiPattern := `^[a-zA-Z0-9-_.: ]*$`
 	unicodePattern := `^[\p{L}\p{N}-_.—— ]*$`
 
 	asciiRegex := regexp.MustCompile(asciiPattern)
