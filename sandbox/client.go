@@ -19,7 +19,7 @@ func newClient() *Client {
 	}
 }
 
-// Request send a request and get response
+// Request sends a request and get response
 func (c *Client) Request(method string, uri string, body any) (r *Response, err error) {
 	buf, err := json.Marshal(body)
 	if err != nil {

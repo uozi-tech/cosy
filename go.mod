@@ -9,7 +9,7 @@ require (
 	github.com/elliotchance/orderedmap/v3 v3.0.0
 	github.com/fatih/color v1.18.0
 	github.com/gin-gonic/gin v1.10.0
-	github.com/go-co-op/gocron/v2 v2.13.0
+	github.com/go-co-op/gocron/v2 v2.14.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.3
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/google/uuid v1.6.0
@@ -33,7 +33,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/bytedance/sonic v1.12.5 // indirect
+	github.com/bytedance/sonic v1.12.6 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -70,14 +70,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884 // indirect
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	google.golang.org/protobuf v1.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/datatypes v1.2.5 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect

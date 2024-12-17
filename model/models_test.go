@@ -1,10 +1,11 @@
 package model
 
 import (
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestEmbed struct {
@@ -47,7 +48,7 @@ func TestResolvedModels(t *testing.T) {
 	expectedModel := map[string]ResolvedModel{
 		"User": {
 			Name: "User",
-			OrderedFields: []*resolvedModelField{
+			OrderedFields: []*ResolvedModelField{
 				{
 					Name:    "ID",
 					Type:    "uint64",
@@ -136,7 +137,7 @@ func TestResolvedModels(t *testing.T) {
 		},
 		"Product": {
 			Name: "Product",
-			OrderedFields: []*resolvedModelField{
+			OrderedFields: []*ResolvedModelField{
 				{
 					Name:    "ID",
 					Type:    "uint64",
