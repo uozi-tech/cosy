@@ -51,6 +51,7 @@ type User struct {
 | or_equal | SetOrEqual()         |
 | or_fussy | SetOrFussy()         |
 | preload  | SetPreload()         |
+| 其他       | 自定义筛选器               |
 
 ### item
 

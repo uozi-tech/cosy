@@ -1,6 +1,7 @@
 package cosy
 
 import (
+	"github.com/elliotchance/orderedmap/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
@@ -42,6 +43,7 @@ type Ctx[T any] struct {
 	search                   []string
 	between                  []string
 	unique                   []string
+	customFilters            *orderedmap.OrderedMap[string, string]
 }
 
 func Core[T any](c *gin.Context) *Ctx[T] {
@@ -54,6 +56,7 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 		skipAssociationsOnCreate: true,
 		columnWhiteList:          make(map[string]bool),
 		selectedFields:           make(map[string]bool),
+		customFilters:            orderedmap.NewOrderedMap[string, string](),
 	}
 }
 

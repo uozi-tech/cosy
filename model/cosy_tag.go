@@ -1,18 +1,20 @@
 package model
 
 import (
+	"github.com/elliotchance/orderedmap/v3"
 	"strings"
 )
 
 type CosyTag struct {
-	all    string
-	add    string
-	update string
-	item   string
-	list   []string
-	json   string
-	batch  bool
-	unique bool
+	all          string
+	add          string
+	update       string
+	item         string
+	list         []string
+	json         string
+	batch        bool
+	unique       bool
+	customFilter *orderedmap.OrderedMap[string, string]
 }
 
 // NewCosyTag creates a new CosyTag from a tag string
@@ -21,6 +23,8 @@ func NewCosyTag(tag string) (c CosyTag) {
 		return
 	}
 
+	c.customFilter = orderedmap.NewOrderedMap[string, string]()
+
 	// split tag by ;
 	groups := strings.Split(tag, ";")
 	for _, group := range groups {
@@ -28,13 +32,14 @@ func NewCosyTag(tag string) (c CosyTag) {
 		// we need to get the right side of :
 		directives := strings.Split(group, ":")
 
-		// fix for cosy:"batch", cosy:"db_unique"
+		// fixed for cosy:"batch", cosy:"db_unique"
 		if len(directives) == 1 {
 			directives = append(directives, "")
 		}
 		if len(directives) < 2 {
 			continue
 		}
+
 		// now the directives are like
 		// ["all", "omitempty"]
 		// ["add", "required,max=100"],
@@ -42,6 +47,7 @@ func NewCosyTag(tag string) (c CosyTag) {
 		// ["update", "omitempty"]
 		// ["item", "preload"]
 		// ["json", "password"]
+		// ["list", "fussy[sakura]"]
 
 		switch directives[0] {
 		// for "add", "update", "item" directives, we only need the right side
@@ -58,7 +64,7 @@ func NewCosyTag(tag string) (c CosyTag) {
 			c.list = strings.Split(directives[1], ",")
 		case "json":
 			c.json = directives[1]
-			// for batch directives, we only need the left side
+		// for batch directives, we only need the left side
 		case "batch":
 			c.batch = true
 		case "db_unique":

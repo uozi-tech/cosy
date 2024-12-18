@@ -1,6 +1,7 @@
 package cosy
 
 import (
+	"github.com/elliotchance/orderedmap/v3"
 	"github.com/uozi-tech/cosy/model"
 )
 
@@ -28,15 +29,16 @@ func getListHook[T any]() func(core *Ctx[T]) {
 
 	return func(core *Ctx[T]) {
 		var (
-			in      []string
-			eq      []string
-			fussy   []string
-			orIn    []string
-			orEq    []string
-			orFussy []string
-			preload []string
-			search  []string
-			between []string
+			in            []string
+			eq            []string
+			fussy         []string
+			orIn          []string
+			orEq          []string
+			orFussy       []string
+			preload       []string
+			search        []string
+			between       []string
+			customFilters = orderedmap.NewOrderedMap[string, string]() // key=>filter
 		)
 
 		for _, field := range resolved.OrderedFields {
@@ -62,6 +64,8 @@ func getListHook[T any]() func(core *Ctx[T]) {
 					search = append(search, field.JsonTag)
 				case Between:
 					between = append(between, field.JsonTag)
+				default:
+					customFilters.Set(field.JsonTag, dir)
 				}
 			}
 		}
@@ -92,6 +96,11 @@ func getListHook[T any]() func(core *Ctx[T]) {
 		}
 		if len(between) > 0 {
 			core.SetBetween(between...)
+		}
+		if customFilters.Len() > 0 {
+			for key, filterName := range customFilters.AllFromFront() {
+				core.SetCustomFilter(key, filterName)
+			}
 		}
 	}
 }
