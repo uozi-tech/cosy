@@ -72,6 +72,12 @@ export default defineConfig(({mode}) => {
           ]
         },
         {
+          text: '筛选器',
+          items: [
+            {text: '接口参考', link: '/filter'},
+          ]
+        },
+        {
           text: '数据库迁移',
           items: [
             {text: '接口参考', link: '/db-migration'},
