@@ -78,6 +78,12 @@ export default defineConfig(({mode}) => {
           ]
         },
         {
+          text: '简单队列',
+          items: [
+            {text: '接口参考', link: '/queue'},
+          ]
+        },
+        {
           text: '数据库迁移',
           items: [
             {text: '接口参考', link: '/db-migration'},
