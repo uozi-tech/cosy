@@ -19,11 +19,10 @@ const (
 )
 
 type Queue[T any] struct {
-	name            string
-	direction       Direction // left-to-right or right-to-left
-	listName        string
-	listRightToLeft string
-	lock            *redislock.Lock
+	name      string
+	direction Direction // left-to-right or right-to-left
+	listName  string
+	lock      *redislock.Lock
 }
 
 // New create a new queue
@@ -42,12 +41,12 @@ func New[T any](name string, direction Direction) *Queue[T] {
 // produce is a function to send data string to the queue
 func (q *Queue[T]) produce(dataStr string) (err error) {
 	if q.direction == LeftToRight {
-		err = redis.LPush(q.listRightToLeft, dataStr)
+		err = redis.LPush(q.listName, dataStr)
 		if err != nil {
 			return err
 		}
 	} else {
-		err = redis.RPush(q.listRightToLeft, dataStr)
+		err = redis.RPush(q.listName, dataStr)
 		if err != nil {
 			return err
 		}
@@ -60,9 +59,9 @@ func (q *Queue[T]) produce(dataStr string) (err error) {
 // It returns the data as a string and an error if any.
 func (q *Queue[T]) consume() (dataStr string, err error) {
 	if q.direction == LeftToRight {
-		dataStr, err = redis.RPop(q.listRightToLeft)
+		dataStr, err = redis.RPop(q.listName)
 	} else {
-		dataStr, err = redis.LPop(q.listRightToLeft)
+		dataStr, err = redis.LPop(q.listName)
 	}
 	return
 }
@@ -121,6 +120,6 @@ func (q *Queue[T]) Consume(data *T) error {
 
 // Len retrieve the queue len
 func (q *Queue[T]) Len() (result int64) {
-	result, _ = redis.LLen(q.listRightToLeft)
+	result, _ = redis.LLen(q.listName)
 	return
 }
