@@ -93,6 +93,7 @@ export default defineConfig(({mode}) => {
           text: '错误处理',
           items: [
             {text: '接口参考', link: '/error-handler'},
+            {text: '文档和代码生成', link: '/error-handler/docs-code-gen'},
           ]
         },
         {

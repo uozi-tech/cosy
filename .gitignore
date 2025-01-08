@@ -5,3 +5,6 @@ docs/.vitepress/cache
 docs/.vitepress/dist
 node_modules
 coverage.out
+err-docs-dist
+err-ts-dist
+err-js-dist
