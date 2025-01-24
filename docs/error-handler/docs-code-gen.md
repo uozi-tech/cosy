@@ -23,8 +23,10 @@ go run cmd/errdocs/generate.go ./project md ./docs
 go run cmd/errdocs/generate.go ./project ts ./src/errors t
 
 # 生成 JavaScript 错误定义，不使用末尾逗号
-go run cmd/errdocs/generate.go ./project js ./dist $gettext false
+go run cmd/errdocs/generate.go ./project js ./dist '$gettext' false
 ```
+
+从 `v1.14.2` 开始，您可以在项目中的 `cmd/errdef/generate.go` 中使用 `error.Generate()` 来创建生成器，以实现在本地调用文档和代码生成器。
 
 ## 生成的文件示例
 
