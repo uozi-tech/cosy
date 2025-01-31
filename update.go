@@ -21,6 +21,13 @@ func (c *Ctx[T]) Modify() {
 	}
 	c.ID = c.GetParamID()
 
+	resolvedModel := model.GetResolvedModel[T]()
+	for _, field := range resolvedModel.OrderedFields {
+		if field.CosyTag.GetUnique() {
+			c.SetUnique(field.JsonTag)
+		}
+	}
+
 	errs := c.validate()
 
 	if len(errs) > 0 {

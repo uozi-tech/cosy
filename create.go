@@ -8,6 +8,12 @@ import (
 )
 
 func (c *Ctx[T]) Create() {
+	resolvedModel := model.GetResolvedModel[T]()
+	for _, field := range resolvedModel.OrderedFields {
+		if field.CosyTag.GetUnique() {
+			c.SetUnique(field.JsonTag)
+		}
+	}
 
 	errs := c.validate()
 
@@ -27,7 +33,6 @@ func (c *Ctx[T]) Create() {
 	}
 
 	err := map2struct.WeakDecode(c.Payload, &c.Model)
-
 	if err != nil {
 		errHandler(c.Context, err)
 		return

@@ -38,11 +38,13 @@ func (c *Ctx[T]) BatchModify() {
 	resolvedModel := model.GetResolvedModel[T]()
 	for k := range c.Payload["data"].(map[string]interface{}) {
 		// check if the field is allowed to be batch updated
-		if _, ok := resolvedModel.Fields[k]; !ok ||
-			!resolvedModel.Fields[k].CosyTag.GetBatch() {
+		field, ok := resolvedModel.Fields[k]
+		if !ok {
 			continue
 		}
-		c.AddSelectedFields(k)
+		if field.CosyTag.GetBatch() {
+			c.AddSelectedFields(k)
+		}
 	}
 
 	var batchUpdate batchUpdateStruct[T]

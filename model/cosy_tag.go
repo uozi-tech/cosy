@@ -130,3 +130,8 @@ func (c *CosyTag) GetJson() string {
 func (c *CosyTag) GetBatch() bool {
 	return c.batch
 }
+
+// GetUnique returns the unique directive
+func (c *CosyTag) GetUnique() bool {
+	return c.unique
+}
