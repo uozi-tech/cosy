@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"flag"
+
 	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy"
 )
@@ -29,16 +31,30 @@ var (
 type parseResult map[string][]cosy.Error
 
 func Generate() {
-	if len(os.Args) < 3 {
-		log.Println("Usage: go run cmd/errdocs/generate.go <project folder path> <type: md|ts|js> <output dir> [wrapper] [trailing_comma]")
-		log.Println("Example: go run cmd/errdocs/generate.go ./project ts ./dist '$gettext' true")
-		return
+	var (
+		projectFolder string
+		docType       string
+		outDir        string
+		wrapper       string
+		trailingComma bool
+		ignoreDirs    string
+	)
+
+	flag.StringVar(&projectFolder, "project", "", "Project folder path (required)")
+	flag.StringVar(&docType, "type", "", "Documentation type: md|ts|js (required)")
+	flag.StringVar(&outDir, "output", "", "Output directory (required)")
+	flag.StringVar(&wrapper, "wrapper", "$gettext", "Wrapper function name")
+	flag.BoolVar(&trailingComma, "trailing-comma", true, "Add trailing comma in output")
+	flag.StringVar(&ignoreDirs, "ignore-dirs", "", "Comma-separated directories to ignore")
+	flag.Parse()
+
+	// Validate required flags
+	if projectFolder == "" || docType == "" || outDir == "" {
+		log.Fatal("Missing required flags: -project, -type, -output")
 	}
 
-	rootPath := os.Args[1]
-	docType := strings.ToLower(strings.TrimSpace(os.Args[2]))
-
-	// Validate doc type
+	// Process doc type
+	docType = strings.ToLower(strings.TrimSpace(docType))
 	switch docType {
 	case "md", "ts", "js":
 		// valid type
@@ -46,30 +62,26 @@ func Generate() {
 		log.Fatalf("Invalid type: %s. Must be one of: md, ts, js", docType)
 	}
 
-	// Output directory is required
-	if len(os.Args) < 4 {
-		log.Fatalf("Output directory is required")
-	}
-	outDir := os.Args[3]
-
-	// Set wrapper function and trailing comma
-	wrapper := "$gettext"
-	trailingComma := true // default to true
-	if len(os.Args) > 4 {
-		wrapper = os.Args[4]
-	}
-	if len(os.Args) > 5 {
-		trailingComma = strings.ToLower(os.Args[5]) != "false"
+	// Process ignore directories
+	var ignoreDirsList []string
+	if ignoreDirs != "" {
+		ignoreDirsList = strings.Split(ignoreDirs, ",")
 	}
 
 	globalScopeMap := make(map[string][]cosy.Error)
 
 	// find all .go files
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(projectFolder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
+			dirName := filepath.Base(path)
+			for _, d := range ignoreDirsList {
+				if strings.EqualFold(dirName, d) {
+					return filepath.SkipDir
+				}
+			}
 			return nil
 		}
 		if filepath.Ext(path) == ".go" {
