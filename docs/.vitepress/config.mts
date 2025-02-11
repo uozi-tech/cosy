@@ -109,6 +109,12 @@ export default defineConfig(({mode}) => {
           ]
         },
         {
+          text: '定时任务',
+          items: [
+            {text: '接口参考', link: '/cron'},
+          ]
+        },
+        {
           text: '设置',
           items: [
             {text: '集成', link: '/settings/start'},

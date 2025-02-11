@@ -26,20 +26,21 @@ func TestSandbox(t *testing.T) {
 			r := router.GetEngine()
 			g := r.Group("/")
 			Api[User]("users").InitRouter(g)
-			
-            resp, err = c.Get("/users/1")
-            if err != nil {
-                t.Error(err)
-                return
-            }
+
+      resp, err = c.Get("/users/1")
+      if err != nil {
+          t.Error(err)
+          return
+      }
+
 			var user User
 			err = resp.To(&user)
-            if err != nil {
-                t.Error(err)
-                return
-            }
-            assert.Equal(t, http.StatusOK, resp.StatusCode)
-		    assert.Equal(t, uint64(1), user.ID)
+      if err != nil {
+          t.Error(err)
+          return
+      }
+      assert.Equal(t, http.StatusOK, resp.StatusCode)
+      assert.Equal(t, uint64(1), user.ID)
 		})
 }
 ```
@@ -118,9 +119,6 @@ type Response struct {
 ```go
 func (r *Response) To(dest any) error
 ```
-
-
-
 
 ***
 [1] 清理环境基于 Run 函数的 defer，如果出现 Fatal 等不可 recover 的错误，可能会导致清理环境失败。
