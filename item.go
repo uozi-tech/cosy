@@ -32,7 +32,12 @@ func (c *Ctx[T]) Get() {
 
     // scan into custom struct
     if c.scan != nil {
-        c.JSON(http.StatusOK, c.scan(db))
+		r := c.scan(db)
+		if err, ok := r.(error); ok {
+			errHandler(c.Context, err)
+			return
+		}
+        c.JSON(http.StatusOK, r)
         return
     }
 
