@@ -25,7 +25,7 @@ require (
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.0
 	go.uber.org/zap v1.27.0
-	gopkg.in/guregu/null.v4 v4.0.0
+	gopkg.in/guregu/null.v5 v5.0.0
 	gopkg.in/ini.v1 v1.67.0
 	gorm.io/gen v0.3.26
 	gorm.io/gorm v1.25.12
