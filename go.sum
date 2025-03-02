@@ -234,6 +234,8 @@ github.com/uozi-tech/cosy-driver-postgres v0.2.1 h1:OICakGuT+omva6QOJCxTJ5Lfr7CG
 github.com/uozi-tech/cosy-driver-postgres v0.2.1/go.mod h1:eAy1A89yHbAEfjkhNAifaJQk172NqrNoRyRtFcZc9Go=
 github.com/uozi-tech/cosy-driver-sqlite v0.2.0 h1:eTpIMyGoFUK4JcaiKfJHD5AyiM6vtCwN98c7Bz5n25o=
 github.com/uozi-tech/cosy-driver-sqlite v0.2.0/go.mod h1:87a6mzn5IuEtIR4z7U4Ey8eKLGfNEOSkv7kPQlbNQgM=
+github.com/uozi-tech/cosy-driver-sqlite v0.2.1 h1:W+Z4pY25PSJCeReqroG7LIBeffsqotbpHzgqSMqZDIM=
+github.com/uozi-tech/cosy-driver-sqlite v0.2.1/go.mod h1:2ya7Z5P3HzFi1ktfL8gvwaAGx0DDV0bmWxNSNpaLlwo=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
@@ -370,6 +372,8 @@ gorm.io/driver/postgres v1.5.9/go.mod h1:DX3GReXH+3FPWGrrgffdvCk3DQ1dwDPdmbenSkw
 gorm.io/driver/sqlite v1.5.0/go.mod h1:kDMDfntV9u/vuMmz8APHtHF0b4nyBB7sfCieC6G8k8I=
 gorm.io/driver/sqlite v1.5.6 h1:fO/X46qn5NUEEOZtnjJRWRzZMe8nqJiQ9E+0hi+hKQE=
 gorm.io/driver/sqlite v1.5.6/go.mod h1:U+J8craQU6Fzkcvu8oLeAQmi50TkwPEhHDEjQZXDah4=
+gorm.io/driver/sqlite v1.5.7 h1:8NvsrhP0ifM7LX9G4zPB97NwovUakUxc+2V2uuf3Z1I=
+gorm.io/driver/sqlite v1.5.7/go.mod h1:U+J8craQU6Fzkcvu8oLeAQmi50TkwPEhHDEjQZXDah4=
 gorm.io/driver/sqlserver v1.5.4 h1:xA+Y1KDNspv79q43bPyjDMUgHoYHLhXYmdFcYPobg8g=
 gorm.io/driver/sqlserver v1.5.4/go.mod h1:+frZ/qYmuna11zHPlh5oc2O6ZA/lS88Keb0XSH1Zh/g=
 gorm.io/gen v0.3.26 h1:sFf1j7vNStimPRRAtH4zz5NiHM+1dr6eA9aaRdplyhY=
