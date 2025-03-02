@@ -1,8 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.23.0
-
-toolchain go1.23.4
+go 1.24.0
 
 require (
 	github.com/bsm/redislock v0.9.4
@@ -24,7 +22,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/uozi-tech/cosy-driver-mysql v0.2.2
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
-	github.com/uozi-tech/cosy-driver-sqlite v0.2.0
+	github.com/uozi-tech/cosy-driver-sqlite v0.2.1
 	go.uber.org/zap v1.27.0
 	gopkg.in/ini.v1 v1.67.0
 	gorm.io/gen v0.3.26
@@ -80,7 +78,7 @@ require (
 	gorm.io/datatypes v1.2.5 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/driver/postgres v1.5.9 // indirect
-	gorm.io/driver/sqlite v1.5.6 // indirect
+	gorm.io/driver/sqlite v1.5.7 // indirect
 	gorm.io/hints v1.1.2 // indirect
 	gorm.io/plugin/dbresolver v1.5.3 // indirect
 )
