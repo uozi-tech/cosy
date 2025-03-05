@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.24.0
+go 1.24.1
 
 require (
 	github.com/bsm/redislock v0.9.4
