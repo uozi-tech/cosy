@@ -3,9 +3,10 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/bsm/redislock"
 	"github.com/uozi-tech/cosy/redis"
-	"time"
 )
 
 // mainService(m) -> redisList(1) -> microService(n)
@@ -51,6 +52,9 @@ func (q *Queue[T]) produce(dataStr string) (err error) {
 			return err
 		}
 	}
+
+	// Publish notification that new data is available
+	redis.Publish("queue_notify:"+q.listName, "new_task")
 
 	return nil
 }
@@ -122,4 +126,50 @@ func (q *Queue[T]) Consume(data *T) error {
 func (q *Queue[T]) Len() (result int64) {
 	result, _ = redis.LLen(q.listName)
 	return
+}
+
+// Subscribe creates a subscription to receive new task notifications
+// Returns a channel that will receive task data whenever new tasks are added
+func (q *Queue[T]) Subscribe(ctx context.Context) (<-chan T, error) {
+	taskChan := make(chan T)
+	pubsub := redis.Subscribe("queue_notify:" + q.listName)
+
+	// Handle messages in a goroutine
+	go func() {
+		defer pubsub.Close()
+		defer close(taskChan)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-pubsub.Channel():
+				// When notification received, consume task from queue
+				var task T
+				err := q.Consume(&task)
+				if err == nil {
+					taskChan <- task
+				}
+			}
+		}
+	}()
+
+	return taskChan, nil
+}
+
+// Clean completely empties the queue
+func (q *Queue[T]) Clean() error {
+	// Get all elements first
+	elements, err := redis.GetList(q.listName)
+	if err != nil {
+		return err
+	}
+
+	// If queue is already empty, return
+	if len(elements) == 0 {
+		return nil
+	}
+
+	// Delete the queue
+	return redis.Del(q.listName)
 }
