@@ -144,12 +144,30 @@ func (q *Queue[T]) Subscribe(ctx context.Context) (<-chan T, error) {
 			case <-ctx.Done():
 				return
 			case <-pubsub.Channel():
-				// When notification received, consume task from queue
+				// When notification received, try to acquire lock before consuming
+				err := q.Lock()
+				if err != nil {
+					// If lock acquisition fails, continue to next iteration
+					continue
+				}
+
+				// Check if queue has any messages before attempting to consume
+				if q.Len() == 0 {
+					// Queue is empty, release lock and continue
+					_ = q.Unlock()
+					continue
+				}
+
+				// Try to consume task from queue
 				var task T
-				err := q.Consume(&task)
+				err = q.Consume(&task)
 				if err == nil {
+					// Only send to channel if successfully consumed
 					taskChan <- task
 				}
+
+				// Always release the lock
+				_ = q.Unlock()
 			}
 		}
 	}()
