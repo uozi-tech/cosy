@@ -2,6 +2,8 @@ package sandbox
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	mysql "github.com/uozi-tech/cosy-driver-mysql"
@@ -15,7 +17,6 @@ import (
 	"github.com/uozi-tech/cosy/router"
 	"github.com/uozi-tech/cosy/settings"
 	"github.com/uozi-tech/cosy/sonyflake"
-	"sync"
 )
 
 var mutex sync.Mutex
@@ -97,24 +98,26 @@ func (t *Instance) setUp() {
 }
 
 func (t *Instance) cleanUp() {
-	model.ClearCollection()
-	// clean scope* mysql table
-	db := model.UseDB()
-	var tables []string
-	db.Raw("SELECT table_name FROM information_schema.tables WHERE table_name LIKE ?",
-		settings.DataBaseSettings.TablePrefix+"%").Pluck("table_name", &tables)
+	if t.databaseType != "" {
+		model.ClearCollection()
+		// clean scope* mysql table
+		db := model.UseDB()
+		var tables []string
+		db.Raw("SELECT table_name FROM information_schema.tables WHERE table_name LIKE ?",
+			settings.DataBaseSettings.TablePrefix+"%").Pluck("table_name", &tables)
 
-	for _, table := range tables {
-		var dropSQL string
+		for _, table := range tables {
+			var dropSQL string
 
-		if t.databaseType == "pgsql" {
-			dropSQL = fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", table)
-		} else {
-			dropSQL = fmt.Sprintf("DROP TABLE IF EXISTS `%s`", table)
-		}
+			if t.databaseType == "pgsql" {
+				dropSQL = fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", table)
+			} else {
+				dropSQL = fmt.Sprintf("DROP TABLE IF EXISTS `%s`", table)
+			}
 
-		if err := db.Exec(dropSQL).Error; err != nil {
-			logger.Error("failed to drop table %s: %v", table, err)
+			if err := db.Exec(dropSQL).Error; err != nil {
+				logger.Error("failed to drop table %s: %v", table, err)
+			}
 		}
 	}
 	// clean scope* redis key
