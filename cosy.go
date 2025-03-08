@@ -1,11 +1,12 @@
 package cosy
 
 import (
+	"strings"
+
 	"github.com/elliotchance/orderedmap/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
-	"strings"
 )
 
 type Ctx[T any] struct {
@@ -49,6 +50,7 @@ type Ctx[T any] struct {
 func Core[T any](c *gin.Context) *Ctx[T] {
 	return &Ctx[T]{
 		Context:                  c,
+		rules:                    make(gin.H),
 		gormScopes:               make([]func(tx *gorm.DB) *gorm.DB, 0),
 		beforeExecuteHookFunc:    make([]func(ctx *Ctx[T]), 0),
 		beforeDecodeHookFunc:     make([]func(ctx *Ctx[T]), 0),
@@ -72,9 +74,8 @@ func (c *Ctx[T]) SetItemKey(key string) *Ctx[T] {
 }
 
 func (c *Ctx[T]) SetValidRules(rules gin.H) *Ctx[T] {
-	c.rules = rules
-
 	for k, rule := range rules {
+		c.rules[k] = rule
 		rule := cast.ToString(rule)
 		if strings.Contains(rule, "db_unique") {
 			c.unique = append(c.unique, k)
