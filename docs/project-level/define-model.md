@@ -33,7 +33,7 @@ type User struct {
 
 ### update
 
-配置修改时的验证规则，比如这个字段可以不存在，或者不存在时不进行后续校验，那么就可以设置 `add:omitempty,oneof=1 1000`。
+配置修改时的验证规则，比如这个字段可以不存在，或者不存在时不进行后续校验，那么就可以设置 `update:omitempty,oneof=1 1000`。
 
 ### all
 
