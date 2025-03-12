@@ -132,6 +132,20 @@ func (q *Queue[T]) Len() (result int64) {
 // Returns a channel that will receive task data whenever new tasks are added
 func (q *Queue[T]) Subscribe(ctx context.Context) (<-chan T, error) {
 	taskChan := make(chan T)
+	go func() {
+		err := q.Lock()
+		if err == nil {
+			for q.Len() > 0 {
+				var task T
+				err = q.Consume(&task)
+				if err == nil {
+					taskChan <- task
+				}
+			}
+			_ = q.Unlock()
+		}
+	}()
+
 	pubsub := redis.Subscribe("queue_notify:" + q.listName)
 
 	// Handle messages in a goroutine
