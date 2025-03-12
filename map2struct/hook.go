@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/guregu/null/v5"
+	"github.com/guregu/null/v6"
 	"github.com/jackc/pgtype"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
