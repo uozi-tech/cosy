@@ -1,10 +1,11 @@
 package cosy
 
 import (
+	"net/http"
+
 	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 func (c *Ctx[T]) PermanentlyDelete() {
@@ -17,10 +18,6 @@ func (c *Ctx[T]) Destroy() {
 		return
 	}
 	c.ID = c.GetParamID()
-
-	if c.beforeExecuteHook() {
-		return
-	}
 
 	db := model.UseDB()
 
@@ -45,6 +42,10 @@ func (c *Ctx[T]) Destroy() {
 		return
 	}
 
+	if c.beforeExecuteHook() {
+		return
+	}
+
 	err = result.Delete(&c.OriginModel).Error
 	if err != nil {
 		errHandler(c.Context, err)
@@ -64,10 +65,6 @@ func (c *Ctx[T]) Recover() {
 	}
 	c.ID = c.GetParamID()
 
-	if c.beforeExecuteHook() {
-		return
-	}
-
 	db := model.UseDB()
 
 	result := db.Unscoped()
@@ -83,6 +80,10 @@ func (c *Ctx[T]) Recover() {
 
 	if err != nil {
 		errHandler(c.Context, err)
+		return
+	}
+
+	if c.beforeExecuteHook() {
 		return
 	}
 
