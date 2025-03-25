@@ -1,5 +1,14 @@
 # API 参考
 
+## 初始化
+```go
+func Init(mode string)
+```
+
+初始化日志系统，其中`mode`参数可以是：
+- `gin.DebugMode`: 调试模式，输出所有日志级别
+- `gin.ReleaseMode`: 发布模式，仅输出Info级别及以上日志
+
 ## 获取实例
 ```go
 func GetLogger() *zap.SugaredLogger
@@ -14,6 +23,13 @@ logger.GetLogger().WithOptions(zap.AddCallerSkip(1)).Errorln(err)
 ```
 
 使用 `WithOptions(zap.AddCallerSkip(1))` 可以使得输出的调用栈是调用该封装函数的文件和行号。
+
+## 同步缓冲区
+```go
+func Sync()
+```
+
+同步并刷新所有缓冲的日志条目。在程序退出前调用可确保所有日志被写入。
 
 ## Debug
 ```go

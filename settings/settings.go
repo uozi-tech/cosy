@@ -1,10 +1,11 @@
 package settings
 
 import (
-	"github.com/elliotchance/orderedmap/v3"
-	"gopkg.in/ini.v1"
 	"log"
 	"reflect"
+
+	"github.com/elliotchance/orderedmap/v3"
+	"gopkg.in/ini.v1"
 )
 
 var (
@@ -20,6 +21,7 @@ func init() {
 	sections.Set("database", DataBaseSettings)
 	sections.Set("redis", RedisSettings)
 	sections.Set("sonyflake", SonyflakeSettings)
+	sections.Set("log", LogSettings)
 }
 
 // Register the setting, this should be called before Init
