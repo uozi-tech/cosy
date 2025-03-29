@@ -157,3 +157,29 @@ cErr := e.NewWithParams(500, "跟踪信息 {0} 的错误是 {1}", "foo", "bar")
   "params": ["foo", "bar"]
 }
 ```
+
+## 为现有错误附加参数
+
+在 `v1.17.0` 中，我们新增了 `cosy.WrapErrorWithParams` 函数，用于为现有的 `cosy.Error` 类型错误附加额外的参数。
+
+```go
+func WrapErrorWithParams(err error, params ...string) error
+```
+
+这个函数可以在处理错误的过程中，根据上下文动态地为错误添加参数，例如：
+
+```go
+// 创建一个基础错误
+baseErr := cosy.NewError(500, "处理时发生错误 {0}")
+
+// 在某处处理时，为错误附加参数
+func processItem() error {
+    // 一些操作...
+    if err != nil {
+        return cosy.WrapErrorWithParams(baseErr, err.Error())
+    }
+    return nil
+}
+```
+
+如果传入的不是 `cosy.Error` 类型的错误，函数会原样返回错误而不做任何修改。

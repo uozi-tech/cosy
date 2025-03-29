@@ -3,13 +3,14 @@ package cosy
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/settings"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"net/http"
-	"strings"
 )
 
 type ErrorScope struct {
@@ -72,6 +73,21 @@ func NewErrorWithParams(code int32, message string, params ...string) error {
 		Message: message,
 		Params:  params,
 	}
+}
+
+// WrapErrorWithParams adds parameters to an existing error
+func WrapErrorWithParams(err error, params ...string) error {
+	var cErr *Error
+	if errors.As(err, &cErr) {
+		newErr := &Error{
+			Scope:   cErr.Scope,
+			Code:    cErr.Code,
+			Message: cErr.Message,
+			Params:  append(cErr.Params, params...),
+		}
+		return newErr
+	}
+	return err
 }
 
 // errorResp error response
