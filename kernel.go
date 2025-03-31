@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/uozi-tech/cosy/cron"
@@ -14,11 +20,6 @@ import (
 	"github.com/uozi-tech/cosy/router"
 	"github.com/uozi-tech/cosy/settings"
 	"github.com/uozi-tech/cosy/sonyflake"
-	"net"
-	"net/http"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 var (
@@ -79,9 +80,18 @@ func Boot(confPath string) {
 		}
 	}
 
-	// Start the gin server
+	// Start the server (HTTP or HTTPS)
 	go func() {
-		if err := srv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		var err error
+		if settings.ServerSettings.EnableHTTPS {
+			logger.Info("Starting HTTPS server")
+			err = srv.ServeTLS(listener, settings.ServerSettings.SSLCert, settings.ServerSettings.SSLKey)
+		} else {
+			logger.Info("Starting HTTP server")
+			err = srv.Serve(listener)
+		}
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatalf("listen: %s\n", err)
 		}
 	}()
