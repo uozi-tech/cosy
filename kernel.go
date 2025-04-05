@@ -2,11 +2,13 @@ package cosy
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -23,9 +25,26 @@ import (
 )
 
 var (
-	TCPAddr  *net.TCPAddr
-	listener net.Listener
+	TCPAddr      *net.TCPAddr
+	listener     net.Listener
+	tlsCertCache atomic.Value // Stores tls.Certificate
 )
+
+// loadAndCacheCertificate loads TLS certificate from disk and stores it in cache
+func loadAndCacheCertificate(certFile, keyFile string) error {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return err
+	}
+	tlsCertCache.Store(cert)
+	logger.Info("SSL certificate loaded and cached successfully")
+	return nil
+}
+
+// ReloadTLSCertificate reloads the TLS certificate from disk
+func ReloadTLSCertificate() error {
+	return loadAndCacheCertificate(settings.ServerSettings.SSLCert, settings.ServerSettings.SSLKey)
+}
 
 // SetListener Set the listener
 func SetListener(l net.Listener) {
@@ -80,12 +99,37 @@ func Boot(confPath string) {
 		}
 	}
 
+	// Preload certificate to cache if HTTPS is enabled
+	if settings.ServerSettings.EnableHTTPS {
+		if err := loadAndCacheCertificate(settings.ServerSettings.SSLCert, settings.ServerSettings.SSLKey); err != nil {
+			logger.Fatalf("Failed to load initial SSL certificate: %s\n", err)
+		}
+	}
+
 	// Start the server (HTTP or HTTPS)
 	go func() {
 		var err error
 		if settings.ServerSettings.EnableHTTPS {
-			logger.Info("Starting HTTPS server")
-			err = srv.ServeTLS(listener, settings.ServerSettings.SSLCert, settings.ServerSettings.SSLKey)
+			logger.Info("Starting HTTPS server with certificate hot-reload support")
+
+			// Create TLS config with GetCertificate function for certificate hot-reloading
+			tlsConfig := &tls.Config{
+				GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+					certVal, ok := tlsCertCache.Load().(tls.Certificate)
+					if !ok {
+						logger.Error("No valid certificate found in cache")
+						return nil, errors.New("no valid certificate available")
+					}
+					return &certVal, nil
+				},
+			}
+
+			// Set TLS config
+			srv.TLSConfig = tlsConfig
+
+			// Start HTTPS server without providing cert and key files directly
+			// as they will be loaded via the GetCertificate callback
+			err = srv.ServeTLS(listener, "", "")
 		} else {
 			logger.Info("Starting HTTP server")
 			err = srv.Serve(listener)
@@ -126,6 +170,10 @@ func RegisterInitFunc(f ...func()) {
 // RegisterGoroutine Register syncs functions, this function should be called before kernel boot.
 func RegisterGoroutine(f ...func()) {
 	kernel.RegisterGoroutine(f...)
+}
+
+func RegisterMigrationsBeforeAutoMigrate(m []*gormigrate.Migration) {
+	model.RegisterMigrationsBeforeAutoMigrate(m)
 }
 
 // RegisterMigration Register a migration

@@ -26,15 +26,44 @@ SSLKey      = /path/to/key.pem
 
 ## 工作原理
 
-当 `EnableHTTPS` 设置为 `true` 时，Cosy 将通过 `http.Server.ServeTLS()` 方法启动一个 HTTPS 服务器。否则，将使用 `http.Server.Serve()` 方法启动一个标准的 HTTP 服务器。
+当 `EnableHTTPS` 设置为 `true` 时，Cosy 将使用 TLS 配置启动一个 HTTPS 服务器。否则，将使用 `http.Server.Serve()` 方法启动一个标准的 HTTP 服务器。
+
+Cosy 现在支持证书热重载，这意味着您可以更新证书文件而不需要重启服务器。系统会使用缓存机制来存储证书，以优化性能。
 
 ```go
-if settings.ServerSettings.EnableHTTPS {
-    logger.Info("Starting HTTPS server")
-    err = srv.ServeTLS(listener, settings.ServerSettings.SSLCert, settings.ServerSettings.SSLKey)
-} else {
-    logger.Info("Starting HTTP server")
-    err = srv.Serve(listener)
+// 证书热重载机制摘要
+tlsConfig := &tls.Config{
+    GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+        certVal, ok := tlsCertCache.Load().(tls.Certificate)
+        if !ok {
+            return nil, errors.New("no valid certificate available")
+        }
+        return &certVal, nil
+    },
+}
+```
+
+### 证书热重载
+
+当您更新了证书文件后，可以通过调用 `ReloadTLSCertificate()` 函数来重新加载证书：
+
+```go
+// 手动重载证书示例
+if err := cosy.ReloadTLSCertificate(); err != nil {
+    logger.Error("无法重新加载证书:", err)
+}
+```
+
+您也可以创建一个定时任务，定期自动重新加载证书：
+
+```go
+// 在应用程序初始化时注册一个每天自动重载证书的任务
+func init() {
+    cron.RegisterTask("0 0 * * *", func() {
+        if err := cosy.ReloadTLSCertificate(); err != nil {
+            logger.Error("自动重载证书失败:", err)
+        }
+    })
 }
 ```
 
