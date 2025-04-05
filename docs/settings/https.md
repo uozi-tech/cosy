@@ -54,19 +54,6 @@ if err := cosy.ReloadTLSCertificate(); err != nil {
 }
 ```
 
-您也可以创建一个定时任务，定期自动重新加载证书：
-
-```go
-// 在应用程序初始化时注册一个每天自动重载证书的任务
-func init() {
-    cron.RegisterTask("0 0 * * *", func() {
-        if err := cosy.ReloadTLSCertificate(); err != nil {
-            logger.Error("自动重载证书失败:", err)
-        }
-    })
-}
-```
-
 ## 获取 SSL 证书
 
 ### 开发环境

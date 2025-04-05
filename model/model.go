@@ -70,13 +70,15 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 		}
 	}
 
+	migrate(db, migrationsAfterAutoMigrate)
+
 	err = db.AutoMigrate(GenerateAllModel()...)
 
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	migrate(db)
+	migrate(db, migrationsBeforeAutoMigrate)
 
 	ResolvedModels()
 

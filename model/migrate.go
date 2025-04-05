@@ -15,9 +15,12 @@ func (e *WarringError) Error() string {
 	return e.Message
 }
 
-var migrations []*gormigrate.Migration
+var (
+	migrationsBeforeAutoMigrate []*gormigrate.Migration
+	migrationsAfterAutoMigrate  []*gormigrate.Migration
+)
 
-func migrate(db *gorm.DB) {
+func migrate(db *gorm.DB, migrations []*gormigrate.Migration) {
 	if len(migrations) == 0 {
 		return
 	}
@@ -33,7 +36,11 @@ func migrate(db *gorm.DB) {
 	}
 }
 
+func RegisterMigrationsBeforeAutoMigrate(m []*gormigrate.Migration) {
+	migrationsBeforeAutoMigrate = append(migrationsBeforeAutoMigrate, m...)
+}
+
 // RegisterMigration register migration
 func RegisterMigration(m []*gormigrate.Migration) {
-	migrations = append(migrations, m...)
+	migrationsAfterAutoMigrate = append(migrationsAfterAutoMigrate, m...)
 }
