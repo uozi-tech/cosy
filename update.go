@@ -1,13 +1,14 @@
 package cosy
 
 import (
+	"net/http"
+	"reflect"
+
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/map2struct"
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"net/http"
-	"reflect"
 )
 
 func (c *Ctx[T]) SetNextHandler(handler gin.HandlerFunc) *Ctx[T] {

@@ -36,7 +36,7 @@ func loadAndCacheCertificate(certFile, keyFile string) error {
 	if err != nil {
 		return err
 	}
-	tlsCertCache.Store(cert)
+	tlsCertCache.Store(&cert)
 	logger.Info("SSL certificate loaded and cached successfully")
 	return nil
 }
@@ -115,12 +115,12 @@ func Boot(confPath string) {
 			// Create TLS config with GetCertificate function for certificate hot-reloading
 			tlsConfig := &tls.Config{
 				GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					certVal, ok := tlsCertCache.Load().(tls.Certificate)
+					certVal, ok := tlsCertCache.Load().(*tls.Certificate)
 					if !ok {
 						logger.Error("No valid certificate found in cache")
 						return nil, errors.New("no valid certificate available")
 					}
-					return &certVal, nil
+					return certVal, nil
 				},
 			}
 
