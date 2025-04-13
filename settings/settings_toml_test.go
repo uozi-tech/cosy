@@ -1,5 +1,4 @@
-//go:build !toml_settings
-
+//go:build toml_settings
 package settings
 
 import (
@@ -12,7 +11,7 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	ConfPath = "app.testing.ini"
+	ConfPath = "app.testing.toml"
 
 	file, err := os.Create(ConfPath)
 	if err != nil {
@@ -20,7 +19,7 @@ func TestIntegration(t *testing.T) {
 	}
 	defer file.Close()
 
-	Init("app.testing.ini")
+	Init("app.testing.toml")
 
 	jwtSecret := uuid.New().String()
 
@@ -44,6 +43,31 @@ func TestIntegration(t *testing.T) {
 	SonyflakeSettings.MachineID = 1
 	SonyflakeSettings.StartTime = time.Date(2024, 6, 19, 0, 0, 0, 0, time.UTC)
 
+	type wechat = struct {
+		AppID          string
+		AppSecret      string
+		Token          string
+		EncodingAESKey string
+	}
+
+	var wechatSettings = map[string]wechat{}
+
+	Register("wechat", &wechatSettings)
+
+	wechatSettings["mini_program"] = wechat{
+		AppID:          "wx1234567890",
+		AppSecret:      "wx1234567890",
+		Token:          "wx1234567890",
+		EncodingAESKey: "wx1234567890",
+	}
+
+	wechatSettings["my"] = wechat{
+		AppID:          "wx1234567890",
+		AppSecret:      "wx1234567890",
+		Token:          "wx1234567890",
+		EncodingAESKey: "wx1234567890",
+	}
+
 	err = Save()
 	if err != nil {
 		t.Fatal(err)
@@ -53,8 +77,7 @@ func TestIntegration(t *testing.T) {
 
 	assert := assert.New(t)
 
-	assert.NotNil(Conf)
-	assert.Equal("app.testing.ini", ConfPath)
+	assert.Equal("app.testing.toml", ConfPath)
 	assert.Equal(jwtSecret, AppSettings.JwtSecret)
 	assert.Equal(20, AppSettings.PageSize)
 	assert.Equal("127.0.0.1", ServerSettings.Host)
@@ -71,4 +94,7 @@ func TestIntegration(t *testing.T) {
 
 	assert.Equal(time.Date(2024, 6, 19, 0, 0, 0, 0, time.UTC), SonyflakeSettings.StartTime)
 	assert.Equal(uint16(1), SonyflakeSettings.MachineID)
+
+	assert.Equal("wx1234567890", wechatSettings["mini_program"].AppID)
+	assert.Equal("wx1234567890", wechatSettings["my"].AppID)
 }

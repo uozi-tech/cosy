@@ -24,9 +24,13 @@ func main() {
 
 对于项目级简化，则不需要手动初始化。
 
-Cosy 使用 ini 作为配置文件格式，以下是一个配置文件的示例。
+## 配置文件格式
 
-默认情况下，将 `app.ini` 放在与二进制文件相同的目录中既可。
+Cosy 支持两种配置文件格式：INI 和 TOML。默认情况下使用 INI 格式，但您可以通过构建标签选择使用 TOML 格式。
+
+### 使用 INI 格式 (默认)
+
+默认情况下，将 `app.ini` 放在与二进制文件相同的目录中即可。
 
 ```ini
 [app]
@@ -57,6 +61,45 @@ DB = 0
 Prefix = my-prefix
 ```
 
+### 使用 TOML 格式
+
+如果要使用 TOML 格式，需要在构建时添加 `toml_settings` 标签：
+
+```bash
+go build -tags toml_settings
+```
+
+然后将 `app.toml` 放在与二进制文件相同的目录中：
+
+```toml
+[app]
+PageSize = 20
+JwtSecret = "39B4F75C-8E51-4E9C-87F5-94E40447B0E0"
+
+[server]
+Host = "127.0.0.1"
+Port = 9000
+RunMode = "debug"
+BaseUrl = "https://api.example.com"
+EnableHTTPS = false
+SSLCert = "/path/to/certificate.pem"
+SSLKey = "/path/to/key.pem"
+
+[database]
+User = "postgres"
+Password = ""
+Host = "127.0.0.1"
+Port = 5432
+Name = "my-database"
+TablePrefix = "t_"
+
+[redis]
+Addr = "127.0.0.1:6379"
+Password = ""
+DB = 0
+Prefix = "my-prefix"
+```
+
 ## HTTPS 支持
 
 Cosy 支持 HTTPS，可通过以下配置项启用：
@@ -69,10 +112,16 @@ Cosy 支持 HTTPS，可通过以下配置项启用：
 
 对于开发环境，可以使用自签名证书；对于生产环境，建议使用由受信任的证书颁发机构签发的证书。
 
+## 指定配置文件
+
 如果需要指定不同的配置文件路径，可以使用 `-config` 参数。
 
-假设有一个二进制文件 main
+假设有一个二进制文件 main：
 
-```go
+```bash
+# 使用 INI 格式
 ./main -config app.testing.ini
+
+# 使用 TOML 格式 (如果使用 toml_settings 构建标签)
+./main -config app.testing.toml
 ```

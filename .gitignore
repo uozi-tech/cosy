@@ -1,5 +1,6 @@
 app.ini
 app.testing.ini
+app.testing.toml
 .DS_Store
 docs/.vitepress/cache
 docs/.vitepress/dist

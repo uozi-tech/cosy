@@ -7,6 +7,10 @@
 func ProtectedFill(targetSettings interface{}, newSettings interface{})
 ```
 
+::: info 注意
+无论使用 INI 还是 TOML 配置格式（通过 `toml_settings` 构建标签选择），`ProtectedFill` 函数的行为都是一致的。
+:::
+
 ::: warning 警告
 ProtectedFill 并不会对设置的值进行转义，因此您需要确保传入的字符串是安全的，可以使用 safety_text 等验证规则来避免设置文件被注入。
 :::
@@ -37,6 +41,13 @@ func UpdateSettings(c *gin.Context) {
         return
     }
     settings.ProtectedFill(&settings.ServerSettings, &json.Server)
+
+    // 保存设置到配置文件 (支持 INI 和 TOML 两种格式)
+    err := settings.Save()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
 
     c.JSON(http.StatusOK, settings.ServerSettings)
 }

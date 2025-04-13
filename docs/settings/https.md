@@ -4,7 +4,11 @@ Cosy 框架提供了内置的 HTTPS 支持，允许您的应用程序通过安�
 
 ## 配置项
 
-在 `app.ini` 配置文件的 `[server]` 部分，您可以设置以下与 HTTPS 相关的配置选项：
+Cosy 支持 INI 和 TOML 两种配置格式。以下是在两种格式中设置 HTTPS 相关选项的示例：
+
+### INI 格式配置 (默认)
+
+在 `app.ini` 配置文件的 `[server]` 部分：
 
 ```ini
 [server]
@@ -15,7 +19,21 @@ BaseUrl     = https://api.example.com
 EnableHTTPS = true
 SSLCert     = /path/to/certificate.pem
 SSLKey      = /path/to/key.pem
+```
 
+### TOML 格式配置 (使用 toml_settings 构建标签)
+
+在 `app.toml` 配置文件的 `[server]` 部分：
+
+```toml
+[server]
+Host = "127.0.0.1"
+Port = 9443
+RunMode = "debug"
+BaseUrl = "https://api.example.com"
+EnableHTTPS = true
+SSLCert = "/path/to/certificate.pem"
+SSLKey = "/path/to/key.pem"
 ```
 
 | 配置项       | 类型    | 描述                           |

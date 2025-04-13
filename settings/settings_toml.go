@@ -1,15 +1,17 @@
+//go:build toml_settings
+
 package settings
 
 import (
 	"log"
+	"os"
 	"reflect"
 
+	"github.com/BurntSushi/toml"
 	"github.com/elliotchance/orderedmap/v3"
-	"gopkg.in/ini.v1"
 )
 
 var (
-	Conf     *ini.File
 	ConfPath string
 )
 
@@ -37,12 +39,37 @@ func Init(confPath string) {
 
 // Load the settings
 func load() (err error) {
-	Conf, err = ini.LoadSources(ini.LoadOptions{
-		Loose:        true,
-		AllowShadows: true,
-	}, ConfPath)
+	data, err := os.ReadFile(ConfPath)
+	if err != nil {
+		return err
+	}
 
-	return
+	// Create a map to temporarily hold the parsed data
+	tmpConfig := make(map[string]interface{})
+	err = toml.Unmarshal(data, &tmpConfig)
+	if err != nil {
+		return err
+	}
+
+	// Map each section to its corresponding struct
+	for name, sectionData := range tmpConfig {
+		ptr, ok := sections.Get(name)
+		if ok {
+			// Convert section data to TOML again
+			bytes, err := toml.Marshal(sectionData)
+			if err != nil {
+				return err
+			}
+
+			// Unmarshal into the target struct
+			err = toml.Unmarshal(bytes, ptr)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // Reload the settings
@@ -54,27 +81,19 @@ func Reload() error {
 func setup() {
 	err := load()
 	if err != nil {
-		log.Fatalf("setting.init, fail to parse 'app.ini': %v", err)
-	}
-	for name, ptr := range sections.AllFromFront() {
-		err = MapTo(name, ptr)
-		if err != nil {
-			log.Fatalf("setting.MapTo %s err: %v", name, err)
-		}
+		log.Fatalf("setting.init, fail to parse TOML file: %v", err)
 	}
 }
 
-// MapTo the settings
+// MapTo the settings (kept for backward compatibility)
 func MapTo(section string, v any) error {
-	return Conf.Section(section).MapTo(v)
+	// No need to do anything as load() already mapped to the structs
+	return nil
 }
 
-// ReflectFrom the settings
+// ReflectFrom the settings (kept for backward compatibility)
 func ReflectFrom(section string, v any) {
-	err := Conf.Section(section).ReflectFrom(v)
-	if err != nil {
-		log.Fatalf("Cfg.ReflectFrom %s err: %v", section, err)
-	}
+	// Nothing to do as we're directly modifying the struct pointers
 }
 
 // ProtectedFill fill the target settings with new settings
@@ -93,15 +112,26 @@ func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
 
 // Save the settings
 func Save() (err error) {
+	// Create a map to hold all sections for saving
+	configToSave := make(map[string]interface{})
+
 	for name, ptr := range sections.AllFromFront() {
-		ReflectFrom(name, ptr)
+		configToSave[name] = ptr
 	}
-	err = Conf.SaveTo(ConfPath)
+
+	f, err := os.Create(ConfPath)
 	if err != nil {
-		return
+		return err
 	}
-	setup()
-	return
+	defer f.Close()
+
+	encoder := toml.NewEncoder(f)
+	err = encoder.Encode(configToSave)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // WithoutRedis remove the redis settings
