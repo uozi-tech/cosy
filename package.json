@@ -9,6 +9,6 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "vite": "^6.2.5"
+    "vite": "^6.3.0"
   }
 }
