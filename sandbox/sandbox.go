@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -30,6 +31,7 @@ type Instance struct {
 	databaseType string
 
 	client *Client
+	ctx    context.Context
 }
 
 func NewInstance(configPath, databaseType string) *Instance {
@@ -38,6 +40,7 @@ func NewInstance(configPath, databaseType string) *Instance {
 		confPath:     configPath,
 		databaseType: databaseType,
 		client:       newClient(),
+		ctx:          context.Background(),
 	}
 }
 
@@ -81,7 +84,7 @@ func (t *Instance) setUp() {
 	cron.Start()
 
 	// Kernel boot
-	kernel.Boot()
+	kernel.Boot(t.ctx)
 
 	// Connect to database
 	switch t.databaseType {

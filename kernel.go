@@ -82,7 +82,7 @@ func Boot(confPath string) {
 	router.Init()
 
 	// Kernel boot
-	kernel.Boot()
+	kernel.Boot(ctx)
 
 	addr := fmt.Sprintf("%s:%d", settings.ServerSettings.Host, settings.ServerSettings.Port)
 	srv := &http.Server{
@@ -168,7 +168,7 @@ func RegisterInitFunc(f ...func()) {
 }
 
 // RegisterGoroutine Register syncs functions, this function should be called before kernel boot.
-func RegisterGoroutine(f ...func()) {
+func RegisterGoroutine(f ...func(context.Context)) {
 	kernel.RegisterGoroutine(f...)
 }
 

@@ -1,11 +1,13 @@
 package kernel
 
+import "context"
+
 var async []func()
 
-var syncs []func()
+var syncs []func(context.Context)
 
 // Boot the kernel
-func Boot() {
+func Boot(ctx context.Context) {
 	defer recovery()
 
 	for _, v := range async {
@@ -13,7 +15,7 @@ func Boot() {
 	}
 
 	for _, v := range syncs {
-		go v()
+		go v(ctx)
 	}
 }
 
@@ -23,6 +25,6 @@ func RegisterInitFunc(f ...func()) {
 }
 
 // RegisterGoroutine Register syncs functions, this function should be called before kernel boot.
-func RegisterGoroutine(f ...func()) {
+func RegisterGoroutine(f ...func(context.Context)) {
 	syncs = append(syncs, f...)
 }
