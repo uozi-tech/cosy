@@ -3,6 +3,7 @@ package model
 import (
 	"reflect"
 	"strings"
+	"sync"
 )
 
 var collection []any
@@ -37,7 +38,10 @@ type ResolvedModel struct {
 	OrderedFields []*ResolvedModelField
 }
 
-var resolvedModelMap = make(map[string]*ResolvedModel)
+var (
+	resolvedModelMap = make(map[string]*ResolvedModel)
+	mu               sync.RWMutex
+)
 
 func deepResolve(r *ResolvedModel, m reflect.Type) {
 	for i := 0; i < m.NumField(); i++ {
@@ -112,12 +116,17 @@ func ResolvedModels() {
 
 		deepResolve(r, m)
 
+		mu.Lock()
 		resolvedModelMap[r.Name] = r
+		mu.Unlock()
 	}
 }
 
 // GetResolvedModel get resolved model from resolvedModelMap
 func GetResolvedModel[T any]() *ResolvedModel {
 	name := reflect.TypeFor[T]().Name()
+
+	mu.RLock()
+	defer mu.RUnlock()
 	return resolvedModelMap[name]
 }
