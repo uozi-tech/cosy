@@ -1,13 +1,14 @@
 package model
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/settings"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	"time"
 )
 
 var (
@@ -70,7 +71,7 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 		}
 	}
 
-	migrate(db, migrationsAfterAutoMigrate)
+	migrate(db, migrationsBeforeAutoMigrate)
 
 	err = db.AutoMigrate(GenerateAllModel()...)
 
@@ -78,7 +79,7 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 		logger.Fatal(err)
 	}
 
-	migrate(db, migrationsBeforeAutoMigrate)
+	migrate(db, migrationsAfterAutoMigrate)
 
 	ResolvedModels()
 
