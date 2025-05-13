@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/BurntSushi/toml v1.5.0
@@ -28,7 +28,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gen v0.3.27
-	gorm.io/gorm v1.26.0
+	gorm.io/gorm v1.26.1
 )
 
 require (
