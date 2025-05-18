@@ -19,6 +19,7 @@ require (
 	github.com/samber/lo v1.50.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake v1.2.1
+	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.8.0
 	github.com/stretchr/testify v1.10.0
 	github.com/uozi-tech/cosy-driver-mysql v0.2.2
