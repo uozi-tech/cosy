@@ -68,6 +68,63 @@ func setUserID(ctx *cosy.Ctx[model.Post]) {
 }
 ```
 
+## 事务支持
+
+如果需要在创建过程中使用事务，可以使用 `WithTransaction` 方法：
+
+```go
+func CreateUser(c *gin.Context) {
+   core := cosy.Core[model.User](c).
+      SetValidRules(gin.H{
+         "name": "required",
+         "email": "required",
+         // ... 其他字段
+      }).
+      WithTransaction()
+
+   core.BeforeExecuteHook(createUserRelatedData).Create()
+}
+```
+
+使用事务后，如果在任何一个钩子中出现错误或者调用了 `Abort` 方法，事务将自动回滚。
+
+在钩子函数中，你可以通过 `c.Tx` 获取事务对象（*gorm.DB），用于在同一事务中执行其他数据库操作：
+
+```go
+func createUserRelatedData(ctx *cosy.Ctx[model.User]) {
+   // 使用 ctx.Tx 执行其他数据库操作，这些操作将在同一事务中进行
+
+   // 创建用户默认设置
+   userSetting := model.UserSetting{
+      UserID: ctx.Model.ID,
+      Theme: "default",
+      Language: "zh-CN",
+   }
+
+   err := ctx.Tx.Create(&userSetting).Error
+   if err != nil {
+      ctx.AbortWithError(err) // 如果出错，中止并回滚事务
+   }
+}
+```
+
+## 关联关系处理
+
+默认情况下，创建操作会忽略关联关系。如果需要在创建时包含关联关系，可以使用 `WithAssociations` 方法：
+
+```go
+func CreateUser(c *gin.Context) {
+    core := cosy.Core[model.User](c).SetValidRules(gin.H{
+        "name":  "required",
+        "email": "required",
+        "group": "omitempty",
+        // ... 其他字段
+    })
+
+    core.WithAssociations().Create()
+}
+```
+
 注意，该接口在创建项目后，会再次查询数据库并使用 `Preload(clause.Associations)` 预加载所有的关联。
 
 默认情况下，该接口会返回创建后的记录，如果需要直接跳转到下一个 Gin Handler Func，请使用 `SetNextHandler(c *gin.Context)` 方法。
@@ -89,5 +146,5 @@ func setUserID(ctx *cosy.Ctx[model.Post]) {
     "id": 1,
     "name": "Admin"
   }
-}    
+}
 ```

@@ -26,7 +26,10 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
-	db := model.UseDB()
+	c.Tx = model.UseDB()
+	if c.useTransaction {
+		c.Tx = c.Tx.Begin()
+	}
 
 	if c.beforeDecodeHook() {
 		return
@@ -43,9 +46,9 @@ func (c *Ctx[T]) Create() {
 	}
 
 	if c.skipAssociationsOnCreate {
-		err = db.Omit(clause.Associations).Create(&c.Model).Error
+		err = c.Tx.Omit(clause.Associations).Create(&c.Model).Error
 	} else {
-		err = db.Create(&c.Model).Error
+		err = c.Tx.Create(&c.Model).Error
 	}
 
 	if err != nil {
@@ -53,13 +56,17 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
-	tx := db.Preload(clause.Associations)
+	tx := c.Tx.Preload(clause.Associations)
 	tx = c.resolvePreload(tx)
 	tx = c.resolveJoins(tx)
 	tx.Table(c.table, c.tableArgs...).First(&c.Model)
 
 	if c.executedHook() {
 		return
+	}
+
+	if c.useTransaction {
+		c.Tx.Commit()
 	}
 
 	if c.nextHandler != nil {

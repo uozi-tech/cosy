@@ -7,4 +7,11 @@ func (c *Ctx[T]) AbortWithError(err error) {
 
 func (c *Ctx[T]) Abort() {
 	c.abort = true
+	c.RollbackTransaction()
+}
+
+func (c *Ctx[T]) RollbackTransaction() {
+	if c.useTransaction {
+		c.Tx.Rollback()
+	}
 }

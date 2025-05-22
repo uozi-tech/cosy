@@ -40,13 +40,14 @@ func (c *Ctx[T]) Modify() {
 		return
 	}
 
-	db := model.UseDB()
+	c.Tx = model.UseDB()
+	if c.useTransaction {
+		c.Tx = c.Tx.Begin()
+	}
 
-	result := db
+	c.applyGormScopes(c.Tx)
 
-	c.applyGormScopes(result)
-
-	err := result.Session(&gorm.Session{}).First(&c.OriginModel, c.ID).Error
+	err := c.Tx.Session(&gorm.Session{}).First(&c.OriginModel, c.ID).Error
 	if err != nil {
 		c.AbortWithError(err)
 		return
@@ -71,7 +72,7 @@ func (c *Ctx[T]) Modify() {
 	}
 
 	if c.table != "" {
-		db = db.Table(c.table, c.tableArgs...)
+		c.Tx = c.Tx.Table(c.table, c.tableArgs...)
 	}
 
 	v := reflect.ValueOf(&c.Model).Elem()
@@ -80,13 +81,13 @@ func (c *Ctx[T]) Modify() {
 		idField.Set(reflect.ValueOf(c.ID))
 	}
 
-	err = db.Select(c.GetSelectedFields()).Save(&c.Model).Error
+	err = c.Tx.Select(c.GetSelectedFields()).Save(&c.Model).Error
 	if err != nil {
 		c.AbortWithError(err)
 		return
 	}
 
-	err = db.Preload(clause.Associations).First(&c.Model, c.ID).Error
+	err = c.Tx.Preload(clause.Associations).First(&c.Model, c.ID).Error
 	if err != nil {
 		c.AbortWithError(err)
 		return
@@ -94,6 +95,10 @@ func (c *Ctx[T]) Modify() {
 
 	if c.executedHook() {
 		return
+	}
+
+	if c.useTransaction {
+		c.Tx.Commit()
 	}
 
 	if c.nextHandler != nil {

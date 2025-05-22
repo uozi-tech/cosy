@@ -63,6 +63,85 @@ type User struct {
 | BeforeExecuteHook | 空结构体            | 准备更新的数据   | 客户端提交的数据    |
 | ExecutedHook      | 空结构体            | 准备更新的数据   | 客户端提交的数据    |
 
+## 事务支持
+
+如果需要在批量更新过程中使用事务，可以使用 `WithTransaction` 方法：
+
+```go
+func BatchModifyUser(c *gin.Context) {
+   core := cosy.Core[model.User](c).
+      SetValidRules(gin.H{
+         "status": "omitempty,oneof=1 2 3",
+         "power": "omitempty,oneof=1 1000",
+         // ... 其他字段
+      }).
+      WithTransaction()
+
+   core.BeforeExecuteHook(validateBatchUpdate).BatchModify()
+}
+```
+
+使用事务后，如果在任何一个钩子中出现错误或者调用了 `Abort` 方法，事务将自动回滚。
+
+在钩子函数中，你可以通过 `c.Tx` 获取事务对象（*gorm.DB），用于在同一事务中执行其他数据库操作：
+
+```go
+func logBatchUpdate(ctx *cosy.Ctx[model.User]) {
+   // 使用 ctx.Tx 执行其他数据库操作，这些操作将在同一事务中进行
+
+   // 记录批量更新操作日志
+   for _, id := range ctx.BatchEffectedIDs {
+      log := model.OperationLog{
+         TargetID: id,
+         Action: "batch_update",
+         Status: ctx.Model.Status,
+      }
+
+      err := ctx.Tx.Create(&log).Error
+      if err != nil {
+         ctx.AbortWithError(err) // 如果出错，中止并回滚事务
+         return
+      }
+   }
+}
+```
+
+## 中止操作
+
+在某些情况下，你可能需要中止批量更新操作，例如在业务逻辑验证失败时。可以使用 `Abort` 方法来中止操作：
+
+```go
+func validateBatchUpdate(ctx *cosy.Ctx[model.User]) {
+   // 业务逻辑验证
+   if len(ctx.BatchEffectedIDs) > 100 {
+      ctx.Abort()
+      ctx.JSON(http.StatusBadRequest, gin.H{"error": "一次最多只能修改100条记录"})
+   }
+}
+
+func BatchModifyUser(c *gin.Context) {
+   core := cosy.Core[model.User](c).
+      SetValidRules(gin.H{
+         "status": "omitempty,oneof=1 2 3",
+         // ... 其他字段
+      }).
+      WithTransaction()
+
+   core.BeforeExecuteHook(validateBatchUpdate).BatchModify()
+}
+```
+
+如果使用了事务，调用 `Abort` 方法将会自动回滚事务。如果需要中止操作并返回特定错误，可以使用 `AbortWithError` 方法：
+
+```go
+func validateBatchUpdate(ctx *cosy.Ctx[model.User]) {
+   // 业务逻辑验证
+   if len(ctx.BatchEffectedIDs) > 100 {
+      ctx.AbortWithError(errors.New("一次最多只能修改100条记录"))
+   }
+}
+```
+
 ## 字段保护
 Cosy 会自动过滤掉 ValidRules 中不存在的字段，并且数据库更新时只会使用过滤后的字段列表作为限制条件，
 如果你在 BeforeExecuteHook 中修改了 ctx.Model 的字段，但这些字段不在 ValidRules 中，那么这些字段将不会被更新。

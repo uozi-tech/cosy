@@ -12,6 +12,7 @@ func (c *Ctx[T]) beforeExecuteHook() (abort bool) {
 		for _, v := range c.beforeExecuteHookFunc {
 			v(c)
 			if c.abort {
+				c.RollbackTransaction()
 				return true
 			}
 		}
@@ -24,6 +25,7 @@ func (c *Ctx[T]) beforeDecodeHook() (abort bool) {
 		for _, v := range c.beforeDecodeHookFunc {
 			v(c)
 			if c.abort {
+				c.RollbackTransaction()
 				return true
 			}
 		}
@@ -36,6 +38,7 @@ func (c *Ctx[T]) executedHook() (abort bool) {
 		for _, v := range c.executedHookFunc {
 			v(c)
 			if c.abort {
+				c.RollbackTransaction()
 				return true
 			}
 		}

@@ -19,6 +19,8 @@ type Ctx[T any] struct {
 	BatchEffectedIDs         []string
 	table                    string
 	tableArgs                []interface{}
+	useTransaction           bool
+	Tx                       *gorm.DB
 	abort                    bool
 	nextHandler              *gin.HandlerFunc
 	skipAssociationsOnCreate bool
@@ -140,5 +142,11 @@ func (c *Ctx[T]) GetSelectedFields() []string {
 // WithoutSortOrder disable sort order for "get list"
 func (c *Ctx[T]) WithoutSortOrder() *Ctx[T] {
 	c.disableSortOrder = true
+	return c
+}
+
+// WithTransaction use transaction for "create" and "update"
+func (c *Ctx[T]) WithTransaction() *Ctx[T] {
+	c.useTransaction = true
 	return c
 }
