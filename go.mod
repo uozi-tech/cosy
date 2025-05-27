@@ -7,7 +7,7 @@ require (
 	github.com/bsm/redislock v0.9.4
 	github.com/elliotchance/orderedmap/v3 v3.1.0
 	github.com/fatih/color v1.18.0
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.1
 	github.com/go-co-op/gocron/v2 v2.16.2
 	github.com/go-gormigrate/gormigrate/v2 v2.1.4
 	github.com/go-playground/validator/v10 v10.26.0
@@ -15,7 +15,7 @@ require (
 	github.com/guregu/null/v6 v6.0.0
 	github.com/jackc/pgtype v1.14.4
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/redis/go-redis/v9 v9.8.0
+	github.com/redis/go-redis/v9 v9.9.0
 	github.com/samber/lo v1.50.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake v1.2.1
@@ -28,7 +28,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gen v0.3.27
-	gorm.io/gorm v1.26.1
+	gorm.io/gorm v1.30.0
 )
 
 require (
