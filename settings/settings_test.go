@@ -70,5 +70,5 @@ func TestIntegration(t *testing.T) {
 	assert.Equal(jwtSecret, RedisSettings.Password)
 
 	assert.Equal(time.Date(2024, 6, 19, 0, 0, 0, 0, time.UTC), SonyflakeSettings.StartTime)
-	assert.Equal(uint16(1), SonyflakeSettings.MachineID)
+	assert.Equal(int(1), SonyflakeSettings.MachineID)
 }
