@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.24.3
+go 1.24.4
 
 require (
 	github.com/BurntSushi/toml v1.5.0
@@ -15,11 +15,11 @@ require (
 	github.com/guregu/null/v6 v6.0.0
 	github.com/jackc/pgtype v1.14.4
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/redis/go-redis/v9 v9.9.0
-	github.com/samber/lo v1.50.0
+	github.com/redis/go-redis/v9 v9.10.0
+	github.com/samber/lo v1.51.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
-	github.com/spf13/cast v1.8.0
+	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	github.com/uozi-tech/cosy-driver-mysql v0.2.2
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
