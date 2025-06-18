@@ -47,6 +47,12 @@ func SetNx(key string, value interface{}, exp time.Duration) error
 func TTL(key string) (time.Duration, error)
 ```
 
+## Expire
+设置指定键的过期时间。
+```go
+func Expire(key string, exp time.Duration) error
+```
+
 ## Keys
 获取模式匹配的键名列表。
 ```go
