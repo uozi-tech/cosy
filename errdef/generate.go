@@ -21,10 +21,14 @@ var (
 	// group(2): scope name (e.g. user)
 	reScope = regexp.MustCompile(`(\w+)\s*=\s*cosy\.NewErrorScope\s*\(\s*"([^"]+)"\s*\)`)
 
-	// Updated regex templates to support negative error codes
-	// Example: -1, -100, etc.
-	newTemplate           = `%s\s*\.\s*New\s*\(\s*(-?[0-9]+)\s*,\s*"([^"]*)"\s*\)`
-	newWithParamsTemplate = `%s\s*\.\s*NewWithParams\s*\(\s*(-?[0-9]+)\s*,\s*"([^"]*)"\s*,`
+	// Updated regex templates to support negative error codes and constant references
+	// Example: -1, -100, ErrCodeUserNotFound, etc.
+	newTemplate           = `%s\s*\.\s*New\s*\(\s*(\w+|[+-]?[0-9]+)\s*,\s*"([^"]*)"\s*\)`
+	newWithParamsTemplate = `%s\s*\.\s*NewWithParams\s*\(\s*(\w+|[+-]?[0-9]+)\s*,\s*"([^"]*)"\s*,`
+
+	// Regex to match const declarations
+	// Matches: ErrCodeUserNotFound = 4036 or ErrCodeUserNotFound int = 4036
+	reConstDecl = regexp.MustCompile(`(\w+)(?:\s+\w+)?\s*=\s*([+-]?[0-9]+)`)
 )
 
 // parseResult stores mapping of scopeName -> []ErrorInfo for a file
@@ -144,20 +148,37 @@ func parseGoFile(filePath string) (parseResult, error) {
 	defer file.Close()
 
 	scopeVarMap := make(map[string]string) // varName -> scopeName
+	constMap := make(map[string]int32)     // constName -> value
+
+	// First pass: collect const declarations and scope definitions
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		// Match scope definitions
 		matches := reScope.FindStringSubmatch(line)
 		if len(matches) == 3 {
 			varName := matches[1]
 			scopeName := matches[2]
 			scopeVarMap[varName] = scopeName
 		}
+
+		// Match const declarations
+		constMatches := reConstDecl.FindAllStringSubmatch(line, -1)
+		for _, m := range constMatches {
+			if len(m) == 3 {
+				constName := m[1]
+				constValue := cast.ToInt32(m[2])
+				constMap[constName] = constValue
+			}
+		}
 	}
 
 	if len(scopeVarMap) == 0 {
 		return parseResult{}, nil
 	}
+
+	// Reset file pointer for second pass
 	if _, err := file.Seek(0, 0); err != nil {
 		return nil, err
 	}
@@ -168,6 +189,7 @@ func parseGoFile(filePath string) (parseResult, error) {
 		res[v] = []cosy.Error{}
 	}
 
+	// Second pass: collect error definitions
 	scanner = bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -182,7 +204,16 @@ func parseGoFile(filePath string) (parseResult, error) {
 				if len(m) == 3 {
 					codeStr := m[1]
 					msg := m[2]
-					res[scopeName] = append(res[scopeName], cosy.Error{Code: cast.ToInt32(codeStr), Message: msg})
+
+					// Check if codeStr is a constant name or direct number
+					var code int32
+					if constValue, exists := constMap[codeStr]; exists {
+						code = constValue
+					} else {
+						code = cast.ToInt32(codeStr)
+					}
+
+					res[scopeName] = append(res[scopeName], cosy.Error{Code: code, Message: msg})
 				}
 			}
 
@@ -192,7 +223,16 @@ func parseGoFile(filePath string) (parseResult, error) {
 				if len(m) == 3 {
 					codeStr := m[1]
 					msg := m[2]
-					res[scopeName] = append(res[scopeName], cosy.Error{Code: cast.ToInt32(codeStr), Message: msg})
+
+					// Check if codeStr is a constant name or direct number
+					var code int32
+					if constValue, exists := constMap[codeStr]; exists {
+						code = constValue
+					} else {
+						code = cast.ToInt32(codeStr)
+					}
+
+					res[scopeName] = append(res[scopeName], cosy.Error{Code: code, Message: msg})
 				}
 			}
 		}
