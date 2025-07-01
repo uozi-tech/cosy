@@ -118,6 +118,9 @@ func (w *SLSWriter) InitProducer() error {
 	}
 
 	producerConfig := producer.GetDefaultProducerConfig()
+	producerConfig.Logger = &ZapLogger{
+		logger: GetLogger(),
+	}
 	producerConfig.Endpoint = slsSettings.EndPoint
 	provider := slsSettings.GetCredentialsProvider()
 	producerConfig.CredentialsProvider = provider
@@ -129,7 +132,11 @@ func (w *SLSWriter) InitProducer() error {
 		},
 	}
 
-	w.producer = producer.InitProducer(producerConfig)
+	var err error
+	w.producer, err = producer.NewProducer(producerConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create SLS producer: %w", err)
+	}
 	w.producer.Start()
 
 	return nil
@@ -150,6 +157,9 @@ func InitAuditSLSProducer(ctx context.Context) error {
 	}
 
 	producerConfig := producer.GetDefaultProducerConfig()
+	producerConfig.Logger = &ZapLogger{
+		logger: GetLogger(),
+	}
 	// Note: Don't set custom logger here to avoid circular dependency
 	// The producer will use its default logger
 	producerConfig.Endpoint = slsSettings.EndPoint
@@ -164,7 +174,11 @@ func InitAuditSLSProducer(ctx context.Context) error {
 		},
 	}
 
-	auditProducer = producer.InitProducer(producerConfig)
+	var err error
+	auditProducer, err = producer.NewProducer(producerConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create SLS producer: %w", err)
+	}
 	auditProducer.Start()
 
 	// Wait for context cancellation

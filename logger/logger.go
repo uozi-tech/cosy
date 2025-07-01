@@ -95,29 +95,41 @@ func Init(mode string) {
 		)
 	}
 
-	// Add SLS Core if enabled
-	if settings.SLSSettings.Enable() {
-		// Initialize SLS writer for default logging
-		slsWriter := NewSLSWriter(settings.SLSSettings.DefaultLogStoreName)
-		if err := slsWriter.InitProducer(); err != nil {
-			log.Printf("Failed to initialize SLS producer for default logging: %v", err)
-		} else {
-			slsEncoder := GetSLSEncoder(mode)
+	// Initialize basic logger first (console + file only)
+	core := zapcore.NewTee(cores...)
+	logger = zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
 
-			// Add SLS cores for both high and low priority logs
-			cores = append(cores,
-				zapcore.NewCore(slsEncoder, zapcore.AddSync(slsWriter), highPriority),
-				zapcore.NewCore(slsEncoder, zapcore.AddSync(slsWriter), lowPriority),
-			)
-		}
+	// Now add SLS support if enabled
+	if settings.SLSSettings.Enable() {
+		AddSLSSupport(mode, highPriority, lowPriority)
+	}
+}
+
+// AddSLSSupport adds SLS logging support to the existing logger
+func AddSLSSupport(mode string, highPriority, lowPriority zap.LevelEnablerFunc) {
+	// Initialize SLS writer for default logging
+	slsWriter := NewSLSWriter(settings.SLSSettings.DefaultLogStoreName)
+	if err := slsWriter.InitProducer(); err != nil {
+		log.Printf("Failed to initialize SLS producer for default logging: %v", err)
+		return
 	}
 
-	// Join the outputs, encoders, and level-handling functions into
-	// zapcore.Cores, then tee the two cores together.
-	core := zapcore.NewTee(cores...)
+	slsEncoder := GetSLSEncoder(mode)
 
-	// From a zapcore.Core, it's easy to construct a Logger.
-	logger = zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
+	// Get current cores from existing logger
+	currentCore := logger.Desugar().Core()
+
+	// Create new SLS cores
+	slsCores := []zapcore.Core{
+		zapcore.NewCore(slsEncoder, zapcore.AddSync(slsWriter), highPriority),
+		zapcore.NewCore(slsEncoder, zapcore.AddSync(slsWriter), lowPriority),
+	}
+
+	// Combine existing cores with SLS cores
+	newCore := zapcore.NewTee(append([]zapcore.Core{currentCore}, slsCores...)...)
+
+	// Replace the logger with one that includes SLS support
+	logger = zap.New(newCore, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
 }
 
 // Sync flushes any buffered log entries.

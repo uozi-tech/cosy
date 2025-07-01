@@ -37,14 +37,14 @@ func isWebSocketUpgrade(c *gin.Context) bool {
 
 func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		requestId := uuid.New().String()
+		c.Set(CosyRequestIDKey, requestId)
+		c.Header("Request-ID", requestId)
+
 		if !settings.SLSSettings.Enable() {
 			c.Next()
 			return
 		}
-
-		requestId := uuid.New().String()
-		c.Set(CosyRequestIDKey, requestId)
-		c.Header("Request-ID", requestId)
 
 		startTime := time.Now()
 		ip := c.ClientIP()
