@@ -40,7 +40,7 @@ func (c *Ctx[T]) BatchDestroy() {
 		return
 	}
 
-	db := model.UseDB()
+	db := model.UseDB(c.Context)
 	result := db
 
 	if cast.ToBool(c.Query("permanent")) || c.permanentlyDelete {
@@ -87,7 +87,7 @@ func (c *Ctx[T]) BatchRecover() {
 		return
 	}
 
-	db := model.UseDB()
+	db := model.UseDB(c.Context)
 	result := db.Unscoped()
 	c.applyGormScopes(result)
 

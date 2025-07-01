@@ -27,7 +27,7 @@ func (c *Ctx[T]) BatchModify() {
 		return
 	}
 
-	db := model.UseDB()
+	db := model.UseDB(c.Context)
 
 	c.applyGormScopes(db)
 

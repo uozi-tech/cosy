@@ -1,17 +1,19 @@
 package valid
 
 import (
+	"context"
 	"errors"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
-	"strings"
 )
 
 // DbUnique checks if the value is unique in the table of the database
-func DbUnique[T any](payload gin.H, columns []string) (conflicts []string, err error) {
-	db := model.UseDB()
+func DbUnique[T any](ctx context.Context, payload gin.H, columns []string) (conflicts []string, err error) {
+	db := model.UseDB(ctx)
 
 	var m T
 

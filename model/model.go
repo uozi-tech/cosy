@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,17 +33,17 @@ func BeforeMigrate(f func(*gorm.DB) error) {
 func logMode() gormlogger.Interface {
 	switch settings.ServerSettings.RunMode {
 	case gin.ReleaseMode:
-		return gormlogger.Default.LogMode(gormlogger.Warn)
+		return logger.DefaultGormLogger.LogMode(gormlogger.Warn)
 	default:
 		fallthrough
 	case gin.DebugMode:
-		return gormlogger.Default.LogMode(gormlogger.Info)
+		return logger.DefaultGormLogger.LogMode(gormlogger.Info)
 	}
 }
 
 // UseDB return the global db instance
-func UseDB() *gorm.DB {
-	return db
+func UseDB(ctx context.Context) *gorm.DB {
+	return db.WithContext(ctx)
 }
 
 // Init initialize the global db instance

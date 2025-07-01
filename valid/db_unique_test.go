@@ -1,12 +1,13 @@
 package valid
 
 import (
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/uozi-tech/cosy-driver-postgres"
+	postgres "github.com/uozi-tech/cosy-driver-postgres"
 	"github.com/uozi-tech/cosy/model"
 	"github.com/uozi-tech/cosy/settings"
-	"testing"
 )
 
 type User struct {
@@ -23,7 +24,7 @@ func TestDbUnique(t *testing.T) {
 
 	defer func() {
 		// clear testing env
-		err := model.UseDB().Migrator().DropTable(&User{})
+		err := model.UseDB(t.Context()).Migrator().DropTable(&User{})
 		if err != nil {
 			t.Error(err)
 		}
@@ -36,7 +37,7 @@ func TestDbUnique(t *testing.T) {
 		"email": "test@test.com",
 	}
 
-	conflicts, err := DbUnique[User](payload, []string{"email", "name"})
+	conflicts, err := DbUnique[User](t.Context(), payload, []string{"email", "name"})
 
 	if err != nil {
 		t.Error(err)
@@ -50,7 +51,7 @@ func TestDbUnique(t *testing.T) {
 		"email": "test2@test.com",
 	}
 
-	conflicts, err = DbUnique[User](payload, []string{"email", "name"})
+	conflicts, err = DbUnique[User](t.Context(), payload, []string{"email", "name"})
 
 	if err != nil {
 		t.Error(err)
@@ -64,7 +65,7 @@ func TestDbUnique(t *testing.T) {
 		"email": "test2@test.com",
 	}
 
-	conflicts, err = DbUnique[User](payload, []string{"email", "name"})
+	conflicts, err = DbUnique[User](t.Context(), payload, []string{"email", "name"})
 
 	if err != nil {
 		t.Error(err)

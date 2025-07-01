@@ -1,7 +1,12 @@
 package cosy
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
@@ -13,9 +18,6 @@ import (
 	"github.com/uozi-tech/cosy/sandbox"
 	"github.com/uozi-tech/cosy/settings"
 	"gorm.io/gorm"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -456,7 +458,7 @@ func testAbortWithError(t *testing.T, instance *sandbox.Instance) {
 func TestCosyTagDbUnique(t *testing.T) {
 	sandbox.NewInstance("app.ini", "pgsql").
 		RegisterModels(User{}).Run(func(instance *sandbox.Instance) {
-		db := model.UseDB()
+		db := model.UseDB(context.Background())
 		db.Create(&User{Name: "test", Email: "test@test.com"})
 		g := router.GetEngine().Group("/")
 		Api[User]("users").InitRouter(g)

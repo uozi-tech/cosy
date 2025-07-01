@@ -19,7 +19,7 @@ func (c *Ctx[T]) Destroy() {
 	}
 	c.ID = c.GetParamID()
 
-	db := model.UseDB()
+	db := model.UseDB(c.Context)
 
 	result := db
 
@@ -65,7 +65,7 @@ func (c *Ctx[T]) Recover() {
 	}
 	c.ID = c.GetParamID()
 
-	db := model.UseDB()
+	db := model.UseDB(c.Context)
 
 	result := db.Unscoped()
 	c.applyGormScopes(result)

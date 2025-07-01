@@ -40,7 +40,7 @@ func (c *Ctx[T]) Modify() {
 		return
 	}
 
-	c.Tx = model.UseDB()
+	c.Tx = model.UseDB(c.Context)
 	if c.useTransaction {
 		c.Tx = c.Tx.Begin()
 	}

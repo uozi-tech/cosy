@@ -27,5 +27,11 @@ features:
   -   icon: ⚡
       title: 性能优化
       details: 尽最大努力优化，减少反射的使用。
+  -   icon: 📝
+      title: 日志审计
+      details: 完整的请求审计和日志记录，支持 SLS 集成和数据库监控。
+  -   icon: 🌐
+      title: 地理位置
+      details: 内置 GeoIP 功能，自动解析客户端地理位置信息。
 ---
 

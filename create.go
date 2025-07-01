@@ -26,7 +26,7 @@ func (c *Ctx[T]) Create() {
 		return
 	}
 
-	c.Tx = model.UseDB()
+	c.Tx = model.UseDB(c.Context)
 	if c.useTransaction {
 		c.Tx = c.Tx.Begin()
 	}

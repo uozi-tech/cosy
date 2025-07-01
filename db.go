@@ -1,13 +1,15 @@
 package cosy
 
 import (
+	"context"
+
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 )
 
 // UseDB return the ptr of gorm.DB.
-func UseDB() *gorm.DB {
-	return model.UseDB()
+func UseDB(ctx context.Context) *gorm.DB {
+	return model.UseDB(ctx)
 }
 
 // RegisterModels register models.

@@ -1,8 +1,20 @@
 # Logger
 
-封装 go.uber.org/zap
+Logger 模块基于 `go.uber.org/zap` 构建，提供完整的日志记录、审计、SLS 集成和数据库日志功能。
 
-对于接口级简化的项目，需要手动初始化 Logger，如下：
+## 主要功能
+
+- 📝 **基础日志记录**：支持多级别日志输出和文件轮转
+- 🔍 **HTTP 审计**：自动记录所有 HTTP 请求的详细信息
+- 🌐 **SLS 集成**：与阿里云日志服务无缝对接
+- 📊 **数据库监控**：集成 GORM 日志，监控 SQL 执行
+- 🔗 **会话日志**：提供请求级别的日志上下文
+
+## 快速开始
+
+### 基本使用
+
+对于接口级简化的项目，需要手动初始化 Logger：
 
 ```go
 import (
@@ -10,14 +22,70 @@ import (
 )
 
 func main() {
-    // ...
+    // 初始化日志系统
     logger.Init()
     defer logger.Sync()
-    // ...
+
+    // 基本日志记录
+    logger.Info("应用启动")
+    logger.Error("发生错误")
 }
 ```
 
 对于项目级简化的项目，无需手动初始化。
+
+### 完整集成示例
+
+```go
+import (
+    "context"
+    "github.com/gin-gonic/gin"
+    "github.com/uozi-tech/cosy/logger"
+    "github.com/uozi-tech/cosy/settings"
+    "gorm.io/gorm"
+)
+
+func main() {
+    // 初始化配置
+    settings.InitSettings()
+
+    // 初始化 SLS
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    go logger.InitSLS(ctx)
+
+    // 初始化数据库
+    db := initDB()
+
+    // 创建 Gin 应用
+    r := gin.New()
+
+    // 添加审计中间件
+    r.Use(logger.AuditMiddleware(nil))
+
+    // 路由处理
+    r.GET("/users/:id", func(c *gin.Context) {
+        // 使用会话日志
+        sessionLogger := logger.NewSessionLogger(c)
+        sessionLogger.Info("查询用户")
+
+        // 数据库操作（自动记录 SQL）
+        var user User
+        db.WithContext(c).First(&user, c.Param("id"))
+
+        c.JSON(200, user)
+    })
+
+    r.Run(":8080")
+}
+
+func initDB() *gorm.DB {
+    db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{
+        Logger: logger.DefaultGormLogger, // 使用集成的 GORM 日志器
+    })
+    return db
+}
+```
 
 ## 日志文件配置
 

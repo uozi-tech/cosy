@@ -24,6 +24,7 @@ func init() {
 	sections.Set("redis", RedisSettings)
 	sections.Set("sonyflake", SonyflakeSettings)
 	sections.Set("log", LogSettings)
+	sections.Set("sls", SLSSettings)
 }
 
 // Register the setting, this should be called before Init

@@ -104,7 +104,7 @@ func (t *Instance) cleanUp() {
 	if t.databaseType != "" {
 		model.ClearCollection()
 		// clean scope* mysql table
-		db := model.UseDB()
+		db := model.UseDB(t.ctx)
 		var tables []string
 		db.Raw("SELECT table_name FROM information_schema.tables WHERE table_name LIKE ?",
 			settings.DataBaseSettings.TablePrefix+"%").Pluck("table_name", &tables)
@@ -136,4 +136,8 @@ func (t *Instance) cleanUp() {
 
 func (t *Instance) GetClient() *Client {
 	return t.client
+}
+
+func (t *Instance) Context() context.Context {
+	return t.ctx
 }

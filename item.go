@@ -18,7 +18,7 @@ func (c *Ctx[T]) Get() {
 
     data := new(T)
 
-    db := model.UseDB()
+    db := model.UseDB(c.Context)
 
     db = c.applyGormScopes(db)
 

@@ -62,6 +62,22 @@ export default defineConfig(({mode}) => {
           items: [
             {text: '集成', link: '/logger/start'},
             {text: '接口参考', link: '/logger/api-references'},
+            {text: '中间件', link: '/logger/middleware'},
+            {text: '会话日志', link: '/logger/session'},
+            {text: 'SLS 集成', link: '/logger/sls-integration'},
+            {text: 'GORM 集成', link: '/logger/gorm-integration'},
+          ]
+        },
+        {
+          text: 'GeoIP',
+          items: [
+            {text: '地理位置解析', link: '/geoip'},
+          ]
+        },
+        {
+          text: '审计日志',
+          items: [
+            {text: '接口参考', link: '/audit'},
           ]
         },
         {
@@ -122,6 +138,7 @@ export default defineConfig(({mode}) => {
             {text: '注册设置', link: '/settings/register'},
             {text: '热更新', link: '/settings/update'},
             {text: '保护性填充', link: '/settings/protected-fill'},
+            {text: 'SLS 配置', link: '/settings/sls'},
           ]
         }
       ],

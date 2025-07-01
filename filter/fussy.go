@@ -13,14 +13,14 @@ import (
 
 func QueryToFussySearch(c *gin.Context, db *gorm.DB, key string) *gorm.DB {
 	if qArr := c.QueryArray(key + "[]"); qArr != nil {
-		db = applyFuzzyCondition(db, key, qArr)
+		db = applyFuzzyCondition(c, db, key, qArr)
 	} else if q := c.Query(key); q != "" {
-		db = applyFuzzyCondition(db, key, []string{q})
+		db = applyFuzzyCondition(c, db, key, []string{q})
 	}
 	return db
 }
 
-func applyFuzzyCondition(tx *gorm.DB, column string, values []string) *gorm.DB {
+func applyFuzzyCondition(c *gin.Context, tx *gorm.DB, column string, values []string) *gorm.DB {
 	stmt := tx.Statement
 
 	// build column name (column LIKE ?)
@@ -28,7 +28,7 @@ func applyFuzzyCondition(tx *gorm.DB, column string, values []string) *gorm.DB {
 	stmt.QuoteTo(&colBuilder, clause.Column{Table: stmt.Table, Name: column})
 	colBuilder.WriteString(" LIKE ?")
 
-	db := model.UseDB()
+	db := model.UseDB(c)
 	var valueBuilder strings.Builder
 
 	for _, value := range values {
@@ -57,7 +57,7 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, keys ...string) *gorm.D
 	valueBuilder.WriteString("%")
 	likeValue := valueBuilder.String()
 
-	db := model.UseDB()
+	db := model.UseDB(c)
 	var colBuilder strings.Builder
 
 	for _, v := range keys {

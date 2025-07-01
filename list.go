@@ -54,12 +54,12 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 	c.beforeExecuteHook()
 
 	var dbModel T
-	result := model.UseDB()
+	result := model.UseDB(c.Context)
 
 	if cast.ToBool(c.Query("trash")) {
 		tableName := c.table
 		if c.table == "" {
-			stmt := &gorm.Statement{DB: model.UseDB()}
+			stmt := &gorm.Statement{DB: model.UseDB(c.Context)}
 			err := stmt.Parse(&dbModel)
 			if err != nil {
 				logger.Error(err)

@@ -6,8 +6,6 @@ var async []func()
 
 var syncs []func(context.Context)
 
-
-
 // Boot the kernel
 func Boot(ctx context.Context) {
 	defer recovery()

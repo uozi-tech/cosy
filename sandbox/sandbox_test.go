@@ -40,7 +40,7 @@ func TestInstance(t *testing.T) {
 				RegisterModels(User{}).
 				Run(func(instance *Instance) {
 					var tables []string
-					db := model.UseDB()
+					db := model.UseDB(instance.ctx)
 
 					db.Raw("SELECT table_name FROM information_schema.tables WHERE table_name LIKE ?",
 						settings.DataBaseSettings.TablePrefix+"%").Scan(&tables)
@@ -160,7 +160,7 @@ func TestInstance(t *testing.T) {
 					assert.Equal(t, http.StatusOK, resp.StatusCode)
 				})
 			var tables []string
-			db := model.UseDB()
+			db := model.UseDB(t.Context())
 
 			db.Raw("SELECT table_name FROM information_schema.tables WHERE table_name LIKE ?",
 				settings.DataBaseSettings.TablePrefix+"%").Scan(&tables)

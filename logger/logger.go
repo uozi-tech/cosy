@@ -95,6 +95,23 @@ func Init(mode string) {
 		)
 	}
 
+	// Add SLS Core if enabled
+	if settings.SLSSettings.Enable() {
+		// Initialize SLS writer for default logging
+		slsWriter := NewSLSWriter(settings.SLSSettings.DefaultLogStoreName)
+		if err := slsWriter.InitProducer(); err != nil {
+			log.Printf("Failed to initialize SLS producer for default logging: %v", err)
+		} else {
+			slsEncoder := GetSLSEncoder(mode)
+
+			// Add SLS cores for both high and low priority logs
+			cores = append(cores,
+				zapcore.NewCore(slsEncoder, zapcore.AddSync(slsWriter), highPriority),
+				zapcore.NewCore(slsEncoder, zapcore.AddSync(slsWriter), lowPriority),
+			)
+		}
+	}
+
 	// Join the outputs, encoders, and level-handling functions into
 	// zapcore.Cores, then tee the two cores together.
 	core := zapcore.NewTee(cores...)
@@ -113,7 +130,7 @@ func GetLogger() *zap.SugaredLogger {
 	return logger
 }
 
-// Debug logs a message at DebugLevel.
+// "Debug" logs a message at DebugLevel.
 func Debug(args ...any) {
 	logger.Debugln(args...)
 }
