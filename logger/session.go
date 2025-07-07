@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -15,7 +17,16 @@ type SessionLogger struct {
 }
 
 // NewSessionLogger creates a new session logger
-func NewSessionLogger(c *gin.Context) *SessionLogger {
+func NewSessionLogger(ctx context.Context) *SessionLogger {
+	c, ok := ctx.(*gin.Context)
+	if !ok {
+		return &SessionLogger{
+			RequestID: "",
+			Logs:      NewSLSLogStack(),
+			Logger:    GetLogger(),
+		}
+	}
+
 	requestId, ok := c.Get(CosyRequestIDKey)
 	if !ok {
 		requestId = uuid.New().String()
