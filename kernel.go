@@ -149,8 +149,6 @@ func Boot(confPath string) {
 		return
 	}
 
-	logger.Info("Server listening on", TCPAddr.String())
-
 	// Listen for the interrupt signal.
 	<-ctx.Done()
 

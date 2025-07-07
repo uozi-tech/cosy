@@ -42,6 +42,11 @@ func NewSessionLogger(ctx context.Context) *SessionLogger {
 	}
 }
 
+func (s *SessionLogger) WithOptions(opts ...zap.Option) *SessionLogger {
+	s.Logger = s.Logger.WithOptions(opts...)
+	return s
+}
+
 // "Debug" logs a message at DebugLevel.
 func (s *SessionLogger) Debug(args ...any) {
 	s.Logger.Debugln(args...)

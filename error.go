@@ -119,12 +119,14 @@ func errorResp(c *gin.Context, err error) {
 
 // errHandler error handler for internal use
 func errHandler(c *gin.Context, err error) {
-	logger.GetLogger().WithOptions(zap.AddCallerSkip(1)).Errorln(err)
+	s := logger.NewSessionLogger(c).WithOptions(zap.AddCallerSkip(2))
+	s.Error(err)
 	errorResp(c, err)
 }
 
 // ErrHandler error handler for external use
 func ErrHandler(c *gin.Context, err error) {
-	logger.GetLogger().Errorln(err)
+	s := logger.NewSessionLogger(c).WithOptions(zap.AddCallerSkip(1))
+	s.Error(err)
 	errorResp(c, err)
 }
