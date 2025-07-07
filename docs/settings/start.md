@@ -100,17 +100,20 @@ DB = 0
 Prefix = "my-prefix"
 ```
 
-## HTTPS 支持
+## 协议支持
 
-Cosy 支持 HTTPS，可通过以下配置项启用：
+Cosy 支持多种 HTTP 协议，包括 HTTP/1.1、HTTP/2 和 HTTP/3：
 
 - `EnableHTTPS`：是否启用 HTTPS，设置为 `true` 开启
 - `SSLCert`：SSL 证书文件路径
 - `SSLKey`：SSL 密钥文件路径
+- `EnableH2`：是否启用 HTTP/2 支持
+- `EnableH3`：是否启用 HTTP/3 支持
 
 当 `EnableHTTPS` 设置为 `true` 时，服务器将使用 HTTPS 协议启动，否则使用 HTTP。
 
-对于开发环境，可以使用自签名证书；对于生产环境，建议使用由受信任的证书颁发机构签发的证书。
+详细的协议配置说明，请参考：
+- [协议支持配置](protocol.md) - 多协议支持和 HTTPS 的详细配置
 
 ## 指定配置文件
 

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
@@ -90,10 +89,6 @@ func Boot(confPath string) {
 	kernel.Boot(ctx)
 
 	addr := fmt.Sprintf("%s:%d", settings.ServerSettings.Host, settings.ServerSettings.Port)
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: router.GetEngine(),
-	}
 
 	// If the listener is nil, create a new listener, otherwise use the preset listener.
 	if listener == nil {
@@ -105,47 +100,54 @@ func Boot(confPath string) {
 	}
 
 	// Preload certificate to cache if HTTPS is enabled
+	var tlsConfig *tls.Config
 	if settings.ServerSettings.EnableHTTPS {
 		if err := loadAndCacheCertificate(settings.ServerSettings.SSLCert, settings.ServerSettings.SSLKey); err != nil {
 			logger.Fatalf("Failed to load initial SSL certificate: %s\n", err)
 		}
+
+		// Create TLS config with GetCertificate function for certificate hot-reloading
+		tlsConfig = &tls.Config{
+			GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+				certVal, ok := tlsCertCache.Load().(*tls.Certificate)
+				if !ok {
+					logger.Error("No valid certificate found in cache")
+					return nil, errors.New("no valid certificate available")
+				}
+				return certVal, nil
+			},
+		}
 	}
 
-	// Start the server (HTTP or HTTPS)
-	go func() {
-		var err error
-		if settings.ServerSettings.EnableHTTPS {
-			logger.Info("Starting HTTPS server with certificate hot-reload support")
-
-			// Create TLS config with GetCertificate function for certificate hot-reloading
-			tlsConfig := &tls.Config{
-				GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					certVal, ok := tlsCertCache.Load().(*tls.Certificate)
-					if !ok {
-						logger.Error("No valid certificate found in cache")
-						return nil, errors.New("no valid certificate available")
-					}
-					return certVal, nil
-				},
-			}
-
-			// Set TLS config
-			srv.TLSConfig = tlsConfig
-
-			// Start HTTPS server without providing cert and key files directly
-			// as they will be loaded via the GetCertificate callback
-			err = srv.ServeTLS(listener, "", "")
-		} else {
-			logger.Info("Starting HTTP server")
-			err = srv.Serve(listener)
-		}
-
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Fatalf("listen: %s\n", err)
-		}
-	}()
+	// Create and initialize server factory with protocol support
+	serverFactory := kernel.NewServerFactory(router.GetEngine(), tlsConfig)
+	if err := serverFactory.Initialize(); err != nil {
+		logger.Fatalf("Failed to initialize server factory: %v", err)
+	}
 
 	TCPAddr = listener.Addr().(*net.TCPAddr)
+
+	// Start all protocol servers in a goroutine with proper error handling
+	serverStarted := make(chan error, 1)
+	go func() {
+		if err := serverFactory.Start(ctx, listener); err != nil {
+			serverStarted <- err
+			return
+		}
+		serverStarted <- nil
+	}()
+
+	// Wait for server to start or fail
+	select {
+	case err := <-serverStarted:
+		if err != nil {
+			logger.Fatalf("Failed to start servers: %v", err)
+		}
+	case <-ctx.Done():
+		// If we receive shutdown signal before server starts, just exit
+		logger.Info("Received shutdown signal before server started")
+		return
+	}
 
 	logger.Info("Server listening on", TCPAddr.String())
 
@@ -158,9 +160,9 @@ func Boot(confPath string) {
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := serverFactory.Shutdown(shutdownCtx); err != nil {
 		logger.Fatal("Server forced to shutdown: ", err)
 	}
 
