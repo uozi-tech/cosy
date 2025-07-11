@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       vite:
-        specifier: ^7.0.2
-        version: 7.0.2
+        specifier: ^7.0.4
+        version: 7.0.4
     devDependencies:
       vitepress:
         specifier: ^1.6.3
@@ -929,8 +929,8 @@ packages:
       terser:
         optional: true
 
-  vite@7.0.2:
-    resolution: {integrity: sha512-hxdyZDY1CM6SNpKI4w4lcUc3Mtkd9ej4ECWVHSMrOdSinVc2zYOAppHeGc/hzmRo3pxM5blMzkuWHOJA/3NiFw==}
+  vite@7.0.4:
+    resolution: {integrity: sha512-SkaSguuS7nnmV7mfJ8l81JGBFV7Gvzp8IzgE8A8t23+AxuNX61Q5H1Tpz5efduSN7NHC8nQXD3sKQKZAu5mNEA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -1837,7 +1837,7 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
-  vite@7.0.2:
+  vite@7.0.4:
     dependencies:
       esbuild: 0.25.3
       fdir: 6.4.6(picomatch@4.0.2)
