@@ -243,7 +243,7 @@ func (zl ZapLogger) Log(keyvals ...interface{}) error {
 		return fmt.Errorf("odd number of arguments")
 	}
 	var loggerFunc func(args ...interface{})
-	logger := zl.logger.WithOptions(zap.AddCallerSkip(2))
+	logger := zl.logger.WithOptions(zap.AddCallerSkip(1))
 	for i := 0; i < len(keyvals); i += 2 {
 		key, ok := keyvals[i].(string)
 		if !ok {
@@ -251,19 +251,19 @@ func (zl ZapLogger) Log(keyvals ...interface{}) error {
 		}
 		if key == "level" {
 			switch keyvals[i+1] {
-			case "debug":
-				loggerFunc = logger.Debug
+			// case "debug":
+			// 	loggerFunc = logger.Debug
 			case "warn":
 				loggerFunc = logger.Warn
 			case "error":
 				loggerFunc = logger.Error
-			case "info":
-				loggerFunc = logger.Info
+			// case "info":
+			// 	loggerFunc = logger.Info
 			default:
-				loggerFunc = logger.Info
+				loggerFunc = nil
 			}
 		}
-		if key == "msg" {
+		if key == "msg" && loggerFunc != nil {
 			loggerFunc(keyvals[i+1])
 			return nil
 		}
