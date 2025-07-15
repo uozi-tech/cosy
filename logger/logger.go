@@ -15,7 +15,51 @@ import (
 
 var logger *zap.SugaredLogger
 
-// Init initializes the logger with the given mode.
+// init initializes a basic debug-level logger to prevent nil pointer issues
+func init() {
+	// First, define our level-handling logic.
+	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+			return lvl < zapcore.ErrorLevel
+	})
+
+	// Directly output to stdout and stderr, and add caller information.
+	consoleDebugging := zapcore.Lock(os.Stdout)
+	consoleErrors := zapcore.Lock(os.Stderr)
+	encodeCaller := zapcore.FullCallerEncoder
+	encoderConfig := zapcore.EncoderConfig{
+		// Keys can be anything except the empty string.
+		TimeKey:        "T",
+		LevelKey:       "L",
+		NameKey:        "N",
+		CallerKey:      "C",
+		FunctionKey:    zapcore.OmitKey,
+		MessageKey:     "M",
+		StacktraceKey:  "S",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeCaller:   encodeCaller,
+	}
+
+	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime)
+	encoderConfig.ConsoleSeparator = "\t"
+	encoderConfig.EncodeLevel = colorLevelEncoder
+	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
+
+	cores := []zapcore.Core{
+		zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
+		zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority),
+	}
+
+	core := zapcore.NewTee(cores...)
+	logger = zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
+}
+
+// Init initializes the logger with the given mode and overrides the basic logger configuration.
 func Init(mode string) {
 	// First, define our level-handling logic.
 	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
@@ -95,7 +139,7 @@ func Init(mode string) {
 		)
 	}
 
-	// Initialize basic logger first (console + file only)
+	// Initialize enhanced logger (console + file only)
 	core := zapcore.NewTee(cores...)
 	logger = zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
 
@@ -142,7 +186,7 @@ func GetLogger() *zap.SugaredLogger {
 	return logger
 }
 
-// "Debug" logs a message at DebugLevel.
+// Debug logs a message at DebugLevel.
 func Debug(args ...any) {
 	logger.Debugln(args...)
 }

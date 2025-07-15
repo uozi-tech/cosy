@@ -14,6 +14,12 @@ func recovery() {
 	}
 }
 
+func Test_init(t *testing.T) {
+	Debug("not panic")
+	Init("release")
+	Debug("not print")
+}
+
 func TestLogger(t *testing.T) {
 	Init("debug")
 
