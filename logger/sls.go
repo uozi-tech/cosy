@@ -223,7 +223,7 @@ func (l *SLSLogStack) Append(item SLSLogItem) {
 }
 
 func (l *SLSLogStack) AppendLog(level zapcore.Level, message string) {
-	_, file, line, _ := runtime.Caller(2)
+	_, file, line, _ := runtime.Caller(3)
 	l.Append(SLSLogItem{
 		Time:    time.Now().Unix(),
 		Level:   level,

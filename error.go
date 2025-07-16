@@ -119,7 +119,7 @@ func errorResp(c *gin.Context, err error) {
 
 // errHandler error handler for internal use
 func errHandler(c *gin.Context, err error) {
-	s := logger.NewSessionLogger(c)
+	s := logger.NewSessionLogger(c).WithOptions(zap.AddCallerSkip(2))
 	s.Error(err)
 	errorResp(c, err)
 }
