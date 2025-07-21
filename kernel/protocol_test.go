@@ -56,6 +56,7 @@ func TestHTTPServer(t *testing.T) {
 }
 
 func TestHTTPSServer(t *testing.T) {
+	settings.ServerSettings.EnableH2 = true
 	tlsConfig := createTestTLSConfig()
 	server := NewHTTPSServer(tlsConfig)
 
