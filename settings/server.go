@@ -13,6 +13,5 @@ type Server struct {
 }
 
 var ServerSettings = &Server{
-	RunMode:  "debug",
-	EnableH2: true, // HTTP/2 is enabled by default
+	RunMode: "debug",
 }
