@@ -2,15 +2,16 @@ package cosy
 
 import (
 	"errors"
+	"net/http"
+	"reflect"
+	"regexp"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/valid"
-	"net/http"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
 type ValidateError struct {
@@ -198,7 +199,19 @@ func getJsonPath(t reflect.Type, fields []string, path *[]string) {
 		return
 	}
 
-	*path = append(*path, f.Tag.Get("json"))
+	jsonTag := f.Tag.Get("json")
+	// Handle empty json tag case
+	if jsonTag == "" {
+		// Use lowercase field name as fallback
+		jsonTag = strings.ToLower(field)
+	} else {
+		// Handle json:"name,omitempty" case
+		if parts := strings.Split(jsonTag, ","); len(parts) > 0 {
+			jsonTag = parts[0]
+		}
+	}
+
+	*path = append(*path, jsonTag)
 
 	if index != "" {
 		*path = append(*path, index)
