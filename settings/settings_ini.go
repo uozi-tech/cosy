@@ -36,6 +36,7 @@ func Register(name string, ptr any) {
 func Init(confPath string) {
 	ConfPath = confPath
 	setup()
+	parseAllEnv()
 }
 
 // Load the settings
