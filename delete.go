@@ -19,18 +19,19 @@ func (c *Ctx[T]) Destroy() {
 	}
 	c.ID = c.GetParamID()
 
-	db := model.UseDB(c.Context)
-
-	result := db
-
-	if cast.ToBool(c.Query("permanent")) || c.permanentlyDelete {
-		result = result.Unscoped()
+	c.Tx = model.UseDB(c.Context)
+	if c.useTransaction {
+		c.Tx = c.Tx.Begin()
 	}
 
-	c.applyGormScopes(result)
+	if cast.ToBool(c.Query("permanent")) || c.permanentlyDelete {
+		c.Tx = c.Tx.Unscoped()
+	}
+
+	c.applyGormScopes(c.Tx)
 
 	var err error
-	session := result.Session(&gorm.Session{})
+	session := c.Tx.Session(&gorm.Session{})
 	if c.table != "" {
 		err = session.Table(c.table, c.tableArgs...).Take(c.OriginModel, c.ID).Error
 	} else {
@@ -46,7 +47,7 @@ func (c *Ctx[T]) Destroy() {
 		return
 	}
 
-	err = result.Delete(&c.OriginModel).Error
+	err = c.Tx.Delete(&c.OriginModel).Error
 	if err != nil {
 		errHandler(c.Context, err)
 		return
@@ -54,6 +55,10 @@ func (c *Ctx[T]) Destroy() {
 
 	if c.executedHook() {
 		return
+	}
+
+	if c.useTransaction {
+		c.Tx.Commit()
 	}
 
 	c.JSON(http.StatusNoContent, nil)
@@ -65,13 +70,17 @@ func (c *Ctx[T]) Recover() {
 	}
 	c.ID = c.GetParamID()
 
-	db := model.UseDB(c.Context)
+	c.Tx = model.UseDB(c.Context)
+	if c.useTransaction {
+		c.Tx = c.Tx.Begin()
+	}
 
-	result := db.Unscoped()
-	c.applyGormScopes(result)
+	c.Tx = c.Tx.Unscoped()
+
+	c.applyGormScopes(c.Tx)
 
 	var err error
-	session := result.Session(&gorm.Session{})
+	session := c.Tx.Session(&gorm.Session{})
 	if c.table != "" {
 		err = session.Table(c.table).First(&c.Model, c.ID).Error
 	} else {
@@ -90,9 +99,9 @@ func (c *Ctx[T]) Recover() {
 	resolvedModel := model.GetResolvedModel[T]()
 	if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
 		(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
-		err = result.Model(&c.Model).Update("deleted_at", nil).Error
+		err = c.Tx.Model(&c.Model).Update("deleted_at", nil).Error
 	} else {
-		err = result.Model(&c.Model).Update("deleted_at", 0).Error
+		err = c.Tx.Model(&c.Model).Update("deleted_at", 0).Error
 	}
 
 	if err != nil {
@@ -102,6 +111,10 @@ func (c *Ctx[T]) Recover() {
 
 	if c.executedHook() {
 		return
+	}
+
+	if c.useTransaction {
+		c.Tx.Commit()
 	}
 
 	c.JSON(http.StatusNoContent, nil)
