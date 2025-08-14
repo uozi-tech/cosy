@@ -12,6 +12,7 @@ import (
 	cSettings "github.com/uozi-tech/cosy/settings"
 )
 
+// GetAuditLogs retrieves audit logs
 func GetAuditLogs(c *gin.Context, logsHandler func(logs []map[string]string)) {
 	if !cSettings.SLSSettings.Enable() {
 		c.JSON(http.StatusOK, cModel.DataList{})
@@ -45,13 +46,17 @@ func GetAuditLogs(c *gin.Context, logsHandler func(logs []map[string]string)) {
 	queryExp := "*"
 	filter := make([]string, 0)
 	if query.IP != "" {
-		filter = append(filter, fmt.Sprintf("ip:%s*", query.IP))
+		if fieldQuery := BuildFieldQuery(query.IP, "ip"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if query.ReqMethod != "" {
 		filter = append(filter, fmt.Sprintf("req_method:%s", query.ReqMethod))
 	}
 	if query.ReqUrl != "" {
-		filter = append(filter, fmt.Sprintf("req_url:%s*", query.ReqUrl))
+		if fieldQuery := BuildFieldQuery(query.ReqUrl, "req_url"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if query.RespStatusCode != "" {
 		filter = append(filter, fmt.Sprintf("resp_status_code:%s", query.RespStatusCode))
@@ -60,10 +65,14 @@ func GetAuditLogs(c *gin.Context, logsHandler func(logs []map[string]string)) {
 		filter = append(filter, fmt.Sprintf("user_id:%s", query.UserID))
 	}
 	if query.Server != "" {
-		filter = append(filter, fmt.Sprintf("__source__:%s*", query.Server))
+		if fieldQuery := BuildFieldQuery(query.Server, "__source__"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if query.SessionContent != "" {
-		filter = append(filter, fmt.Sprintf("session_logs:%s*", query.SessionContent))
+		if fieldQuery := BuildFieldQuery(query.SessionContent, "session_logs"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if len(filter) > 0 {
 		queryExp = strings.Join(filter, " and ")

@@ -45,13 +45,19 @@ func GetDefaultLogs(c *gin.Context) {
 		filter = append(filter, fmt.Sprintf("level:%s", query.Level))
 	}
 	if query.Msg != "" {
-		filter = append(filter, fmt.Sprintf("msg:%s*", query.Msg))
+		if fieldQuery := BuildFieldQuery(query.Msg, "msg"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if query.Caller != "" {
-		filter = append(filter, fmt.Sprintf("caller:%s*", query.Caller))
+		if fieldQuery := BuildFieldQuery(query.Caller, "caller"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if query.Server != "" {
-		filter = append(filter, fmt.Sprintf("__source__:%s*", query.Server))
+		if fieldQuery := BuildFieldQuery(query.Server, "__source__"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
 	}
 	if len(filter) > 0 {
 		queryExp = strings.Join(filter, " and ")
