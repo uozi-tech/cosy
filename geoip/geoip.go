@@ -1,21 +1,34 @@
 package geoip
 
 import (
+	"bytes"
 	"embed"
+	"io"
 	"log"
 	"net"
 
 	"github.com/oschwald/geoip2-golang"
 	"github.com/uozi-tech/cosy/logger"
+	"github.com/ulikunitz/xz"
 )
 
-//go:embed GeoLite2-Country.mmdb
+//go:embed GeoLite2-Country.mmdb.xz
 var fs embed.FS
 
 var db *geoip2.Reader
 
 func init() {
-	dbBytes, err := fs.ReadFile("GeoLite2-Country.mmdb")
+	compressedBytes, err := fs.ReadFile("GeoLite2-Country.mmdb.xz")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	reader, err := xz.NewReader(bytes.NewReader(compressedBytes))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbBytes, err := io.ReadAll(reader)
 	if err != nil {
 		log.Fatal(err)
 	}

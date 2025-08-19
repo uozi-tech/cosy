@@ -25,6 +25,7 @@ require (
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
+	github.com/ulikunitz/xz v0.5.12
 	github.com/uozi-tech/cosy-driver-mysql v0.2.2
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.1
