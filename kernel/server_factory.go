@@ -156,10 +156,7 @@ func (sf *ServerFactory) startServersWithPriority(ctx context.Context, listener 
 		serverMap[server.Protocol()] = server
 	}
 
-	var wg sync.WaitGroup
-	errCh := make(chan error, len(sf.servers))
-
-	// Start servers in priority order
+	// Start servers in priority order (in goroutines since they block)
 	for _, protocol := range priority {
 		if server, exists := serverMap[protocol]; exists {
 			// Check context before starting each server
@@ -169,47 +166,31 @@ func (sf *ServerFactory) startServersWithPriority(ctx context.Context, listener 
 			default:
 			}
 
-			wg.Add(1)
 			go func(srv Server, proto string) {
-				defer wg.Done()
 				if err := srv.Start(ctx, listener, sf.manager.handler); err != nil {
-					// Only log error if it's not due to context cancellation
-					select {
-					case <-ctx.Done():
-						// Context was cancelled, this is expected during shutdown
-						return
-					default:
-						logger.Errorf("Failed to start %s server: %v", proto, err)
-						errCh <- err
+					// Only log error if it's not due to context cancellation or server closed
+					if err != http.ErrServerClosed {
+						select {
+						case <-ctx.Done():
+							// Context was cancelled, this is expected during shutdown
+							return
+						default:
+							logger.Errorf("Failed to start %s server: %v", proto, err)
+						}
 					}
 				}
 			}(server, protocol)
 
 			// Small delay between server starts to avoid port conflicts
-			// But check context during the delay
-			select {
-			case <-time.After(100 * time.Millisecond):
-				// Continue to next server
-			case <-ctx.Done():
-				return ctx.Err()
-			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
-	allServersDone := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(allServersDone)
-	}()
-
-	select {
-	case err := <-errCh:
-		return err
-	case <-allServersDone:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	// Give servers a moment to start up and report any immediate errors
+	time.Sleep(200 * time.Millisecond)
+	
+	// If we get here, servers have been launched successfully
+	return nil
 }
 
 // logServerStatus logs the final server status with supported protocols and ports

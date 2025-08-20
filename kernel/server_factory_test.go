@@ -164,15 +164,16 @@ func TestServerFactoryLifecycle(t *testing.T) {
 	// Create a dummy listener for testing
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
-	defer listener.Close()
 
-	// This should not error since we have a valid listener
-	go func() {
-		err := factory.Start(ctx, listener)
-		if err != nil {
-			t.Logf("Expected start error: %v", err)
-		}
-	}()
+	// Start the server (returns quickly since servers run in background)
+	err = factory.Start(ctx, listener)
+	assert.NoError(t, err)
+	assert.True(t, factory.IsRunning())
+	
+	// Clean up - shutdown first, then close listener
+	err = factory.Shutdown(ctx)
+	assert.NoError(t, err)
+	listener.Close()
 
 	// Test shutdown when not running
 	err = factory.Shutdown(ctx)
@@ -212,19 +213,15 @@ func TestServerFactoryIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer listener.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// Use a background context for server start (not timeout limited)
+	serverCtx := context.Background()
 
-	// Start the server
-	go func() {
-		err := factory.Start(ctx, listener)
-		if err != nil {
-			t.Logf("Server start error: %v", err)
-		}
-	}()
+	// Start the server (this returns quickly now as servers run in goroutines)
+	err = factory.Start(serverCtx, listener)
+	require.NoError(t, err)
 
-	// Give the server time to start
-	time.Sleep(100 * time.Millisecond)
+	// Give servers a moment to fully initialize
+	time.Sleep(300 * time.Millisecond)
 
 	// Test that the server is running
 	assert.True(t, factory.IsRunning())
