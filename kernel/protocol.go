@@ -101,7 +101,6 @@ func (h *HTTPServer) Start(ctx context.Context, listener net.Listener, handler h
 			return nil
 		default:
 			protocolErr := fmt.Errorf("failed to start HTTP/1.1 server: %w", err)
-			logger.Errorf("Failed to start HTTP/1.1 server: %v", protocolErr)
 			return protocolErr
 		}
 	}
@@ -113,7 +112,6 @@ func (h *HTTPServer) Start(ctx context.Context, listener net.Listener, handler h
 func (h *HTTPServer) Shutdown(ctx context.Context) error {
 	if h.server != nil {
 		if err := h.server.Shutdown(ctx); err != nil {
-			logger.Errorf("Error shutting down HTTP/1.1 server: %v", err)
 			return fmt.Errorf("failed to shutdown HTTP/1.1 server: %w", err)
 		}
 	}
@@ -176,7 +174,6 @@ func (h *HTTPSServer) Start(ctx context.Context, listener net.Listener, handler 
 			return nil
 		default:
 			protocolErr := fmt.Errorf("failed to start HTTP/2 server: %w", err)
-			logger.Errorf("Failed to start HTTPS server: %v", protocolErr)
 			return protocolErr
 		}
 	}
@@ -188,7 +185,6 @@ func (h *HTTPSServer) Start(ctx context.Context, listener net.Listener, handler 
 func (h *HTTPSServer) Shutdown(ctx context.Context) error {
 	if h.server != nil {
 		if err := h.server.Shutdown(ctx); err != nil {
-			logger.Errorf("Error shutting down HTTPS server: %v", err)
 			return fmt.Errorf("failed to shutdown HTTPS server: %w", err)
 		}
 	}
@@ -238,7 +234,6 @@ func (h *HTTP3Server) Start(ctx context.Context, listener net.Listener, handler 
 	go func() {
 		defer close(errChan)
 		if err := h.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Errorf("HTTP/3 server error: %v", err)
 			errChan <- err
 		} else {
 			errChan <- nil
@@ -264,7 +259,6 @@ func (h *HTTP3Server) Start(ctx context.Context, listener net.Listener, handler 
 func (h *HTTP3Server) Shutdown(ctx context.Context) error {
 	if h.server != nil {
 		if err := h.server.Close(); err != nil {
-			logger.Errorf("Error shutting down HTTP/3 server: %v", err)
 			return fmt.Errorf("failed to shutdown HTTP/3 server: %w", err)
 		}
 	}

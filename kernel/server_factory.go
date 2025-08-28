@@ -216,7 +216,6 @@ func (sf *ServerFactory) Shutdown(ctx context.Context) error {
 	var lastErr error
 	for _, server := range sf.servers {
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Errorf("Error shutting down %s server: %v", server.Protocol(), err)
 			lastErr = err
 		}
 	}
