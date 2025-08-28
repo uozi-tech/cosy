@@ -24,7 +24,7 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.9.2
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/ulikunitz/xz v0.5.13
 	github.com/uozi-tech/cosy-driver-mysql v0.2.2
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
