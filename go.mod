@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.25.0
+go 1.25.1
 
 require (
 	github.com/BurntSushi/toml v1.5.0
