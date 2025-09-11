@@ -16,13 +16,12 @@ import (
 	"sync"
 	"time"
 
-	ginpprof "github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/spf13/cast"
+	"github.com/uozi-tech/cosy"
 	"github.com/uozi-tech/cosy/debug/app"
 	"github.com/uozi-tech/cosy/kernel"
-	"github.com/uozi-tech/cosy/logger"
 )
 
 var startupTime = time.Now()
@@ -32,28 +31,24 @@ var (
 	// Pool for stack trace buffers
 	stackTraceBufPool = sync.Pool{
 		New: func() interface{} {
-			return make([]byte, 1024*1024) // 1MB buffer for stack traces
-		},
-	}
-
-	// Pool for string slices used in parsing
-	parseSlicePool = sync.Pool{
-		New: func() interface{} {
-			return make([]string, 0, 128) // Preallocate capacity for parsing
+			buf := make([]byte, 1024*1024) // 1MB buffer for stack traces
+			return &buf
 		},
 	}
 
 	// Pool for heap profile entries
 	heapEntryPool = sync.Pool{
 		New: func() interface{} {
-			return make([]*HeapProfileEntry, 0, 100) // Preallocate for heap entries
+			entries := make([]*HeapProfileEntry, 0, 100) // Preallocate for heap entries
+			return &entries
 		},
 	}
 
 	// Pool for goroutine trace results
 	traceResultPool = sync.Pool{
 		New: func() interface{} {
-			return make([]*kernel.GoroutineTrace, 0, 200) // Preallocate for trace results
+			traces := make([]*kernel.GoroutineTrace, 0, 200) // Preallocate for trace results
+			return &traces
 		},
 	}
 
@@ -69,7 +64,7 @@ func getOSVersion() string {
 		log.Printf("Failed to get host info: %v", err)
 		return "Unknown"
 	}
-	
+
 	// Format: OS Platform Version
 	if info.Platform != "" && info.PlatformVersion != "" {
 		return fmt.Sprintf("%s %s", info.Platform, info.PlatformVersion)
@@ -78,7 +73,7 @@ func getOSVersion() string {
 	} else if info.OS != "" {
 		return info.OS
 	}
-	
+
 	return "Unknown"
 }
 
@@ -86,7 +81,7 @@ func getOSVersion() string {
 func getPprofProfileCounts() (heapCount, goroutineCount int) {
 	// Get goroutine count directly from runtime
 	goroutineCount = runtime.NumGoroutine()
-	
+
 	// Estimate heap sample count based on memory stats
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -97,7 +92,7 @@ func getPprofProfileCounts() (heapCount, goroutineCount int) {
 		// Cap at reasonable number for display
 		heapCount = 10000 + (heapCount-10000)/10
 	}
-	
+
 	return heapCount, goroutineCount
 }
 
@@ -105,32 +100,32 @@ func getPprofProfileCounts() (heapCount, goroutineCount int) {
 func parseHeapProfile() (*HeapProfileResponse, error) {
 	// Create a buffer to capture pprof output
 	var buf strings.Builder
-	
+
 	// Get heap profile directly from pprof
 	profile := pprof.Lookup("heap")
 	if profile == nil {
 		return nil, fmt.Errorf("heap profile not available")
 	}
-	
+
 	// Write profile in text format (debug=1)
 	err := profile.WriteTo(&buf, 1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write heap profile: %v", err)
 	}
-	
+
 	text := buf.String()
 	lines := strings.Split(text, "\n")
-	
+
 	// Get entries slice from pool
 	entriesInterface := heapEntryPool.Get()
-	entries := entriesInterface.([]*HeapProfileEntry)
-	entries = entries[:0] // Reset slice but keep capacity
-	defer heapEntryPool.Put(entries)
+	entriesPtr := entriesInterface.(*[]*HeapProfileEntry)
+	entries := (*entriesPtr)[:0] // Reset slice but keep capacity
+	defer heapEntryPool.Put(entriesPtr)
 
 	result := &HeapProfileResponse{
 		Entries: entries,
 	}
-	
+
 	// Parse header line to get totals using pre-compiled regex
 	// Format: "heap profile: 123: 456 [789: 1011] @ heap/512"
 	for _, line := range lines {
@@ -145,43 +140,43 @@ func parseHeapProfile() (*HeapProfileResponse, error) {
 			break
 		}
 	}
-	
+
 	// Parse individual allocation entries using pre-compiled regex
 	// Format: "123: 456 [789: 1011] @ 0x123 0x456 0x789"
-	
+
 	for i := range lines {
 		line := strings.TrimSpace(lines[i])
 		if line == "" {
 			continue
 		}
-		
+
 		matches := entryRegexCompiled.FindStringSubmatch(line)
 		if len(matches) != 6 {
 			continue
 		}
-		
+
 		entry := &HeapProfileEntry{}
 		entry.InUseObjects, _ = strconv.ParseInt(matches[1], 10, 64)
 		entry.InUseBytes, _ = strconv.ParseInt(matches[2], 10, 64)
 		entry.AllocObjects, _ = strconv.ParseInt(matches[3], 10, 64)
 		entry.AllocBytes, _ = strconv.ParseInt(matches[4], 10, 64)
-		
+
 		// Look for function names in the subsequent lines
 		stackTrace := make([]string, 0)
 		topFunction := "unknown"
-		
+
 		// Parse function names that follow the allocation entry
 		for j := i + 1; j < len(lines) && j < i+30; j++ {
 			nextLine := strings.TrimSpace(lines[j])
 			if nextLine == "" {
 				break
 			}
-			
+
 			// Stop if we hit another entry (starts with digits followed by colon)
 			if entryRegexCompiled.MatchString(nextLine) {
 				break
 			}
-			
+
 			// Look for lines that start with # - these contain the function names
 			if strings.HasPrefix(nextLine, "#") {
 				// Parse format: "#	0x4d532f	bytes.growSlice+0x7f	/usr/local/go/src/bytes/buffer.go:255"
@@ -190,15 +185,15 @@ func parseHeapProfile() (*HeapProfileResponse, error) {
 					// Third field contains the function name, fourth contains file:line
 					funcWithOffset := parts[2]
 					filePath := parts[3]
-					
+
 					// Remove the +0x offset part from function name
 					funcName := strings.Split(funcWithOffset, "+")[0]
-					
+
 					if funcName != "" {
 						// Combine function name with file and line info
 						stackEntry := fmt.Sprintf("%s\n    %s", funcName, filePath)
 						stackTrace = append(stackTrace, stackEntry)
-						
+
 						if topFunction == "unknown" {
 							// Extract just the function name for display (last part after .)
 							nameParts := strings.Split(funcName, ".")
@@ -213,7 +208,7 @@ func parseHeapProfile() (*HeapProfileResponse, error) {
 					// Fallback for entries without file info
 					funcWithOffset := parts[2]
 					funcName := strings.Split(funcWithOffset, "+")[0]
-					
+
 					if funcName != "" {
 						stackTrace = append(stackTrace, funcName)
 						if topFunction == "unknown" {
@@ -228,28 +223,28 @@ func parseHeapProfile() (*HeapProfileResponse, error) {
 				}
 			}
 		}
-		
+
 		// If we still don't have a function name, use a fallback
 		if topFunction == "unknown" {
 			topFunction = "runtime.allocation"
 		}
-		
+
 		entry.StackTrace = stackTrace
 		entry.TopFunction = topFunction
-		
+
 		result.Entries = append(result.Entries, entry)
 	}
-	
+
 	// Sort entries by bytes in use (descending)
 	sort.Slice(result.Entries, func(i, j int) bool {
 		return result.Entries[i].InUseBytes > result.Entries[j].InUseBytes
 	})
-	
+
 	// Create a copy of entries to avoid pool reference escape
-	entriesCopy := make([]*HeapProfileEntry, len(result.Entries))
-	copy(entriesCopy, result.Entries)
+	entriesCopy := make([]*HeapProfileEntry, len(entries))
+	copy(entriesCopy, entries)
 	result.Entries = entriesCopy
-	
+
 	return result, nil
 }
 
@@ -262,7 +257,7 @@ func handleHeapProfile(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, profile)
 }
 
@@ -275,17 +270,18 @@ func ParseRuntimeGoroutinesForTesting() []*kernel.GoroutineTrace {
 func parseRuntimeGoroutines() []*kernel.GoroutineTrace {
 	// Get buffer from pool
 	bufInterface := stackTraceBufPool.Get()
-	buf := bufInterface.([]byte)
-	defer stackTraceBufPool.Put(buf)
+	bufPtr := bufInterface.(*[]byte)
+	buf := *bufPtr
+	defer stackTraceBufPool.Put(bufPtr)
 
 	stackSize := runtime.Stack(buf, true)
 	stackTrace := string(buf[:stackSize])
 
 	// Get traces slice from pool
 	tracesInterface := traceResultPool.Get()
-	traces := tracesInterface.([]*kernel.GoroutineTrace)
-	traces = traces[:0] // Reset slice but keep capacity
-	defer traceResultPool.Put(traces)
+	tracesPtr := tracesInterface.(*[]*kernel.GoroutineTrace)
+	traces := (*tracesPtr)[:0] // Reset slice but keep capacity
+	defer traceResultPool.Put(tracesPtr)
 
 	// Split by "goroutine" keyword to separate different goroutines
 	goroutineSections := strings.Split(stackTrace, "\ngoroutine ")
@@ -315,9 +311,9 @@ func parseRuntimeGoroutines() []*kernel.GoroutineTrace {
 
 		// Extract function names from stack trace
 		functionName := extractFunctionFromStack(lines)
-		
+
 		// Create trace for this goroutine
-		// Note: We cannot determine actual start time from runtime stack, 
+		// Note: We cannot determine actual start time from runtime stack,
 		// so we use startup time as approximation for long-running goroutines
 		trace := &kernel.GoroutineTrace{
 			ID:        fmt.Sprintf("runtime-%s", goroutineID),
@@ -357,26 +353,26 @@ func extractFunctionFromStack(lines []string) string {
 	// Skip the first line (goroutine header) and look for the first function call
 	for i := 1; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
-		
+
 		// Skip empty lines and file/line info
 		if line == "" || strings.Contains(line, ".go:") {
 			continue
 		}
-		
+
 		// Extract function name from lines like "github.com/uozi-tech/cosy/debug.parseRuntimeGoroutines()"
 		if strings.Contains(line, "(") {
 			// Remove parameters if present
 			funcPart := strings.Split(line, "(")[0]
-			
+
 			// Clean up any trailing whitespace or dots
 			funcPart = strings.TrimSpace(funcPart)
 			funcPart = strings.TrimRight(funcPart, ".")
-			
+
 			// If the function part is empty or only contains package path, skip
 			if funcPart == "" || strings.HasSuffix(funcPart, "/") {
 				continue
 			}
-			
+
 			// Keep the full path for github.com packages, or simplify for others
 			if strings.Contains(funcPart, "github.com/") {
 				// For github.com packages, verify we have a function name
@@ -404,7 +400,7 @@ func extractFunctionFromStack(lines []string) string {
 			}
 		}
 	}
-	
+
 	return "runtime-goroutine"
 }
 
@@ -543,23 +539,23 @@ type MemoryInfo struct {
 	NumGC           uint32  `json:"num_gc"`
 	HeapAlloc       uint64  `json:"heap_alloc"`
 	HeapSys         uint64  `json:"heap_sys"`
-	HeapObjects     uint64  `json:"heap_objects"`     // Number of allocated heap objects
-	HeapInuse       uint64  `json:"heap_inuse"`       // Bytes in in-use spans
-	HeapIdle        uint64  `json:"heap_idle"`        // Bytes in idle spans
-	HeapReleased    uint64  `json:"heap_released"`    // Bytes released to the OS
-	StackInuse      uint64  `json:"stack_inuse"`      // Bytes in stack spans
-	StackSys        uint64  `json:"stack_sys"`        // Bytes obtained from system for stack
-	MSpanInuse      uint64  `json:"mspan_inuse"`      // Bytes in mspan structures
-	MSpanSys        uint64  `json:"mspan_sys"`        // Bytes obtained from system for mspan
-	MCacheInuse     uint64  `json:"mcache_inuse"`     // Bytes in mcache structures
-	MCacheSys       uint64  `json:"mcache_sys"`       // Bytes obtained from system for mcache
-	BuckHashSys     uint64  `json:"buck_hash_sys"`    // Bytes in profiling bucket hash table
-	GCSys           uint64  `json:"gc_sys"`           // Bytes in garbage collection metadata
-	OtherSys        uint64  `json:"other_sys"`        // Bytes in other system allocations
-	NextGC          uint64  `json:"next_gc"`          // Target heap size of next GC cycle
-	LastGC          uint64  `json:"last_gc"`          // Time of last garbage collection (nanoseconds)
-	PauseTotalNs    uint64  `json:"pause_total_ns"`   // Total GC pause time in nanoseconds
-	GCCPUFraction   float64 `json:"gc_cpu_fraction"`  // Fraction of CPU used by GC
+	HeapObjects     uint64  `json:"heap_objects"`      // Number of allocated heap objects
+	HeapInuse       uint64  `json:"heap_inuse"`        // Bytes in in-use spans
+	HeapIdle        uint64  `json:"heap_idle"`         // Bytes in idle spans
+	HeapReleased    uint64  `json:"heap_released"`     // Bytes released to the OS
+	StackInuse      uint64  `json:"stack_inuse"`       // Bytes in stack spans
+	StackSys        uint64  `json:"stack_sys"`         // Bytes obtained from system for stack
+	MSpanInuse      uint64  `json:"mspan_inuse"`       // Bytes in mspan structures
+	MSpanSys        uint64  `json:"mspan_sys"`         // Bytes obtained from system for mspan
+	MCacheInuse     uint64  `json:"mcache_inuse"`      // Bytes in mcache structures
+	MCacheSys       uint64  `json:"mcache_sys"`        // Bytes obtained from system for mcache
+	BuckHashSys     uint64  `json:"buck_hash_sys"`     // Bytes in profiling bucket hash table
+	GCSys           uint64  `json:"gc_sys"`            // Bytes in garbage collection metadata
+	OtherSys        uint64  `json:"other_sys"`         // Bytes in other system allocations
+	NextGC          uint64  `json:"next_gc"`           // Target heap size of next GC cycle
+	LastGC          uint64  `json:"last_gc"`           // Time of last garbage collection (nanoseconds)
+	PauseTotalNs    uint64  `json:"pause_total_ns"`    // Total GC pause time in nanoseconds
+	GCCPUFraction   float64 `json:"gc_cpu_fraction"`   // Fraction of CPU used by GC
 	HeapProfileSize int     `json:"heap_profile_size"` // Approximate heap profile sample count
 }
 
@@ -629,12 +625,12 @@ type HeapProfileEntry struct {
 
 // HeapProfileResponse represents heap profile data
 type HeapProfileResponse struct {
-	TotalInUseObjects int64                `json:"total_inuse_objects"`
-	TotalInUseBytes   int64                `json:"total_inuse_bytes"`
-	TotalAllocObjects int64                `json:"total_alloc_objects"`
-	TotalAllocBytes   int64                `json:"total_alloc_bytes"`
-	SampleRate        int                  `json:"sample_rate"`
-	Entries           []*HeapProfileEntry  `json:"entries"`
+	TotalInUseObjects int64               `json:"total_inuse_objects"`
+	TotalInUseBytes   int64               `json:"total_inuse_bytes"`
+	TotalAllocObjects int64               `json:"total_alloc_objects"`
+	TotalAllocBytes   int64               `json:"total_alloc_bytes"`
+	SampleRate        int                 `json:"sample_rate"`
+	Entries           []*HeapProfileEntry `json:"entries"`
 }
 
 // WSConnectionsResponse represents WebSocket connections response
@@ -670,57 +666,16 @@ type EmptyListResponse struct {
 	Total int   `json:"total"`
 }
 
-// InitRouter registers debug handlers to the specified router group
-// Business layer can add custom authentication middleware before registration
-func InitRouter(group *gin.RouterGroup) {
-	g := group.Group("/debug", logger.SkipAuditMiddleware()) // Skip audit logging for all debug routes
-	{
-		// === API Endpoints ===
-		// System information
-		g.GET("/system", handleSystemInfo)
-		
-		// Heap profiling
-		g.GET("/heap", handleHeapProfile)
-
-		// Goroutine monitoring
-		g.GET("/goroutines", handleGoroutines)
-		g.GET("/goroutine/:id", handleGoroutineDetail)
-		g.GET("/goroutines/history", handleGoroutineHistory)
-		g.GET("/goroutines/active", handleActiveGoroutines)
-
-		// Request monitoring
-		g.GET("/requests", handleRequests)
-		g.GET("/request/:id", handleRequestDetail)
-		g.GET("/requests/history", handleRequestHistory)
-		g.GET("/requests/active", handleActiveRequests)
-		g.POST("/requests/search", handleRequestSearch)
-
-		// Real-time monitoring
-		g.GET("/ws", HandleWebSocket)
-		g.GET("/stats", handleMonitorStats)
-		g.GET("/connections", handleWSConnections)
-
-		// Combined monitoring (goroutines + requests)
-		g.GET("/monitor", handleUnifiedMonitor)
-
-		// Register pprof routes using gin-contrib/pprof
-		ginpprof.RouteRegister(g, "/pprof")
-
-		// === Static UI files (register last to avoid conflicts) ===
-		g.GET("/ui/*filepath", handleStaticFiles)
-	}
-}
-
 func handleSystemInfo(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
 	// Get monitor hub for additional statistics
 	hub := GetMonitorHub()
-	
+
 	// Get real pprof data
 	heapProfileSize, _ := getPprofProfileCounts()
-	
+
 	// Fallback to runtime data if pprof is unavailable
 	if heapProfileSize == 0 {
 		numGoroutines := runtime.NumGoroutine()
@@ -852,11 +807,11 @@ func handleGoroutines(c *gin.Context) {
 	case "active":
 		// Get kernel-managed active goroutines
 		traces = kernel.GetActiveGoroutineTraces()
-		
+
 		// Always add runtime goroutines for complete view (they are also active)
 		runtimeTraces := parseRuntimeGoroutines()
 		traces = append(traces, runtimeTraces...)
-		
+
 		// Store runtime goroutines in MonitorHub for consistent access
 		if hub := GetMonitorHub(); hub != nil {
 			for _, trace := range runtimeTraces {
@@ -873,11 +828,11 @@ func handleGoroutines(c *gin.Context) {
 	default:
 		// Default: return all (kernel active + history + runtime active)
 		traces = kernel.GetAllGoroutineTraces()
-		
+
 		// Always add runtime goroutines for complete view
 		runtimeTraces := parseRuntimeGoroutines()
 		traces = append(traces, runtimeTraces...)
-		
+
 		// Store runtime goroutines in MonitorHub for consistent access
 		if hub := GetMonitorHub(); hub != nil {
 			for _, trace := range runtimeTraces {
@@ -1414,23 +1369,25 @@ func handleUnifiedMonitor(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+
 // handleStaticFiles serves static files from the embedded filesystem
 func handleStaticFiles(c *gin.Context) {
 	filePath := c.Param("filepath")
-
-	// Log for debugging
-	log.Printf("Static file request: %s", filePath)
 
 	// Remove leading slash
 	if len(filePath) > 0 && filePath[0] == '/' {
 		filePath = filePath[1:]
 	}
 
+	// If no file path or empty path, serve index.html
+	if filePath == "" {
+		filePath = "index.html"
+	}
+
 	// Try to open the file
 	file, err := app.Open(filePath)
 	if err != nil {
-		log.Printf("File not found: %s, error: %v", filePath, err)
-		c.Status(http.StatusNotFound)
+		cosy.ErrHandler(c, err)
 		return
 	}
 	defer file.Close()
@@ -1438,8 +1395,7 @@ func handleStaticFiles(c *gin.Context) {
 	// Get file info
 	info, err := file.Stat()
 	if err != nil {
-		log.Printf("Failed to get file info: %v", err)
-		c.Status(http.StatusInternalServerError)
+		cosy.ErrHandler(c, err)
 		return
 	}
 
@@ -1460,8 +1416,6 @@ func handleStaticFiles(c *gin.Context) {
 			contentType = "application/octet-stream"
 		}
 	}
-
-	log.Printf("Serving file: %s, size: %d, content-type: %s", filePath, info.Size(), contentType)
 
 	// Set proper headers
 	c.Header("Content-Type", contentType)

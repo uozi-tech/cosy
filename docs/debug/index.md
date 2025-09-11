@@ -85,6 +85,66 @@ http://localhost:8080/api/debug/ui/
 - `GET /debug/heap` - 获取堆内存分析
 - `GET /debug/pprof/*` - 标准 Go pprof 分析端点
 
+## kernel.Run 用法
+
+`kernel.Run` 是与调试系统集成的 Goroutine 跟踪和会话日志管理功能，所有通过 `kernel.Run` 启动的 Goroutine 都会被自动跟踪和监控。
+
+### 基本用法
+
+```go
+import (
+    "context"
+    "github.com/uozi-tech/cosy/kernel"
+    "github.com/uozi-tech/cosy/logger"
+)
+
+// 同步执行
+kernel.Run(ctx, "task-name", func(ctx context.Context) {
+    sessionLogger := logger.NewSessionLogger(ctx)
+    sessionLogger.Info("任务执行")
+    // 业务逻辑...
+})
+
+// 异步执行
+go kernel.Run(ctx, "async-task", func(ctx context.Context) {
+    sessionLogger := logger.NewSessionLogger(ctx)
+    sessionLogger.Info("异步任务执行")
+    // 业务逻辑...
+})
+```
+
+### 与调试系统的集成
+
+- **自动跟踪**: 所有 `kernel.Run` 启动的 Goroutine 都会出现在调试界面中
+- **状态监控**: 实时显示 Goroutine 的运行状态（running, completed, failed）
+- **会话日志**: 每个 Goroutine 的日志都会被单独记录和展示
+- **栈跟踪**: 提供完整的调用栈信息，排除框架噪音
+- **生命周期**: 完整记录从启动到完成的整个生命周期
+
+### 最佳实践
+
+```go
+// 为 Goroutine 提供有意义的名称
+kernel.Run(ctx, "user-notification-sender", func(ctx context.Context) {
+    sessionLogger := logger.NewSessionLogger(ctx)
+    sessionLogger.Info("开始发送用户通知", logger.Field("user_id", userID))
+    
+    // 业务逻辑
+    if err := sendNotification(userID); err != nil {
+        sessionLogger.Error("发送通知失败", logger.Field("error", err))
+        return
+    }
+    
+    sessionLogger.Info("用户通知发送完成")
+})
+```
+
+通过调试界面的 Goroutine 监控页面，您可以：
+- 查看所有活跃的 `kernel.Run` Goroutine
+- 监控 Goroutine 的执行历史
+- 查看每个 Goroutine 的详细日志
+- 分析 Goroutine 的性能和错误信息
+
 ## 安全注意事项
 
 ::: danger 安全警告
