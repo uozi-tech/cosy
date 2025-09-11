@@ -58,6 +58,26 @@ func NewSessionLogger(ctx context.Context) *SessionLogger {
 	}
 }
 
+// ForkSessionLogger creates a new session logger for a derived context,
+// with a new log buffer to avoid sharing log stacks between goroutines.
+// It returns a new context with the forked logger, and the logger itself.
+func ForkSessionLogger(ctx context.Context) (context.Context, *SessionLogger) {
+	parentLogger := NewSessionLogger(ctx)
+
+	// Create a new logger, inheriting properties from the parent
+	// but with a fresh LogBuffer.
+	forkedLogger := &SessionLogger{
+		RequestID: parentLogger.RequestID,
+		Logs:      NewLogBuffer(),
+		Logger:    parentLogger.Logger,
+	}
+
+	// Create a new context with the forked logger.
+	newCtx := context.WithValue(ctx, CosySessionLoggerCtxKey, forkedLogger)
+
+	return newCtx, forkedLogger
+}
+
 func (s *SessionLogger) WithOptions(opts ...zap.Option) *SessionLogger {
 	s.Logger = s.Logger.WithOptions(opts...)
 	return s
@@ -65,85 +85,85 @@ func (s *SessionLogger) WithOptions(opts ...zap.Option) *SessionLogger {
 
 // "Debug" logs a message at DebugLevel.
 func (s *SessionLogger) Debug(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Debugln(args...)
+	s.Logger.Debugln(args...)
 	s.Logs.AppendLog(zapcore.DebugLevel, getMessageln(args...))
 }
 
 // Info logs a message at InfoLevel.
 func (s *SessionLogger) Info(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Infoln(args...)
+	s.Logger.Infoln(args...)
 	s.Logs.AppendLog(zapcore.InfoLevel, getMessageln(args...))
 }
 
 // Warn logs a message at WarnLevel.
 func (s *SessionLogger) Warn(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Warnln(args...)
+	s.Logger.Warnln(args...)
 	s.Logs.AppendLog(zapcore.WarnLevel, getMessageln(args...))
 }
 
 // Error logs a message at ErrorLevel.
 func (s *SessionLogger) Error(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Errorln(args...)
+	s.Logger.Errorln(args...)
 	s.Logs.AppendLog(zapcore.ErrorLevel, getMessageln(args...))
 }
 
 // DPanic logs a message at DPanicLevel.
 func (s *SessionLogger) DPanic(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).DPanic(args...)
+	s.Logger.DPanic(args...)
 	s.Logs.AppendLog(zapcore.DPanicLevel, getMessageln(args...))
 }
 
 // Panic logs a message at PanicLevel.
 func (s *SessionLogger) Panic(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Panicln(args...)
+	s.Logger.Panicln(args...)
 	s.Logs.AppendLog(zapcore.PanicLevel, getMessageln(args...))
 }
 
 // Fatal logs a message at FatalLevel.
 func (s *SessionLogger) Fatal(args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Fatalln(args...)
+	s.Logger.Fatalln(args...)
 	s.Logs.AppendLog(zapcore.FatalLevel, getMessageln(args...))
 }
 
 // Debugf logs a message at DebugLevel.
 func (s *SessionLogger) Debugf(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Debugf(format, args...)
+	s.Logger.Debugf(format, args...)
 	s.Logs.AppendLog(zapcore.DebugLevel, getMessageln(args...))
 }
 
 // Infof logs a message at InfoLevel.
 func (s *SessionLogger) Infof(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Infof(format, args...)
+	s.Logger.Infof(format, args...)
 	s.Logs.AppendLog(zapcore.InfoLevel, getMessageln(args...))
 }
 
 // Warnf logs a message at WarnLevel.
 func (s *SessionLogger) Warnf(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Warnf(format, args...)
+	s.Logger.Warnf(format, args...)
 	s.Logs.AppendLog(zapcore.WarnLevel, getMessageln(args...))
 }
 
 // Errorf logs a message at ErrorLevel.
 func (s *SessionLogger) Errorf(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Errorf(format, args...)
+	s.Logger.Errorf(format, args...)
 	s.Logs.AppendLog(zapcore.ErrorLevel, getMessageln(args...))
 }
 
 // DPanicf logs a message at DPanicLevel.
 func (s *SessionLogger) DPanicf(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).DPanicf(format, args...)
+	s.Logger.DPanicf(format, args...)
 	s.Logs.AppendLog(zapcore.DPanicLevel, getMessageln(args...))
 }
 
 // Panicf logs a message at PanicLevel.
 func (s *SessionLogger) Panicf(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Panicf(format, args...)
+	s.Logger.Panicf(format, args...)
 	s.Logs.AppendLog(zapcore.PanicLevel, getMessageln(args...))
 }
 
 // Fatalf logs a message at FatalLevel.
 func (s *SessionLogger) Fatalf(format string, args ...any) {
-	s.Logger.WithOptions(zap.AddCallerSkip(1)).Fatalf(format, args...)
+	s.Logger.Fatalf(format, args...)
 	s.Logs.AppendLog(zapcore.FatalLevel, getMessageln(args...))
 }
 

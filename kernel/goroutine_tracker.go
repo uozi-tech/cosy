@@ -435,11 +435,9 @@ func Run(ctx context.Context, name string, fn func(context.Context)) {
 	labels := pprof.Labels("goroutine_id", goroutineID, "name", name, "type", "runtime")
 	ctxWithLabels := pprof.WithLabels(ctx, labels)
 
-	// Create session logger for this goroutine
-	sessionLogger := logger.NewSessionLogger(ctxWithLabels)
+	// Fork session logger for this goroutine to ensure a separate log buffer
+	ctxWithSessionLogger, sessionLogger := logger.ForkSessionLogger(ctxWithLabels)
 
-	// Add session logger to context so the function can access it
-	ctxWithSessionLogger := context.WithValue(ctxWithLabels, logger.CosySessionLoggerCtxKey, sessionLogger)
 	// Create trace record with cleaned stack (skip kernel.Run frames)
 	stack := string(debug.Stack())
 	cleanedStack := cleanStackTrace(stack)

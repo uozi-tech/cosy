@@ -40,7 +40,7 @@ func (l *LogBuffer) Append(item LogItem) {
 
 // AppendLog adds a log message with level and caller information
 func (l *LogBuffer) AppendLog(level zapcore.Level, message string) {
-	_, file, line, _ := runtime.Caller(3)
+	_, file, line, _ := runtime.Caller(2)
 	l.Append(LogItem{
 		Time:    time.Now().Unix(),
 		Level:   level,
