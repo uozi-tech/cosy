@@ -114,10 +114,6 @@ function formatGoroutineName(item: GoroutineInfo): string {
   return `Goroutine #${item.id.replace(/^runtime-/, '')}`
 }
 
-function formatGoroutineId(item: GoroutineInfo): string {
-  return item.id.replace(/^runtime-/, '')
-}
-
 function formatGoroutineDuration(item: GoroutineInfo): string {
   // GoroutineInfo already has duration in seconds, convert to milliseconds
   return formatDuration(item.duration * 1000)
@@ -272,10 +268,7 @@ function closeGoroutineDetail() {
                         <ATag :class="getStatusClass(item.status)">
                           {{ item.status }}
                         </ATag>
-                        <ATooltip v-if="item.name && item.name !== `goroutine-${formatGoroutineId(item)}`" :title="item.name">
-                          <span class="font-medium font-mono text-sm">{{ formatGoroutineName(item) }}</span>
-                        </ATooltip>
-                        <span v-else class="font-medium text-gray-500">{{ formatGoroutineName(item) }}</span>
+                        <span class="font-medium font-mono text-sm">{{ formatGoroutineName(item) }}</span>
                       </ASpace>
                       <AButton
                         type="link"
