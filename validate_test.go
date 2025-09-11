@@ -2,14 +2,15 @@ package cosy
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	"github.com/uozi-tech/cosy/logger"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/logger"
 )
 
 type Deep struct {
@@ -52,13 +53,13 @@ func TestBindAndValid(t *testing.T) {
 
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
-	var b map[string]interface{}
+	var b map[string]any
 	_ = json.Unmarshal(bodyBytes, &b)
 
 	logger.Debug(b)
-	assert.Equal(t, "url", b["errors"].(map[string]interface{})["name"])
+	assert.Equal(t, "url", b["errors"].(map[string]any)["name"])
 	assert.Equal(t, "hostname_port",
-		b["errors"].(map[string]interface{})["dive_strings"].(map[string]interface{})["0"])
+		b["errors"].(map[string]any)["dive_strings"].(map[string]any)["0"])
 	assert.Equal(t, "hostname_port",
-		b["errors"].(map[string]interface{})["deep"].(map[string]interface{})["dive_strings"].(map[string]interface{})["0"])
+		b["errors"].(map[string]any)["deep"].(map[string]any)["dive_strings"].(map[string]any)["0"])
 }

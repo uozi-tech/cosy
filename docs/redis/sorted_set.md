@@ -3,7 +3,7 @@
 ## ZAdd
 向有序集合中添加一个成员，或者更新已存在成员的分数。
 ```go
-func ZAdd(key string, score float64, value interface{}) (int64, error)
+func ZAdd(key string, score float64, value any) (int64, error)
 ```
 
 ## ZCard
@@ -57,7 +57,7 @@ func ZRank(key, member string) (int64, error)
 ## ZRem
 移除有序集合中的一个或多个成员。
 ```go
-func ZRem(key string, members ...interface{}) (int64, error)
+func ZRem(key string, members ...any) (int64, error)
 ```
 
 ## ZRemRangeByRank

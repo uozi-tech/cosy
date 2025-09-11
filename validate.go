@@ -18,10 +18,10 @@ type ValidateError struct {
 	// CosyError
 	Error
 	// ValidateErrors
-	Errors map[string]interface{} `json:"errors"`
+	Errors map[string]any `json:"errors"`
 }
 
-func NewValidateError(errors map[string]interface{}) *ValidateError {
+func NewValidateError(errors map[string]any) *ValidateError {
 	return &ValidateError{
 		Error: Error{
 			Scope:   "validate",
@@ -96,7 +96,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 	}
 
 	// Make sure that the key in c.Payload is also the key of rules
-	validated := make(map[string]interface{})
+	validated := make(map[string]any)
 
 	for k, v := range c.Payload {
 		if _, ok := c.rules[k]; ok {
@@ -125,7 +125,7 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 		return
 	}
 
-	errs = v.ValidateMap(c.Payload["data"].(map[string]interface{}), c.rules)
+	errs = v.ValidateMap(c.Payload["data"].(map[string]any), c.rules)
 
 	if len(errs) > 0 {
 		// logger.Debug(errs)
@@ -136,8 +136,8 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	}
 
 	// Make sure that the key in c.Payload is also the key of rules
-	validated := make(map[string]interface{})
-	for k, value := range c.Payload["data"].(map[string]interface{}) {
+	validated := make(map[string]any)
+	for k, value := range c.Payload["data"].(map[string]any) {
 		if _, ok := c.rules[k]; ok {
 			validated[k] = value
 		}
@@ -147,7 +147,7 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	return
 }
 
-func BindAndValid(c *gin.Context, target interface{}) bool {
+func BindAndValid(c *gin.Context, target any) bool {
 	err := c.ShouldBindJSON(target)
 	if err != nil {
 		var verrs validator.ValidationErrors
@@ -158,7 +158,7 @@ func BindAndValid(c *gin.Context, target interface{}) bool {
 		}
 
 		t := reflect.TypeOf(target).Elem()
-		errorsMap := make(map[string]interface{})
+		errorsMap := make(map[string]any)
 		for _, value := range verrs {
 			var path []string
 			namespace := strings.Split(value.StructNamespace(), ".")
@@ -224,7 +224,7 @@ func getJsonPath(t reflect.Type, fields []string, path *[]string) {
 }
 
 // insertError inserts an error into the errors map
-func insertError(errorsMap map[string]interface{}, path []string, errorTag string) {
+func insertError(errorsMap map[string]any, path []string, errorTag string) {
 	if len(path) == 0 {
 		return
 	}
@@ -238,10 +238,10 @@ func insertError(errorsMap map[string]interface{}, path []string, errorTag strin
 
 	// Create a new map if necessary
 	if _, ok := errorsMap[jsonTag]; !ok {
-		errorsMap[jsonTag] = make(map[string]interface{})
+		errorsMap[jsonTag] = make(map[string]any)
 	}
 
 	// Recursively insert into the nested map
-	subMap, _ := errorsMap[jsonTag].(map[string]interface{})
+	subMap, _ := errorsMap[jsonTag].(map[string]any)
 	insertError(subMap, path[1:], errorTag)
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/uozi-tech/cosy/settings"
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/utils"
 )
@@ -90,23 +89,23 @@ func (l *GormLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
 }
 
 // Info implements the gormlogger.Interface interface
-func (l *GormLogger) Info(ctx context.Context, msg string, data ...interface{}) {
+func (l *GormLogger) Info(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Info {
-		l.Printf(l.infoStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
+		l.Printf(l.infoStr+msg, append([]any{utils.FileWithLineNum()}, data...)...)
 	}
 }
 
 // Warn implements the gormlogger.Interface interface
-func (l *GormLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (l *GormLogger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Warn {
-		l.Printf(l.warnStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
+		l.Printf(l.warnStr+msg, append([]any{utils.FileWithLineNum()}, data...)...)
 	}
 }
 
 // Error implements the gormlogger.Interface interface
-func (l *GormLogger) Error(ctx context.Context, msg string, data ...interface{}) {
+func (l *GormLogger) Error(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Error {
-		l.Printf(l.errStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
+		l.Printf(l.errStr+msg, append([]any{utils.FileWithLineNum()}, data...)...)
 	}
 }
 
@@ -119,7 +118,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 
-	logItem := SLSLogItem{
+	logItem := LogItem{
 		Time:   time.Now().Unix(),
 		Caller: utils.FileWithLineNum(),
 	}
@@ -152,20 +151,16 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 		}
 	}
 
-	if !settings.SLSSettings.Enable() {
-		return
-	}
-
 	ginContext, ok := ctx.(*gin.Context)
 	if !ok {
 		return
 	}
 
-	ctxSqlLogs, ok := ginContext.Get(CosySLSLogStackKey)
+	ctxLogs, ok := ginContext.Get(CosyLogBufferKey)
 	if !ok {
 		return
 	}
 
-	sqlLogs := ctxSqlLogs.(*SLSLogStack)
-	sqlLogs.Append(logItem)
+	logs := ctxLogs.(*LogBuffer)
+	logs.Append(logItem)
 }

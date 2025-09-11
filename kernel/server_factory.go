@@ -249,11 +249,11 @@ func (sf *ServerFactory) GetRunningProtocols() []string {
 }
 
 // GetServerInfo returns information about configured servers
-func (sf *ServerFactory) GetServerInfo() map[string]interface{} {
+func (sf *ServerFactory) GetServerInfo() map[string]any {
 	sf.mu.RLock()
 	defer sf.mu.RUnlock()
 
-	info := map[string]interface{}{
+	info := map[string]any{
 		"running":           sf.running,
 		"enabled_protocols": sf.getEnabledProtocols(),
 		"protocol_priority": []string{ProtocolH3, ProtocolH2, ProtocolH1}, // Fixed priority

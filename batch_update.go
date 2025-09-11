@@ -1,10 +1,11 @@
 package cosy
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/map2struct"
 	"github.com/uozi-tech/cosy/model"
-	"net/http"
 )
 
 type batchUpdateStruct[T any] struct {
@@ -36,7 +37,7 @@ func (c *Ctx[T]) BatchModify() {
 	}
 
 	resolvedModel := model.GetResolvedModel[T]()
-	for k := range c.Payload["data"].(map[string]interface{}) {
+	for k := range c.Payload["data"].(map[string]any) {
 		// check if the field is allowed to be batch updated
 		field, ok := resolvedModel.Fields[k]
 		if !ok {

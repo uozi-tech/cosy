@@ -1,21 +1,48 @@
 package kernel
 
-import "context"
+import (
+	"context"
+	"fmt"
 
-var async []func()
+	"github.com/uozi-tech/cosy/logger"
+)
 
-var syncs []func(context.Context)
+var (
+	async            []func()
+	syncs            []func(context.Context)
+	debugInitializer func() error
+)
+
+// RegisterDebugInitializer registers a debug system initializer
+func RegisterDebugInitializer(initializer func() error) {
+	debugInitializer = initializer
+}
 
 // Boot the kernel
 func Boot(ctx context.Context) {
 	defer recovery()
 
+	// Initialize debug monitoring system if registered
+	if debugInitializer != nil {
+		if err := debugInitializer(); err != nil {
+			logger.GetLogger().Error("Failed to initialize debug system:", err)
+		}
+	}
+
+	// Start history cleanup timer
+	StartHistoryCleanup()
+
 	for _, v := range async {
 		v()
 	}
 
-	for _, v := range syncs {
-		go v(ctx)
+	// Start goroutines with tracking using the new Run function
+	for i, v := range syncs {
+		name := fmt.Sprintf("kernel-goroutine-%d", i)
+		fn := v
+		
+		// Use Run function with async execution
+		go Run(ctx, name, fn)
 	}
 }
 
@@ -27,4 +54,10 @@ func RegisterInitFunc(f ...func()) {
 // RegisterGoroutine Register syncs functions, this function should be called before kernel boot.
 func RegisterGoroutine(f ...func(context.Context)) {
 	syncs = append(syncs, f...)
+}
+
+// ClearRegisteredGoroutines clears all registered goroutines (for testing purposes)
+func ClearRegisteredGoroutines() {
+	syncs = nil
+	async = nil
 }

@@ -3,7 +3,7 @@
 ## HSet
 设置哈希表中指定字段的值。
 ```go
-func HSet(key string, field string, value interface{}) (int64, error)
+func HSet(key string, field string, value any) (int64, error)
 ```
 
 ## HGet
@@ -45,5 +45,5 @@ func HLen(key string) (int64, error)
 ## HSetNX
 设置哈希表中指定字段的值，如果字段不存在。
 ```go
-func HSetNX(key string, field string, value interface{}) (bool, error)
+func HSetNX(key string, field string, value any) (bool, error)
 ```

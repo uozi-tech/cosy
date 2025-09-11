@@ -24,7 +24,7 @@ func DbUnique[T any](ctx context.Context, payload gin.H, columns []string) (conf
 			db.Or(v, payload[v])
 		}
 	}
-	result := map[string]interface{}{}
+	result := map[string]any{}
 	err = db.Unscoped().Select(strings.Join(append([]string{"id"}, columns...), ", ")).First(&result).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

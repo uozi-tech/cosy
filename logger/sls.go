@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"time"
 
 	"log"
@@ -15,8 +14,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
-
-	"sync"
 
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 )
@@ -50,7 +47,7 @@ func (w *SLSWriter) Write(p []byte) (n int, err error) {
 	}
 
 	// Parse the log entry
-	var logEntry map[string]interface{}
+	var logEntry map[string]any
 	if err := json.Unmarshal(p, &logEntry); err != nil {
 		return len(p), err
 	}
@@ -197,40 +194,6 @@ func GetAuditProducer() *producer.Producer {
 	return auditProducer
 }
 
-type SLSLogItem struct {
-	Time    int64         `json:"time"`
-	Level   zapcore.Level `json:"level"`
-	Caller  string        `json:"caller"`
-	Message string        `json:"message"`
-}
-
-type SLSLogStack struct {
-	Items []SLSLogItem `json:"items"`
-	mutex sync.Mutex
-}
-
-func NewSLSLogStack() *SLSLogStack {
-	return &SLSLogStack{
-		Items: make([]SLSLogItem, 0),
-		mutex: sync.Mutex{},
-	}
-}
-
-func (l *SLSLogStack) Append(item SLSLogItem) {
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
-	l.Items = append(l.Items, item)
-}
-
-func (l *SLSLogStack) AppendLog(level zapcore.Level, message string) {
-	_, file, line, _ := runtime.Caller(3)
-	l.Append(SLSLogItem{
-		Time:    time.Now().Unix(),
-		Level:   level,
-		Caller:  fmt.Sprintf("%s:%d", file, line),
-		Message: message,
-	})
-}
 
 // ZapLogger is a hack logger for SLS
 type ZapLogger struct {
@@ -238,11 +201,11 @@ type ZapLogger struct {
 }
 
 // Log logs the message to console with zap logger from sls
-func (zl ZapLogger) Log(keyvals ...interface{}) error {
+func (zl ZapLogger) Log(keyvals ...any) error {
 	if len(keyvals)%2 != 0 {
 		return fmt.Errorf("odd number of arguments")
 	}
-	var loggerFunc func(args ...interface{})
+	var loggerFunc func(args ...any)
 	logger := zl.logger.WithOptions(zap.AddCallerSkip(1))
 	for i := 0; i < len(keyvals); i += 2 {
 		key, ok := keyvals[i].(string)

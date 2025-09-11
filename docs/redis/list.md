@@ -3,13 +3,13 @@
 ## RPush
 将值追加到列表的末尾。如果列表不存在，则创建列表。
 ```go
-func RPush(key string, values ...interface{}) error
+func RPush(key string, values ...any) error
 ```
 
 ## LPush
 将值添加到列表的开头。如果列表不存在，则创建列表。
 ```go
-func LPush(key string, values ...interface{}) error
+func LPush(key string, values ...any) error
 ```
 
 ## LLen
@@ -39,13 +39,13 @@ func GetList(key string) ([]string, error)
 ## LRem
 从列表中删除指定的元素。
 ```go
-func LRem(key string, value interface{}) (int64, error)
+func LRem(key string, value any) (int64, error)
 ```
 
 ## InsertIntoList
 在列表中相对于 pivot 插入一个元素。
 ```go
-func InsertIntoList(key string, pivot interface{}, value interface{}, before bool) (int64, error)
+func InsertIntoList(key string, pivot any, value any, before bool) (int64, error)
 ```
 
 ## LIndex

@@ -22,7 +22,7 @@ func init() {
 		return lvl >= zapcore.ErrorLevel
 	})
 	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-			return lvl < zapcore.ErrorLevel
+		return lvl < zapcore.ErrorLevel
 	})
 
 	// Directly output to stdout and stderr, and add caller information.

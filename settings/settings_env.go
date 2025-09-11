@@ -13,7 +13,7 @@ func SetEnvPrefix(prefix string) {
 	envPrefix = prefix
 }
 
-func parseEnv(ptr interface{}, prefix string) {
+func parseEnv(ptr any, prefix string) {
 	err := env.ParseWithOptions(ptr, env.Options{
 		Prefix:                envPrefix + prefix,
 		UseFieldNameByDefault: true,

@@ -1,10 +1,11 @@
 package cosy
 
 import (
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/uozi-tech/cosy/model"
-	"testing"
 )
 
 func TestInternalGetHook(t *testing.T) {

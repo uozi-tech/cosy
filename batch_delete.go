@@ -96,7 +96,7 @@ func (c *Ctx[T]) BatchRecover() {
 	var err error
 	resolvedModel := model.GetResolvedModel[T]()
 	if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
-			(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
+		(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
 		err = result.Update("deleted_at", nil).Error
 	} else {
 		err = result.Update("deleted_at", 0).Error

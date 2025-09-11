@@ -82,8 +82,8 @@ func main() {
     r := gin.Default()
 
     // 使用审计中间件，自动记录地理位置信息
-    r.Use(logger.AuditMiddleware(func(c *gin.Context) map[string]interface{} {
-        return map[string]interface{}{
+    r.Use(logger.AuditMiddleware(func(c *gin.Context) map[string]any {
+        return map[string]any{
             "country": geoip.ParseIP(c.ClientIP()),
         }
     }))

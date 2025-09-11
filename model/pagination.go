@@ -8,8 +8,8 @@ type Pagination struct {
 }
 
 type DataList struct {
-	Data       interface{} `json:"data"`
-	Pagination Pagination  `json:"pagination,omitempty"`
+	Data       any        `json:"data"`
+	Pagination Pagination `json:"pagination,omitempty"`
 }
 
 // TotalPage calculate total page

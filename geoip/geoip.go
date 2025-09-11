@@ -8,8 +8,8 @@ import (
 	"net"
 
 	"github.com/oschwald/geoip2-golang"
-	"github.com/uozi-tech/cosy/logger"
 	"github.com/ulikunitz/xz"
+	"github.com/uozi-tech/cosy/logger"
 )
 
 //go:embed GeoLite2-Country.mmdb.xz

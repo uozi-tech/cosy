@@ -1,12 +1,13 @@
 package cosy
 
 import (
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/uozi-tech/cosy/model"
 	"github.com/uozi-tech/cosy/router"
 	"github.com/uozi-tech/cosy/sandbox"
-	"testing"
 )
 
 func TestCtx_BatchDeleteAndRecover(t *testing.T) {
@@ -23,10 +24,10 @@ func TestCtx_BatchDeleteAndRecover(t *testing.T) {
 		Api[User]("users").InitRouter(g)
 		g.PUT("/users", func(c *gin.Context) {
 			Core[User](c).
-					SetValidRules(gin.H{
-						"gender": "omitempty",
-						"age":    "omitempty",
-					}).BatchModify()
+				SetValidRules(gin.H{
+					"gender": "omitempty",
+					"age":    "omitempty",
+				}).BatchModify()
 		})
 		g.DELETE("/users", func(c *gin.Context) {
 			Core[User](c).BatchDestroy()
@@ -41,7 +42,7 @@ func TestCtx_BatchDeleteAndRecover(t *testing.T) {
 }
 
 func prepareData(t *testing.T, instance *sandbox.Instance) {
-	body := map[string]interface{}{
+	body := map[string]any{
 		"school_id":           "0281876",
 		"avatar":              "",
 		"gender":              0,
@@ -71,7 +72,7 @@ func prepareData(t *testing.T, instance *sandbox.Instance) {
 		return
 	}
 
-	body = map[string]interface{}{
+	body = map[string]any{
 		"school_id":           "0281877",
 		"avatar":              "",
 		"gender":              0,

@@ -9,9 +9,9 @@ import (
 
 func (c *Ctx[T]) UpdateOrder() {
 	var json struct {
-		TargetID    interface{}   `json:"target_id"`
-		Direction   int           `json:"direction" binding:"oneof=-1 1"`
-		AffectedIDs []interface{} `json:"affected_ids"`
+		TargetID    any   `json:"target_id"`
+		Direction   int   `json:"direction" binding:"oneof=-1 1"`
+		AffectedIDs []any `json:"affected_ids"`
 	}
 
 	if !BindAndValid(c.Context, &json) {

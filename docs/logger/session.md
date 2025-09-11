@@ -119,29 +119,14 @@ func (s *SessionLogger) Fatalf(format string, args ...any)
 ```go
 type SessionLogger struct {
     RequestID string              // 请求 ID
-    Logs      *SLSLogStack       // SLS 日志堆栈
+    Logs      *LogBuffer         // 日志缓冲区
     Logger    *zap.SugaredLogger // 底层日志记录器
 }
 ```
 
-### SLSLogItem
+### LogBuffer 和 LogItem
 
-```go
-type SLSLogItem struct {
-    Time    int64         `json:"time"`    // 时间戳
-    Level   zapcore.Level `json:"level"`   // 日志级别
-    Caller  string        `json:"caller"`  // 调用位置
-    Message string        `json:"message"` // 日志消息
-}
-```
-
-### SLSLogStack
-
-```go
-type SLSLogStack struct {
-    Items []SLSLogItem `json:"items"` // 日志项列表
-    mutex sync.Mutex                  // 并发安全保护
-}
+日志相关的数据结构已移至独立模块。详见 [LogBuffer 文档](./log-buffer.md)。
 ```
 
 ## 日志级别

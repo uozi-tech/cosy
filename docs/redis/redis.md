@@ -20,7 +20,7 @@ func Decr(key string) (int64, error)
 ## Set
 设置指定键的值和过期时间。
 ```go
-func Set(key string, value interface{}, exp time.Duration) error
+func Set(key string, value any, exp time.Duration) error
 ```
 
 ## Del
@@ -32,13 +32,13 @@ func Del(key string) error
 ## SetEx
 原子操作设置指定键的值，存在则覆盖，并设置过期时间。
 ```go
-func SetEx(key string, value interface{}, exp time.Duration) error
+func SetEx(key string, value any, exp time.Duration) error
 ```
 
 ## SetNx
 原子操作设置指定键的值，存在则不覆盖，并设置过期时间。
 ```go
-func SetNx(key string, value interface{}, exp time.Duration) error
+func SetNx(key string, value any, exp time.Duration) error
 ```
 
 ## TTL
@@ -68,11 +68,11 @@ func Exists(key string) (bool, error)
 ## Do
 执行指定命令。
 ```go
-func Do(command string, args ...interface{}) (interface{}, error)
+func Do(command string, args ...any) (any, error)
 ```
 
 ## Eval
 执行 `Lua` 脚本。
 ```go
-func Eval(script string, numKeys int64, keys []string, args []interface{}) (interface{}, error)
+func Eval(script string, numKeys int64, keys []string, args []any) (any, error)
 ```

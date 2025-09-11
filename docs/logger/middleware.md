@@ -83,8 +83,8 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 
 ```go
 const (
-    CosySLSLogStackKey = "cosy_sls_log_stack"  // SLS 日志堆栈
-    CosyRequestIDKey   = "cosy_request_id"     // 请求 ID
+    CosyLogBufferKey = "cosy_log_buffer"   // 日志缓冲区
+    CosyRequestIDKey = "cosy_request_id"   // 请求 ID
 )
 ```
 
@@ -98,11 +98,11 @@ func SomeHandler(c *gin.Context) {
         fmt.Printf("Current request ID: %s\n", requestID.(string))
     }
 
-    // 获取日志堆栈（用于添加自定义日志）
-    logStackInterface, exists := c.Get(logger.CosySLSLogStackKey)
+    // 获取日志缓冲区（用于添加自定义日志）
+    logBufferInterface, exists := c.Get(logger.CosyLogBufferKey)
     if exists {
-        logStack := logStackInterface.(*logger.SLSLogStack)
-        // 可以向日志堆栈添加自定义日志项
+        logBuffer := logBufferInterface.(*logger.LogBuffer)
+        // 可以向日志缓冲区添加自定义日志项
     }
 }
 ```

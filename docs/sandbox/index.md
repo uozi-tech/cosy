@@ -58,7 +58,7 @@ databaseType 可选值：
 
 ### 注册模型
 ```go
-func (instance *Instance) RegisterModels(models ...interface{}) *Instance
+func (instance *Instance) RegisterModels(models ...any) *Instance
 ```
 
 ### 运行测试用例

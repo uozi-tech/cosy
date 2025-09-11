@@ -169,7 +169,7 @@ func TestApi(t *testing.T) {
 }
 
 func testCreate(t *testing.T, instance *sandbox.Instance) {
-	body := map[string]interface{}{
+	body := map[string]any{
 		"school_id":           "0281876",
 		"avatar":              "",
 		"gender":              0,
@@ -279,7 +279,7 @@ func testGetList(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, int64(1), data.Pagination.TotalPages)
 	assert.Equal(t, settings.AppSettings.PageSize, data.Pagination.PerPage)
 
-	mapData := data.Data.([]interface{})[0]
+	mapData := data.Data.([]any)[0]
 	var user User
 	err = map2struct.WeakDecode(mapData, &user)
 	if err != nil {
@@ -308,7 +308,7 @@ func testGetList(t *testing.T, instance *sandbox.Instance) {
 func testModify(t *testing.T, instance *sandbox.Instance) {
 	c := instance.GetClient()
 
-	body := map[string]interface{}{
+	body := map[string]any{
 		"school_id":           "0281876-1",
 		"avatar":              "",
 		"name":                "张三-1",
@@ -395,7 +395,7 @@ func testRecover(t *testing.T, instance *sandbox.Instance) {
 }
 
 func testConflict(t *testing.T, instance *sandbox.Instance) {
-	body := map[string]interface{}{
+	body := map[string]any{
 		"school_id":           "0281876",
 		"avatar":              "",
 		"gender":              0,
@@ -432,7 +432,7 @@ func testConflict(t *testing.T, instance *sandbox.Instance) {
 		return
 	}
 
-	assert.Equal(t, "db_unique", data["errors"].(map[string]interface{})["email"])
+	assert.Equal(t, "db_unique", data["errors"].(map[string]any)["email"])
 }
 
 func testGormScope(t *testing.T, instance *sandbox.Instance) {
@@ -463,7 +463,7 @@ func TestCosyTagDbUnique(t *testing.T) {
 		g := router.GetEngine().Group("/")
 		Api[User]("users").InitRouter(g)
 		c := instance.GetClient()
-		body := map[string]interface{}{
+		body := map[string]any{
 			"school_id":           "0281876",
 			"avatar":              "",
 			"gender":              0,
@@ -497,6 +497,6 @@ func TestCosyTagDbUnique(t *testing.T) {
 			return
 		}
 		assert.Equal(t, "Requested with wrong parameters", respBody["message"])
-		assert.Equal(t, "db_unique", respBody["errors"].(map[string]interface{})["email"])
+		assert.Equal(t, "db_unique", respBody["errors"].(map[string]any)["email"])
 	})
 }

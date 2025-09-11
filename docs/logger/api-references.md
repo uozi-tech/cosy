@@ -63,12 +63,12 @@ func InitSLS(ctx context.Context)
 **参数：**
 - `ctx`: 上下文，用于控制生产者生命周期
 
-### NewSLSLogStack
+### NewLogBuffer
 ```go
-func NewSLSLogStack() *SLSLogStack
+func NewLogBuffer() *LogBuffer
 ```
 
-创建新的 SLS 日志堆栈实例。
+创建新的日志缓冲区实例。详见 [LogBuffer 文档](./log-buffer.md)。
 
 ## GORM 集成
 
@@ -99,70 +99,70 @@ func Sync()
 
 ## Debug
 ```go
-func Debug(args ...interface{})
+func Debug(args ...any)
 ```
 
 ## Debugf
 ```go
-func Debugf(format string, args ...interface{})
+func Debugf(format string, args ...any)
 ```
 
 ## Info
 ```go
-func Info(args ...interface{})
+func Info(args ...any)
 ```
 
 ## Infof
 ```go
-func Infof(format string, args ...interface{})
+func Infof(format string, args ...any)
 ```
 
 ## Warn
 ```go
-func Warn(args ...interface{})
+func Warn(args ...any)
 ```
 
 ## Warnf
 ```go
-func Warnf(format string, args ...interface{})
+func Warnf(format string, args ...any)
 ```
 
 ## Error
 ```go
-func Error(args ...interface{})
+func Error(args ...any)
 ```
 
 ## Errorf
 ```go
-func Errorf(format string, args ...interface{})
+func Errorf(format string, args ...any)
 ```
 
 ## Fatal
 ```go
-func Fatal(args ...interface{})
+func Fatal(args ...any)
 ```
 
 ## Fatalf
 ```go
-func Fatalf(format string, args ...interface{})
+func Fatalf(format string, args ...any)
 ```
 
 ## Panic
 ```go
-func Panic(args ...interface{})
+func Panic(args ...any)
 ```
 
 ## Panicf
 ```go
-func Panicf(format string, args ...interface{})
+func Panicf(format string, args ...any)
 ```
 
 ## DPanic
 ```go
-func DPanic(args ...interface{})
+func DPanic(args ...any)
 ```
 
 ## DPanicf
 ```go
-func DPanicf(format string, args ...interface{})
+func DPanicf(format string, args ...any)
 ```

@@ -11,11 +11,11 @@ import (
 
 func TestEnvironmentVariablesOverrideToml(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	// Clean up environment variables before test
 	envVars := []string{
 		"APP_PAGESIZE",
-		"APP_JWTSECRET", 
+		"APP_JWTSECRET",
 		"SERVER_HOST",
 		"SERVER_PORT",
 		"SERVER_RUNMODE",
@@ -28,22 +28,22 @@ func TestEnvironmentVariablesOverrideToml(t *testing.T) {
 		"REDIS_PASSWORD",
 		"REDIS_DB",
 	}
-	
+
 	// Clean environment
 	for _, envVar := range envVars {
 		os.Unsetenv(envVar)
 	}
-	
+
 	// Reset prefix
 	SetEnvPrefix("")
-	
+
 	// Create temporary TOML config file
 	confPath := "app.env.testing.toml"
 	file, err := os.Create(confPath)
 	assert.NoError(err)
 	defer os.Remove(confPath)
 	defer file.Close()
-	
+
 	// Write basic TOML config to file
 	configContent := `[app]
 PageSize = 10
@@ -69,7 +69,7 @@ DB = 1
 	_, err = file.WriteString(configContent)
 	assert.NoError(err)
 	file.Sync()
-	
+
 	// Set environment variables to override config
 	os.Setenv("APP_PAGESIZE", "25")
 	os.Setenv("APP_JWTSECRET", "env-secret")
@@ -84,10 +84,10 @@ DB = 1
 	os.Setenv("REDIS_ADDR", "redis.example.com:6379")
 	os.Setenv("REDIS_PASSWORD", "envredispass")
 	os.Setenv("REDIS_DB", "2")
-	
+
 	// Initialize settings
 	Init(confPath)
-	
+
 	// Verify environment variables override TOML config file values
 	assert.Equal(25, AppSettings.PageSize, "Environment variable should override TOML config file")
 	assert.Equal("env-secret", AppSettings.JwtSecret, "Environment variable should override TOML config file")
@@ -102,7 +102,7 @@ DB = 1
 	assert.Equal("redis.example.com:6379", RedisSettings.Addr, "Environment variable should override TOML config file")
 	assert.Equal("envredispass", RedisSettings.Password, "Environment variable should override TOML config file")
 	assert.Equal(2, RedisSettings.DB, "Environment variable should override TOML config file")
-	
+
 	// Clean up environment variables
 	for _, envVar := range envVars {
 		os.Unsetenv(envVar)
@@ -111,31 +111,31 @@ DB = 1
 
 func TestEnvironmentVariablesWithPrefixToml(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	// Clean environment
 	envVars := []string{
 		"COSY_APP_PAGESIZE",
-		"COSY_APP_JWTSECRET", 
+		"COSY_APP_JWTSECRET",
 		"COSY_SERVER_HOST",
 		"COSY_SERVER_PORT",
 		"COSY_DATABASE_HOST",
 		"COSY_REDIS_ADDR",
 	}
-	
+
 	for _, envVar := range envVars {
 		os.Unsetenv(envVar)
 	}
-	
+
 	// Set prefix
 	SetEnvPrefix("COSY_")
-	
+
 	// Create temporary TOML config file
-	confPath := "app.env.prefix.testing.toml" 
+	confPath := "app.env.prefix.testing.toml"
 	file, err := os.Create(confPath)
 	assert.NoError(err)
 	defer os.Remove(confPath)
 	defer file.Close()
-	
+
 	// Write basic TOML config to file
 	configContent := `[app]
 PageSize = 10
@@ -154,7 +154,7 @@ Addr = "localhost:6379"
 	_, err = file.WriteString(configContent)
 	assert.NoError(err)
 	file.Sync()
-	
+
 	// Set environment variables with prefix
 	os.Setenv("COSY_APP_PAGESIZE", "30")
 	os.Setenv("COSY_APP_JWTSECRET", "prefix-secret")
@@ -162,10 +162,10 @@ Addr = "localhost:6379"
 	os.Setenv("COSY_SERVER_PORT", "9000")
 	os.Setenv("COSY_DATABASE_HOST", "prefixdb.example.com")
 	os.Setenv("COSY_REDIS_ADDR", "prefixredis.example.com:6379")
-	
+
 	// Initialize settings
 	Init(confPath)
-	
+
 	// Verify prefixed environment variables work with TOML
 	assert.Equal(30, AppSettings.PageSize, "Prefixed environment variable should override TOML config file")
 	assert.Equal("prefix-secret", AppSettings.JwtSecret, "Prefixed environment variable should override TOML config file")
@@ -173,56 +173,56 @@ Addr = "localhost:6379"
 	assert.Equal(uint(9000), ServerSettings.Port, "Prefixed environment variable should override TOML config file")
 	assert.Equal("prefixdb.example.com", DataBaseSettings.Host, "Prefixed environment variable should override TOML config file")
 	assert.Equal("prefixredis.example.com:6379", RedisSettings.Addr, "Prefixed environment variable should override TOML config file")
-	
+
 	// Clean up environment variables
 	for _, envVar := range envVars {
 		os.Unsetenv(envVar)
 	}
-	
+
 	// Reset prefix
 	SetEnvPrefix("")
 }
 
 func TestEnvironmentVariablesCustomSectionToml(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	// Clean environment
 	envVars := []string{
 		"CUSTOM_APIKEY",
 		"CUSTOM_TIMEOUT",
 		"CUSTOM_ENABLED",
 	}
-	
+
 	for _, envVar := range envVars {
 		os.Unsetenv(envVar)
 	}
-	
+
 	// Reset prefix
 	SetEnvPrefix("")
-	
+
 	// Define custom settings structure
 	type customSettings struct {
 		APIKey  string `env:"APIKEY"`
 		Timeout int    `env:"TIMEOUT"`
 		Enabled bool   `env:"ENABLED"`
 	}
-	
+
 	var CustomSettings = &customSettings{
 		APIKey:  "default-key",
 		Timeout: 30,
 		Enabled: false,
 	}
-	
+
 	// Register custom settings
 	Register("custom", CustomSettings)
-	
+
 	// Create temporary TOML config file
 	confPath := "app.env.custom.testing.toml"
 	file, err := os.Create(confPath)
 	assert.NoError(err)
 	defer os.Remove(confPath)
 	defer file.Close()
-	
+
 	// Write TOML config with custom section
 	configContent := `[custom]
 APIKey = "config-key"
@@ -232,20 +232,20 @@ Enabled = false
 	_, err = file.WriteString(configContent)
 	assert.NoError(err)
 	file.Sync()
-	
+
 	// Set environment variables for custom section
 	os.Setenv("CUSTOM_APIKEY", "env-key")
 	os.Setenv("CUSTOM_TIMEOUT", "120")
 	os.Setenv("CUSTOM_ENABLED", "true")
-	
+
 	// Initialize settings
 	Init(confPath)
-	
+
 	// Verify custom section environment variables work
 	assert.Equal("env-key", CustomSettings.APIKey, "Environment variable should override custom section in TOML")
 	assert.Equal(120, CustomSettings.Timeout, "Environment variable should override custom section in TOML")
 	assert.Equal(true, CustomSettings.Enabled, "Environment variable should override custom section in TOML")
-	
+
 	// Clean up environment variables
 	for _, envVar := range envVars {
 		os.Unsetenv(envVar)

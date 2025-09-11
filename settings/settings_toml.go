@@ -47,7 +47,7 @@ func load() (err error) {
 	}
 
 	// Create a map to temporarily hold the parsed data
-	tmpConfig := make(map[string]interface{})
+	tmpConfig := make(map[string]any)
 	err = toml.Unmarshal(data, &tmpConfig)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func ReflectFrom(section string, v any) {
 }
 
 // ProtectedFill fill the target settings with new settings
-func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
+func ProtectedFill(targetSettings any, newSettings any) {
 	s := reflect.TypeOf(targetSettings).Elem()
 	vt := reflect.ValueOf(targetSettings).Elem()
 	vn := reflect.ValueOf(newSettings).Elem()
@@ -115,7 +115,7 @@ func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
 // Save the settings
 func Save() (err error) {
 	// Create a map to hold all sections for saving
-	configToSave := make(map[string]interface{})
+	configToSave := make(map[string]any)
 
 	for name, ptr := range sections.AllFromFront() {
 		configToSave[name] = ptr

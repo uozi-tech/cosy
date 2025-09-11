@@ -2,7 +2,7 @@
 
 ## 发布
 ```go
-func Publish(channel string, message interface{}) error
+func Publish(channel string, message any) error
 ```
 ## 订阅
 ```go

@@ -1,4 +1,5 @@
 //go:build toml_settings
+
 package settings
 
 import (

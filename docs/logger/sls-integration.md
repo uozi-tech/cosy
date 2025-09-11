@@ -111,33 +111,9 @@ func InitSLS(ctx context.Context)
 - 启用包 ID 生成
 - 添加类型标签
 
-### SLSLogStack
+### 日志缓冲区
 
-日志堆栈用于在单个请求中收集多个日志项。
-
-#### NewSLSLogStack
-
-```go
-func NewSLSLogStack() *SLSLogStack
-```
-
-创建新的日志堆栈实例。
-
-#### Append
-
-```go
-func (l *SLSLogStack) Append(item SLSLogItem)
-```
-
-向堆栈添加日志项（线程安全）。
-
-#### AppendLog
-
-```go
-func (l *SLSLogStack) AppendLog(level zapcore.Level, message string)
-```
-
-添加日志项，自动设置时间戳和调用位置。
+日志缓冲区用于在单个请求中收集多个日志项。详细文档请参见 [LogBuffer 文档](./log-buffer.md)。
 
 ### ZapLogger
 
@@ -146,32 +122,14 @@ SLS 专用的 Zap 日志适配器。
 #### Log
 
 ```go
-func (zl ZapLogger) Log(keyvals ...interface{}) error
+func (zl ZapLogger) Log(keyvals ...any) error
 ```
 
 将 SLS 内部日志转换为 Zap 日志输出。
 
 ## 数据结构
 
-### SLSLogItem
-
-```go
-type SLSLogItem struct {
-    Time    int64         `json:"time"`    // Unix 时间戳
-    Level   zapcore.Level `json:"level"`   // 日志级别
-    Caller  string        `json:"caller"`  // 调用文件和行号
-    Message string        `json:"message"` // 日志消息
-}
-```
-
-### SLSLogStack
-
-```go
-type SLSLogStack struct {
-    Items []SLSLogItem `json:"items"` // 日志项数组
-    mutex sync.Mutex                  // 并发保护
-}
-```
+日志相关的数据结构（LogBuffer 和 LogItem）已移至独立模块。详见 [LogBuffer 文档](./log-buffer.md)。
 
 ## 配置详解
 
@@ -280,7 +238,7 @@ func getOrdersHandler(c *gin.Context) {
     sessionLogger.Info("查询订单列表")
 
     // 模拟查询逻辑
-    orders := []map[string]interface{}{
+    orders := []map[string]any{
         {"id": 1, "amount": 100.0},
         {"id": 2, "amount": 200.0},
     }
@@ -293,7 +251,7 @@ func createOrderHandler(c *gin.Context) {
     sessionLogger := logger.NewSessionLogger(c)
     sessionLogger.Info("创建新订单")
 
-    var order map[string]interface{}
+    var order map[string]any
     if err := c.ShouldBindJSON(&order); err != nil {
         sessionLogger.Error("请求参数错误:", err)
         c.JSON(400, gin.H{"error": "invalid request"})

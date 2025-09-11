@@ -4,7 +4,7 @@
 该函数通常用于将用户从前端传入的设置应用到程序中，为了确保安全性，如果目标设置结构体中字段的 Tag 中有 `protected:"true"`，则不会被修改。
 
 ```go
-func ProtectedFill(targetSettings interface{}, newSettings interface{})
+func ProtectedFill(targetSettings any, newSettings any)
 ```
 
 ::: info 注意

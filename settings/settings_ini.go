@@ -82,7 +82,7 @@ func ReflectFrom(section string, v any) {
 }
 
 // ProtectedFill fill the target settings with new settings
-func ProtectedFill(targetSettings interface{}, newSettings interface{}) {
+func ProtectedFill(targetSettings any, newSettings any) {
 	s := reflect.TypeOf(targetSettings).Elem()
 	vt := reflect.ValueOf(targetSettings).Elem()
 	vn := reflect.ValueOf(newSettings).Elem()

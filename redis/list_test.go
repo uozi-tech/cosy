@@ -1,11 +1,12 @@
 package redis
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/uozi-tech/cosy/settings"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/settings"
 )
 
 func generateRandomKey(length int) string {
@@ -23,7 +24,7 @@ func TestLPushAndLRange_Success(t *testing.T) {
 	Init()
 
 	key := generateRandomKey(10)
-	values := []interface{}{"value1", "value2", "value3"}
+	values := []any{"value1", "value2", "value3"}
 
 	err := LPush(key, values...)
 	assert.NoError(t, err)
@@ -42,7 +43,7 @@ func TestRPushAndLRange_Success(t *testing.T) {
 	Init()
 
 	key := generateRandomKey(10)
-	values := []interface{}{"value1", "value2", "value3"}
+	values := []any{"value1", "value2", "value3"}
 
 	err := RPush(key, values...)
 	assert.NoError(t, err)
@@ -180,7 +181,7 @@ func TestLIndex_ValidAndInvalidIndex(t *testing.T) {
 func GetlistpageSuccesswithfullpage(t *testing.T) {
 	key := generateRandomKey(10)
 	// Assuming LPush inserts in reverse order and we want the page to reflect that
-	values := []interface{}{"value1", "value2", "value3", "value4", "value5"}
+	values := []any{"value1", "value2", "value3", "value4", "value5"}
 	for _, value := range values {
 		err := LPush(key, value)
 		assert.NoError(t, err)
@@ -201,7 +202,7 @@ func GetlistpageSuccesswithfullpage(t *testing.T) {
 
 func GetlistpageSuccesswithpartialpage(t *testing.T) {
 	key := generateRandomKey(10)
-	values := []interface{}{"value1", "value2", "value3"}
+	values := []any{"value1", "value2", "value3"}
 	for _, value := range values {
 		err := LPush(key, value)
 		assert.NoError(t, err)
@@ -242,7 +243,7 @@ func TestGetListPage(t *testing.T) {
 
 func GetListReturnsAllElements(t *testing.T) {
 	key := generateRandomKey(10)
-	values := []interface{}{"element1", "element2", "element3"}
+	values := []any{"element1", "element2", "element3"}
 	for _, value := range values {
 		err := LPush(key, value)
 		assert.NoError(t, err)

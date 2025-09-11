@@ -13,12 +13,12 @@ type Ctx[T any] struct {
 	*gin.Context
 	ID                       uint64
 	rules                    gin.H
-	Payload                  map[string]interface{}
+	Payload                  map[string]any
 	Model                    T
 	OriginModel              T
 	BatchEffectedIDs         []string
 	table                    string
-	tableArgs                []interface{}
+	tableArgs                []any
 	useTransaction           bool
 	Tx                       *gorm.DB
 	abort                    bool
@@ -64,7 +64,7 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 	}
 }
 
-func (c *Ctx[T]) SetTable(table string, args ...interface{}) *Ctx[T] {
+func (c *Ctx[T]) SetTable(table string, args ...any) *Ctx[T] {
 	c.table = table
 	c.tableArgs = args
 	return c

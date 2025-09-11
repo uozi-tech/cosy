@@ -63,17 +63,17 @@ func Decr(key string) (int64, error) {
 }
 
 // Set sets a key with a value and expiration
-func Set(key string, value interface{}, exp time.Duration) error {
+func Set(key string, value any, exp time.Duration) error {
 	return rdb.Set(ctx, buildKey(key), value, exp).Err()
 }
 
 // SetEx sets a key with a value and expiration if the key exists
-func SetEx(key string, value interface{}, exp time.Duration) error {
+func SetEx(key string, value any, exp time.Duration) error {
 	return rdb.SetEx(ctx, buildKey(key), value, exp).Err()
 }
 
 // SetNx sets a key with a value and expiration if the key does not exist
-func SetNx(key string, value interface{}, exp time.Duration) error {
+func SetNx(key string, value any, exp time.Duration) error {
 	return rdb.SetNX(ctx, buildKey(key), value, exp).Err()
 }
 
@@ -118,19 +118,19 @@ func Exists(key string) (ok bool, err error) {
 }
 
 // Do execute a command
-func Do(command string, args ...interface{}) (interface{}, error) {
-	argsSlice := append([]interface{}{command}, args...)
+func Do(command string, args ...any) (any, error) {
+	argsSlice := append([]any{command}, args...)
 
 	return rdb.Do(ctx, argsSlice...).Result()
 }
 
 // Eval evaluates a script
-func Eval(script string, numKeys int, keys []string, args []interface{}) (interface{}, error) {
+func Eval(script string, numKeys int, keys []string, args []any) (any, error) {
 	if numKeys < 0 {
 		return nil, errors.New("numKeys must be a non-negative number")
 	}
 
-	var slices = []interface{}{script, numKeys}
+	var slices = []any{script, numKeys}
 	if len(keys) > 0 {
 		for _, k := range keys {
 			slices = append(slices, k)

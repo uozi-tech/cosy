@@ -1,10 +1,11 @@
 package redis
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/uozi-tech/cosy/settings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/uozi-tech/cosy/settings"
 )
 
 func TestRedis(t *testing.T) {
@@ -111,8 +112,8 @@ func TestEval(t *testing.T) {
 		script         string
 		numKeys        int
 		keys           []string
-		args           []interface{}
-		expectedResult interface{}
+		args           []any
+		expectedResult any
 		expectedError  error
 	}{
 		{
@@ -129,7 +130,7 @@ func TestEval(t *testing.T) {
 			script:         "return redis.call('SET', KEYS[1], ARGV[1])",
 			numKeys:        1,
 			keys:           []string{"key1"},
-			args:           []interface{}{1},
+			args:           []any{1},
 			expectedResult: "OK",
 			expectedError:  nil,
 		},
@@ -138,7 +139,7 @@ func TestEval(t *testing.T) {
 			script:         "return redis.call('INCRBY', KEYS[1], ARGV[1])",
 			numKeys:        1,
 			keys:           []string{"key1"},
-			args:           []interface{}{10},
+			args:           []any{10},
 			expectedResult: int64(11),
 			expectedError:  nil,
 		},

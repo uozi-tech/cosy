@@ -18,7 +18,7 @@ func ToTimeHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data any) (any, error) {
 		if t != reflect.TypeOf(time.Time{}) {
 			return data, nil
 		}
@@ -42,7 +42,7 @@ func ToTimePtrHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{}) (interface{}, error) {
+		data any) (any, error) {
 		if t != reflect.TypeOf(&time.Time{}) {
 			return data, nil
 		}
@@ -69,7 +69,7 @@ func ToTimePtrHookFunc() mapstructure.DecodeHookFunc {
 
 // ToDecimalHookFunc converts the input data to decimal.Decimal
 func ToDecimalHookFunc() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 
 		if t == reflect.TypeOf(decimal.Decimal{}) {
 			if f.Kind() == reflect.Float64 {
@@ -88,7 +88,7 @@ func ToDecimalHookFunc() mapstructure.DecodeHookFunc {
 
 // ToPgDateHook converts the input data to pgtype.Date
 func ToPgDateHook() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if t == reflect.TypeOf(pgtype.Date{}) {
 			date := pgtype.Date{}
 			_ = date.Set(data)
@@ -101,7 +101,7 @@ func ToPgDateHook() mapstructure.DecodeHookFunc {
 
 // ToPgDatePtrHook converts the input data to *pgtype.Date
 func ToPgDatePtrHook() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if t == reflect.TypeOf(&pgtype.Date{}) {
 			date := &pgtype.Date{}
 			_ = date.Set(data)
@@ -114,7 +114,7 @@ func ToPgDatePtrHook() mapstructure.DecodeHookFunc {
 
 // ToNullableStringHookFunc converts the input data to null.String
 func ToNullableStringHookFunc() mapstructure.DecodeHookFunc {
-	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
 		if t == reflect.TypeOf(null.String{}) {
 			return null.StringFrom(data.(string)), nil
 		}

@@ -2,8 +2,11 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
+	"runtime/debug"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -15,9 +18,32 @@ import (
 )
 
 const (
-	CosySLSLogStackKey = "cosy_sls_log_stack"
+	CosyLogBufferKey = "cosy_log_buffer"
 	CosyRequestIDKey   = "cosy_request_id"
+	CosySkipAuditKey   = "cosy_skip_audit"
+	// CosySessionLoggerKey is the key for storing the session logger in a gin.Context
+	CosySessionLoggerKey = "cosy_session_logger"
 )
+
+type cosySessionLoggerCtxKey struct{}
+
+// CosySessionLoggerCtxKey is the key for storing the session logger in a context.Context
+var CosySessionLoggerCtxKey = cosySessionLoggerCtxKey{}
+
+// MonitorReporter function type for reporting to MonitorHub
+type MonitorReporter func(requestID string, logMap map[string]string)
+
+var globalMonitorReporter MonitorReporter
+
+// SetMonitorReporter sets the global monitor reporter function
+func SetMonitorReporter(reporter MonitorReporter) {
+	globalMonitorReporter = reporter
+}
+
+// GetMonitorReporter gets the global monitor reporter function
+func GetMonitorReporter() MonitorReporter {
+	return globalMonitorReporter
+}
 
 type responseWriter struct {
 	gin.ResponseWriter
@@ -35,22 +61,26 @@ func isWebSocketUpgrade(c *gin.Context) bool {
 		strings.ToLower(c.GetHeader("Upgrade")) == "websocket"
 }
 
+// SkipAuditMiddleware marks the request to skip audit logging
+func SkipAuditMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(CosySkipAuditKey, true)
+		c.Next()
+	}
+}
+
 func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestId := uuid.New().String()
 		c.Set(CosyRequestIDKey, requestId)
 		c.Header("Request-ID", requestId)
 
-		if !settings.SLSSettings.Enable() {
-			c.Next()
-			return
-		}
-
 		startTime := time.Now()
 		ip := c.ClientIP()
 		reqURL := c.Request.URL.String()
 		reqHeader := c.Request.Header
 		reqMethod := c.Request.Method
+		userAgent := c.Request.Header.Get("User-Agent")
 		isWebSocket := isWebSocketUpgrade(c)
 
 		var reqBodyBytes []byte
@@ -77,11 +107,17 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 			c.Writer = responseBodyWriter
 		}
 
-		slsLogStack := NewSLSLogStack()
-		c.Set(CosySLSLogStackKey, slsLogStack)
+		logBuffer := NewLogBuffer()
+		c.Set(CosyLogBufferKey, logBuffer)
 
-		// continue the request
-		c.Next()
+		pprofLabels := pprof.Labels("request_id", requestId, "method", reqMethod, "path", reqURL)
+		ctx := pprof.WithLabels(c.Request.Context(), pprofLabels)
+		c.Request = c.Request.WithContext(ctx)
+
+		pprof.Do(ctx, pprofLabels, func(ctx context.Context) {
+			c.Set("pprofCtx", ctx)
+			c.Next()
+		})
 
 		// get the response meta
 		respStatusCode := cast.ToString(c.Writer.Status())
@@ -101,11 +137,17 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 					logger.Error(r)
 				}
 			}()
-			ctxSqlLogs, ok := c.Get(CosySLSLogStackKey)
+
+			// Skip audit logging if marked by SkipAuditMiddleware
+			if skipAudit, exists := c.Get(CosySkipAuditKey); exists && skipAudit.(bool) {
+				return
+			}
+
+			ctxLogs, ok := c.Get(CosyLogBufferKey)
 			var sqlLogsBytes []byte
 			if ok {
-				sqlLogs := ctxSqlLogs.(*SLSLogStack)
-				sqlLogsBytes, _ = json.Marshal(sqlLogs.Items)
+				logs := ctxLogs.(*LogBuffer)
+				sqlLogsBytes, _ = json.Marshal(logs.Items)
 			}
 			reqHeaderBytes, _ := json.Marshal(reqHeader)
 			respHeaderBytes, _ := json.Marshal(respHeader)
@@ -123,9 +165,20 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 				"latency":          latency,
 				"session_logs":     string(sqlLogsBytes),
 				"is_websocket":     cast.ToString(isWebSocket),
+				"user_agent":       userAgent,
+				"call_stack":       string(debug.Stack()),
 			}
 
 			logMapHandler(c, logMap)
+
+			// Report to MonitorHub if available
+			if monitorReporter := GetMonitorReporter(); monitorReporter != nil {
+				monitorReporter(requestId, logMap)
+			}
+
+			if !settings.SLSSettings.Enable() {
+				return
+			}
 
 			log := producer.GenerateLog(uint32(time.Now().Unix()), logMap)
 

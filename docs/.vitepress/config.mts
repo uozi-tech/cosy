@@ -46,6 +46,13 @@ export default defineConfig(({ mode }) => {
           ]
         },
         {
+          text: '调试功能',
+          items: [
+            { text: '概述', link: '/debug/' },
+            { text: 'Web UI 界面', link: '/debug/webui' },
+          ]
+        },
+        {
           text: 'Redis',
           items: [
             { text: '连接', link: '/redis/start' },
