@@ -23,7 +23,7 @@ func cleanStackTrace(stack string) string {
 	defer stringSlicePool.Put(cleanedLines)
 
 	lines := strings.Split(stack, "\n")
-	
+
 	skipNext := false
 	for _, line := range lines {
 		// Skip runtime/debug.Stack() frame
@@ -31,27 +31,27 @@ func cleanStackTrace(stack string) string {
 			skipNext = true
 			continue
 		}
-		
+
 		// Skip kernel.Run frame and its file location
 		if strings.Contains(line, "github.com/uozi-tech/cosy/kernel.Run(") {
 			skipNext = true
 			continue
 		}
-		
+
 		// Skip file location line after a skipped function
 		if skipNext && strings.HasPrefix(line, "\t") && (strings.Contains(line, "/kernel/goroutine_tracker.go:") || strings.Contains(line, "/runtime/debug/stack.go:")) {
 			skipNext = false
 			continue
 		}
-		
+
 		// Reset skip flag for non-tab lines (function signatures)
 		if !strings.HasPrefix(line, "\t") {
 			skipNext = false
 		}
-		
+
 		cleanedLines = append(cleanedLines, line)
 	}
-	
+
 	return strings.Join(cleanedLines, "\n")
 }
 
@@ -61,11 +61,11 @@ func internString(s string) string {
 	if len(s) > 32 {
 		return s
 	}
-	
+
 	if interned, ok := commonStrings.Load(s); ok {
 		return interned.(string)
 	}
-	
+
 	// Store and return the interned string
 	commonStrings.Store(s, s)
 	return s
@@ -81,19 +81,19 @@ var (
 
 	// sync.Pool for performance optimization
 	stackBufPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return make([]byte, 64*1024) // 64KB buffer for stack traces
 		},
 	}
 
 	stringSlicePool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return make([]string, 0, 64) // Preallocate capacity for string slices
 		},
 	}
 
 	groupCopyPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return make([]*GoroutineTrace, 0, 100) // Preallocate for goroutine copies
 		},
 	}
@@ -112,7 +112,7 @@ type GoroutineTrace struct {
 	EndTime       int64                 `json:"end_time,omitempty"`
 	Stack         string                `json:"stack"`
 	Error         string                `json:"error,omitempty"`
-	SessionLogs   []logger.LogItem   `json:"session_logs,omitempty"`
+	SessionLogs   []logger.LogItem      `json:"session_logs,omitempty"`
 	LastLogSync   int64                 `json:"last_log_sync,omitempty"` // Last time session logs were synchronized
 	sessionLogger *logger.SessionLogger // internal session logger
 }
@@ -443,7 +443,7 @@ func Run(ctx context.Context, name string, fn func(context.Context)) {
 	// Create trace record with cleaned stack (skip kernel.Run frames)
 	stack := string(debug.Stack())
 	cleanedStack := cleanStackTrace(stack)
-	
+
 	trace := &GoroutineTrace{
 		ID:            goroutineID,
 		Name:          name,

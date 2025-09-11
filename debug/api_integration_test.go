@@ -18,7 +18,7 @@ import (
 func TestGoroutineAPIIntegration(t *testing.T) {
 	// Initialize logger
 	logger.Init("debug")
-	
+
 	// Start history cleanup
 	kernel.StartHistoryCleanup()
 	defer kernel.StopHistoryCleanup()
@@ -27,10 +27,10 @@ func TestGoroutineAPIIntegration(t *testing.T) {
 	config := &debug.MonitorConfig{
 		HistoryGoroutineLimit:    200,
 		HistoryRequestLimit:      100,
-		EnableRealtime:          true,
-		HeartbeatInterval:       30 * time.Second,
+		EnableRealtime:           true,
+		HeartbeatInterval:        30 * time.Second,
 		EnablePerformanceMonitor: true,
-		SampleRate:              1.0,
+		SampleRate:               1.0,
 	}
 	if err := debug.InitDebugSystem(config); err != nil {
 		t.Fatalf("Failed to initialize debug system: %v", err)
@@ -80,8 +80,8 @@ func TestGoroutineAPIIntegration(t *testing.T) {
 			}
 
 			var response struct {
-				Data  []interface{} `json:"data"`
-				Total int          `json:"total"`
+				Data  []any `json:"data"`
+				Total int   `json:"total"`
 			}
 
 			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
@@ -100,9 +100,9 @@ func TestGoroutineAPIIntegration(t *testing.T) {
 				// Check if we have both types
 				hasKernel := false
 				hasRuntime := false
-				
+
 				for _, item := range response.Data {
-					if itemMap, ok := item.(map[string]interface{}); ok {
+					if itemMap, ok := item.(map[string]any); ok {
 						if id, ok := itemMap["id"].(string); ok {
 							if strings.HasPrefix(id, "runtime-") {
 								hasRuntime = true
@@ -118,7 +118,7 @@ func TestGoroutineAPIIntegration(t *testing.T) {
 						t.Error("Expected to find runtime goroutines in active/all list")
 					}
 				}
-				
+
 				// For our test case, we should have at least the completed kernel goroutine
 				if tt.query == "" && !hasKernel {
 					t.Log("Note: No kernel goroutines found in all list (may be normal if they were cleaned up)")
@@ -126,7 +126,7 @@ func TestGoroutineAPIIntegration(t *testing.T) {
 			} else if tt.query == "?type=history" {
 				// History should only contain kernel-managed goroutines
 				for _, item := range response.Data {
-					if itemMap, ok := item.(map[string]interface{}); ok {
+					if itemMap, ok := item.(map[string]any); ok {
 						if id, ok := itemMap["id"].(string); ok {
 							if strings.HasPrefix(id, "runtime-") {
 								t.Error("History should not contain runtime goroutines")

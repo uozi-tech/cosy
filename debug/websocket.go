@@ -17,14 +17,14 @@ import (
 var (
 	// Pool for WebSocket message buffers
 	wsMessagePool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return make([]byte, 0, 4096) // 4KB initial capacity for message buffers
 		},
 	}
 
 	// Pool for JSON marshaling buffers
 	jsonBufPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return make([]byte, 0, 2048) // 2KB initial capacity for JSON buffers
 		},
 	}
@@ -46,9 +46,9 @@ type WSConnection struct {
 
 // WSMessage WebSocket message
 type WSMessage struct {
-	Type      string      `json:"type"`
-	Data      interface{} `json:"data"`
-	Timestamp int64       `json:"timestamp"`
+	Type      string `json:"type"`
+	Data      any    `json:"data"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 // WSFilter WebSocket filter
@@ -181,7 +181,7 @@ func (ws *WSConnection) writePump() {
 func (ws *WSConnection) handleMessage(msg WSMessage) {
 	switch msg.Type {
 	case "subscribe":
-		if filterData, ok := msg.Data.(map[string]interface{}); ok {
+		if filterData, ok := msg.Data.(map[string]any); ok {
 			ws.updateFilters(filterData)
 		}
 	case "unsubscribe":
@@ -204,7 +204,7 @@ func (ws *WSConnection) handleMessage(msg WSMessage) {
 }
 
 // updateFilters updates filter settings
-func (ws *WSConnection) updateFilters(data map[string]interface{}) {
+func (ws *WSConnection) updateFilters(data map[string]any) {
 	ws.mutex.Lock()
 	defer ws.mutex.Unlock()
 
@@ -268,7 +268,7 @@ func (mh *MonitorHub) broadcastStats() {
 		Timestamp: time.Now().Unix(),
 	}
 
-	mh.wsConnections.Range(func(key, value interface{}) bool {
+	mh.wsConnections.Range(func(key, value any) bool {
 		if wsConn, ok := value.(*WSConnection); ok {
 			if wsConn.Filters.SubscribeStats {
 				wsConn.sendMessage(msg)
@@ -286,7 +286,7 @@ func (mh *MonitorHub) BroadcastGoroutineUpdate(trace *EnhancedGoroutineTrace) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	mh.wsConnections.Range(func(key, value interface{}) bool {
+	mh.wsConnections.Range(func(key, value any) bool {
 		if wsConn, ok := value.(*WSConnection); ok {
 			if wsConn.Filters.SubscribeGoroutines && mh.matchesGoroutineFilter(trace, wsConn.Filters) {
 				wsConn.sendMessage(msg)
@@ -304,7 +304,7 @@ func (mh *MonitorHub) BroadcastRequestUpdate(trace *RequestTrace) {
 		Timestamp: time.Now().Unix(),
 	}
 
-	mh.wsConnections.Range(func(key, value interface{}) bool {
+	mh.wsConnections.Range(func(key, value any) bool {
 		if wsConn, ok := value.(*WSConnection); ok {
 			if wsConn.Filters.SubscribeRequests && mh.matchesRequestFilter(trace, wsConn.Filters) {
 				wsConn.sendMessage(msg)

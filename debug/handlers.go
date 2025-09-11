@@ -1,22 +1,22 @@
 package debug
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/pprof/profile"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy"
@@ -30,31 +30,19 @@ var startupTime = time.Now()
 var (
 	// Pool for stack trace buffers
 	stackTraceBufPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			buf := make([]byte, 1024*1024) // 1MB buffer for stack traces
 			return &buf
 		},
 	}
 
-	// Pool for heap profile entries
-	heapEntryPool = sync.Pool{
-		New: func() interface{} {
-			entries := make([]*HeapProfileEntry, 0, 100) // Preallocate for heap entries
-			return &entries
-		},
-	}
-
 	// Pool for goroutine trace results
 	traceResultPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			traces := make([]*kernel.GoroutineTrace, 0, 200) // Preallocate for trace results
 			return &traces
 		},
 	}
-
-	// Pre-compiled regex patterns for better performance
-	headerRegexCompiled = regexp.MustCompile(`heap profile: (\d+): (\d+) \[(\d+): (\d+)\]`)
-	entryRegexCompiled  = regexp.MustCompile(`^(\d+): (\d+) \[(\d+): (\d+)\] @ (.+)$`)
 )
 
 // getOSVersion returns the operating system version using gopsutil
@@ -96,156 +84,113 @@ func getPprofProfileCounts() (heapCount, goroutineCount int) {
 	return heapCount, goroutineCount
 }
 
-// parseHeapProfile parses pprof heap profile text format using direct pprof calls
+// parseHeapProfile parses pprof heap profile using the protobuf format for robustness
 func parseHeapProfile() (*HeapProfileResponse, error) {
-	// Create a buffer to capture pprof output
-	var buf strings.Builder
-
-	// Get heap profile directly from pprof
-	profile := pprof.Lookup("heap")
-	if profile == nil {
+	p := pprof.Lookup("heap")
+	if p == nil {
 		return nil, fmt.Errorf("heap profile not available")
 	}
 
-	// Write profile in text format (debug=1)
-	err := profile.WriteTo(&buf, 1)
+	var buf bytes.Buffer
+	if err := p.WriteTo(&buf, 0); err != nil { // debug=0 for protobuf format
+		return nil, fmt.Errorf("failed to write heap profile: %w", err)
+	}
+
+	prof, err := profile.Parse(&buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed to write heap profile: %v", err)
+		return nil, fmt.Errorf("failed to parse heap profile: %w", err)
 	}
 
-	text := buf.String()
-	lines := strings.Split(text, "\n")
-
-	// Get entries slice from pool
-	entriesInterface := heapEntryPool.Get()
-	entriesPtr := entriesInterface.(*[]*HeapProfileEntry)
-	entries := (*entriesPtr)[:0] // Reset slice but keep capacity
-	defer heapEntryPool.Put(entriesPtr)
-
-	result := &HeapProfileResponse{
-		Entries: entries,
+	// Find the indices for the sample values we care about.
+	// The order of these values can change.
+	valueIndices := make(map[string]int)
+	for i, s := range prof.SampleType {
+		valueIndices[s.Type] = i
 	}
 
-	// Parse header line to get totals using pre-compiled regex
-	// Format: "heap profile: 123: 456 [789: 1011] @ heap/512"
-	for _, line := range lines {
-		if strings.HasPrefix(line, "heap profile:") {
-			matches := headerRegexCompiled.FindStringSubmatch(line)
-			if len(matches) == 5 {
-				result.TotalInUseObjects, _ = strconv.ParseInt(matches[1], 10, 64)
-				result.TotalInUseBytes, _ = strconv.ParseInt(matches[2], 10, 64)
-				result.TotalAllocObjects, _ = strconv.ParseInt(matches[3], 10, 64)
-				result.TotalAllocBytes, _ = strconv.ParseInt(matches[4], 10, 64)
-			}
-			break
+	requiredTypes := []string{"inuse_objects", "inuse_space", "alloc_objects", "alloc_space"}
+	for _, t := range requiredTypes {
+		if _, ok := valueIndices[t]; !ok {
+			return nil, fmt.Errorf("heap profile missing required sample type: %s", t)
 		}
 	}
 
-	// Parse individual allocation entries using pre-compiled regex
-	// Format: "123: 456 [789: 1011] @ 0x123 0x456 0x789"
+	inuseObjectsIdx := valueIndices["inuse_objects"]
+	inuseSpaceIdx := valueIndices["inuse_space"]
+	allocObjectsIdx := valueIndices["alloc_objects"]
+	allocSpaceIdx := valueIndices["alloc_space"]
 
-	for i := range lines {
-		line := strings.TrimSpace(lines[i])
-		if line == "" {
+	entries := make([]*HeapProfileEntry, 0, len(prof.Sample))
+	var totalInUseObjects, totalInUseBytes, totalAllocObjects, totalAllocBytes int64
+
+	for _, sample := range prof.Sample {
+		inuseObjects := sample.Value[inuseObjectsIdx]
+		inuseBytes := sample.Value[inuseSpaceIdx]
+		allocObjects := sample.Value[allocObjectsIdx]
+		allocBytes := sample.Value[allocSpaceIdx]
+
+		// Sum up totals. Note that this might differ slightly from text format totals
+		// due to how pprof aggregates, but it's a reliable approximation.
+		totalInUseObjects += inuseObjects
+		totalInUseBytes += inuseBytes
+		totalAllocObjects += allocObjects
+		totalAllocBytes += allocBytes
+
+		// Skip samples that don't contribute to memory usage.
+		if inuseBytes == 0 && allocBytes == 0 {
 			continue
 		}
 
-		matches := entryRegexCompiled.FindStringSubmatch(line)
-		if len(matches) != 6 {
-			continue
+		entry := &HeapProfileEntry{
+			InUseObjects: inuseObjects,
+			InUseBytes:   inuseBytes,
+			AllocObjects: allocObjects,
+			AllocBytes:   allocBytes,
+			StackTrace:   make([]string, 0, len(sample.Location)),
 		}
 
-		entry := &HeapProfileEntry{}
-		entry.InUseObjects, _ = strconv.ParseInt(matches[1], 10, 64)
-		entry.InUseBytes, _ = strconv.ParseInt(matches[2], 10, 64)
-		entry.AllocObjects, _ = strconv.ParseInt(matches[3], 10, 64)
-		entry.AllocBytes, _ = strconv.ParseInt(matches[4], 10, 64)
-
-		// Look for function names in the subsequent lines
-		stackTrace := make([]string, 0)
-		topFunction := "unknown"
-
-		// Parse function names that follow the allocation entry
-		for j := i + 1; j < len(lines) && j < i+30; j++ {
-			nextLine := strings.TrimSpace(lines[j])
-			if nextLine == "" {
-				break
-			}
-
-			// Stop if we hit another entry (starts with digits followed by colon)
-			if entryRegexCompiled.MatchString(nextLine) {
-				break
-			}
-
-			// Look for lines that start with # - these contain the function names
-			if strings.HasPrefix(nextLine, "#") {
-				// Parse format: "#	0x4d532f	bytes.growSlice+0x7f	/usr/local/go/src/bytes/buffer.go:255"
-				parts := strings.Fields(nextLine)
-				if len(parts) >= 4 {
-					// Third field contains the function name, fourth contains file:line
-					funcWithOffset := parts[2]
-					filePath := parts[3]
-
-					// Remove the +0x offset part from function name
-					funcName := strings.Split(funcWithOffset, "+")[0]
-
-					if funcName != "" {
-						// Combine function name with file and line info
-						stackEntry := fmt.Sprintf("%s\n    %s", funcName, filePath)
-						stackTrace = append(stackTrace, stackEntry)
-
-						if topFunction == "unknown" {
-							// Extract just the function name for display (last part after .)
-							nameParts := strings.Split(funcName, ".")
-							if len(nameParts) > 0 {
-								topFunction = nameParts[len(nameParts)-1]
-							} else {
-								topFunction = funcName
-							}
-						}
-					}
-				} else if len(parts) >= 3 {
-					// Fallback for entries without file info
-					funcWithOffset := parts[2]
-					funcName := strings.Split(funcWithOffset, "+")[0]
-
-					if funcName != "" {
-						stackTrace = append(stackTrace, funcName)
-						if topFunction == "unknown" {
-							nameParts := strings.Split(funcName, ".")
-							if len(nameParts) > 0 {
-								topFunction = nameParts[len(nameParts)-1]
-							} else {
-								topFunction = funcName
-							}
+		var topFunction string
+		// Build the stack trace from the sample's locations.
+		for _, loc := range sample.Location {
+			for _, line := range loc.Line {
+				fn := line.Function
+				if fn != nil {
+					stackEntry := fmt.Sprintf("%s\n    %s:%d", fn.Name, fn.Filename, line.Line)
+					entry.StackTrace = append(entry.StackTrace, stackEntry)
+					if topFunction == "" {
+						nameParts := strings.Split(fn.Name, ".")
+						if len(nameParts) > 0 {
+							topFunction = nameParts[len(nameParts)-1]
+						} else {
+							topFunction = fn.Name
 						}
 					}
 				}
 			}
 		}
 
-		// If we still don't have a function name, use a fallback
-		if topFunction == "unknown" {
-			topFunction = "runtime.allocation"
+		if topFunction == "" {
+			topFunction = "unknown"
 		}
-
-		entry.StackTrace = stackTrace
 		entry.TopFunction = topFunction
-
-		result.Entries = append(result.Entries, entry)
+		entries = append(entries, entry)
 	}
 
-	// Sort entries by bytes in use (descending)
-	sort.Slice(result.Entries, func(i, j int) bool {
-		return result.Entries[i].InUseBytes > result.Entries[j].InUseBytes
+	// Sort entries by in-use bytes, descending.
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].InUseBytes > entries[j].InUseBytes
 	})
 
-	// Create a copy of entries to avoid pool reference escape
-	entriesCopy := make([]*HeapProfileEntry, len(entries))
-	copy(entriesCopy, entries)
-	result.Entries = entriesCopy
+	response := &HeapProfileResponse{
+		TotalInUseObjects: totalInUseObjects,
+		TotalInUseBytes:   totalInUseBytes,
+		TotalAllocObjects: totalAllocObjects,
+		TotalAllocBytes:   totalAllocBytes,
+		Entries:           entries,
+		SampleRate:        runtime.MemProfileRate,
+	}
 
-	return result, nil
+	return response, nil
 }
 
 // handleHeapProfile handles heap profile requests
@@ -1368,7 +1313,6 @@ func handleUnifiedMonitor(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
-
 
 // handleStaticFiles serves static files from the embedded filesystem
 func handleStaticFiles(c *gin.Context) {
