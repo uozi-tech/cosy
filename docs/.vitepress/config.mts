@@ -6,7 +6,11 @@ export default defineConfig(({ mode }) => {
   return {
     title: "Cosy",
     description: "Documentations of Cosy",
+    head: [
+      ['link', { rel: 'icon', href: '/assets/logo.svg', type: 'image/svg+xml' }]
+    ],
     themeConfig: {
+      logo: '/assets/logo.svg',
       // https://vitepress.dev/reference/default-theme-config
       nav: [
         { text: '首页', link: '/' },
