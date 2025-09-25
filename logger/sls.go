@@ -54,7 +54,8 @@ func (w *SLSWriter) Write(p []byte) (n int, err error) {
 
 	// Create SLS log
 	log := &sls.Log{
-		Time: proto.Uint32(uint32(time.Now().Unix())),
+		Time:   proto.Uint32(uint32(time.Now().Unix())),
+		TimeNs: proto.Uint32(uint32(time.Now().UnixNano())),
 	}
 
 	// Convert log entry to SLS contents
@@ -193,7 +194,6 @@ func InitAuditSLSProducer(ctx context.Context) error {
 func GetAuditProducer() *producer.Producer {
 	return auditProducer
 }
-
 
 // ZapLogger is a hack logger for SLS
 type ZapLogger struct {
