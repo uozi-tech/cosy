@@ -128,43 +128,43 @@ func (s *SessionLogger) Fatal(args ...any) {
 // Debugf logs a message at DebugLevel.
 func (s *SessionLogger) Debugf(format string, args ...any) {
 	s.Logger.Debugf(format, args...)
-	s.Logs.AppendLog(zapcore.DebugLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.DebugLevel, getMessagef(format, args...))
 }
 
 // Infof logs a message at InfoLevel.
 func (s *SessionLogger) Infof(format string, args ...any) {
 	s.Logger.Infof(format, args...)
-	s.Logs.AppendLog(zapcore.InfoLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.InfoLevel, getMessagef(format, args...))
 }
 
 // Warnf logs a message at WarnLevel.
 func (s *SessionLogger) Warnf(format string, args ...any) {
 	s.Logger.Warnf(format, args...)
-	s.Logs.AppendLog(zapcore.WarnLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.WarnLevel, getMessagef(format, args...))
 }
 
 // Errorf logs a message at ErrorLevel.
 func (s *SessionLogger) Errorf(format string, args ...any) {
 	s.Logger.Errorf(format, args...)
-	s.Logs.AppendLog(zapcore.ErrorLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.ErrorLevel, getMessagef(format, args...))
 }
 
 // DPanicf logs a message at DPanicLevel.
 func (s *SessionLogger) DPanicf(format string, args ...any) {
 	s.Logger.DPanicf(format, args...)
-	s.Logs.AppendLog(zapcore.DPanicLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.DPanicLevel, getMessagef(format, args...))
 }
 
 // Panicf logs a message at PanicLevel.
 func (s *SessionLogger) Panicf(format string, args ...any) {
 	s.Logger.Panicf(format, args...)
-	s.Logs.AppendLog(zapcore.PanicLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.PanicLevel, getMessagef(format, args...))
 }
 
 // Fatalf logs a message at FatalLevel.
 func (s *SessionLogger) Fatalf(format string, args ...any) {
 	s.Logger.Fatalf(format, args...)
-	s.Logs.AppendLog(zapcore.FatalLevel, getMessageln(args...))
+	s.Logs.AppendLog(zapcore.FatalLevel, getMessagef(format, args...))
 }
 
 // PanicInfo represents panic information structure

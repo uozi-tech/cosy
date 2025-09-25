@@ -186,7 +186,7 @@ func GetLogger() *zap.SugaredLogger {
 	return logger
 }
 
-// Debug logs a message at DebugLevel.
+// "Debug" logs a message at DebugLevel.
 func Debug(args ...any) {
 	logger.Debugln(args...)
 }

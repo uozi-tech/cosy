@@ -7,3 +7,8 @@ func getMessageln(fmtArgs ...any) string {
 	msg = msg[:len(msg)-1]
 	return msg
 }
+
+func getMessagef(format string, args ...any) string {
+	msg := fmt.Sprintf(format, args...)
+	return msg
+}
