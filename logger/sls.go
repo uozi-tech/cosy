@@ -214,14 +214,14 @@ func (zl ZapLogger) Log(keyvals ...any) error {
 		}
 		if key == "level" {
 			switch keyvals[i+1] {
-			// case "debug":
-			// 	loggerFunc = logger.Debug
+			case "debug":
+				loggerFunc = logger.Debug
 			case "warn":
 				loggerFunc = logger.Warn
 			case "error":
 				loggerFunc = logger.Error
-			// case "info":
-			// 	loggerFunc = logger.Info
+			case "info":
+				loggerFunc = logger.Info
 			default:
 				loggerFunc = nil
 			}
