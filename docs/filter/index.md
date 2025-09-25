@@ -8,10 +8,15 @@ Cosy 提供了以下内置筛选器：
 
 | 筛选器类型 | 说明 | 使用方式 | 示例 |
 |-----------|------|---------|------|
-| `fussy` | 模糊查询 | `cosy:"list:fussy"` | `?name=john` 匹配包含 "john" 的记录 |
-| `eq` | 精确匹配 | `cosy:"list:eq"` | `?status=1` 匹配状态为 1 的记录 |
-| `in` | 多值匹配 | `cosy:"list:in"` | `?power=1,2,3` 匹配权限为 1、2 或 3 的记录 |
-| `between` | 范围查询 | `cosy:"list:between"` | `?age=18,65` 匹配年龄在 18-65 之间的记录 |
+| `fussy` | 模糊查询 | `cosy:"list:fussy"` | `?name=john` 或 `?name[]=john&name[]=doe` |
+| `eq` | 精确匹配 | `cosy:"list:eq"` | `?status=1` |
+| `in` | 多值匹配 | `cosy:"list:in"` | `?power[]=1&power[]=2&power[]=3` 或 `?power=1&power=2&power=3` |
+| `between` | 范围查询 | `cosy:"list:between"` | `?age[]=18&age[]=65` 或 `?age=18&age=65` |
+| `or_eq` | 精确匹配（OR 组合） | `cosy:"list:or_eq"` | 多字段之间使用 OR 连接，如 `?status=1&user_id=2`（需在相应字段上均声明） |
+| `or_in` | 多值匹配（OR 组合） | `cosy:"list:or_in"` | 多字段之间使用 OR 连接，如 `?power[]=1&role[]=2`（需在相应字段上均声明） |
+| `or_fussy` | 模糊匹配（OR 组合） | `cosy:"list:or_fussy"` | 多字段之间使用 OR 连接，如 `?name=john&email=doe`（需在相应字段上均声明） |
+| `search` | 全局模糊搜索 | `cosy:"list:search"` | 在标记了 `search` 的多个字段上使用 `?search=keyword` 进行模糊匹配（OR 组合） |
+| `preload` | 预加载关联 | `cosy:"list:preload"` | 预加载该字段对应的关联数据 |
 
 ## 自定义筛选器
 
@@ -68,7 +73,6 @@ type User struct {
 package filter
 
 import (
-    "strings"
     "time"
     "github.com/gin-gonic/gin"
     "github.com/uozi-tech/cosy/model"
@@ -78,20 +82,17 @@ import (
 type DateRangeFilter struct{}
 
 func (DateRangeFilter) Filter(c *gin.Context, db *gorm.DB, key string, field *model.ResolvedModelField, model *model.ResolvedModel) *gorm.DB {
-    queryValue := c.Query(key)
-    if queryValue == "" {
-        return db
+    // 支持两种形式：?published_at[]=2024-01-01&published_at[]=2024-12-31 或 ?published_at=2024-01-01&published_at=2024-12-31
+    dates := c.QueryArray(key + "[]")
+    if len(dates) == 0 {
+        dates = c.QueryArray(key)
     }
-
-    // 期望格式：2024-01-01,2024-12-31
-    dates := strings.Split(queryValue, ",")
-    if len(dates) != 2 {
+    if len(dates) != 2 || dates[0] == "" || dates[1] == "" {
         return db
     }
 
     startDate, err1 := time.Parse("2006-01-02", dates[0])
     endDate, err2 := time.Parse("2006-01-02", dates[1])
-
     if err1 != nil || err2 != nil {
         return db
     }
@@ -124,7 +125,6 @@ type Article struct {
 package filter
 
 import (
-    "strings"
     "github.com/gin-gonic/gin"
     "github.com/uozi-tech/cosy/model"
     "gorm.io/gorm"
@@ -133,29 +133,32 @@ import (
 type StatusFilter struct{}
 
 func (StatusFilter) Filter(c *gin.Context, db *gorm.DB, key string, field *model.ResolvedModelField, model *model.ResolvedModel) *gorm.DB {
-    queryValue := c.Query(key)
-    if queryValue == "" {
-        return db
-    }
-
     column := field.DBName
 
     // 支持特殊状态查询
-    switch queryValue {
-    case "active":
-        return db.Where(column+" = ?", 1)
-    case "inactive":
-        return db.Where(column+" = ?", 0)
-    case "all":
-        return db // 不添加任何条件
-    default:
-        // 支持多个状态值，用逗号分隔
-        if strings.Contains(queryValue, ",") {
-            statuses := strings.Split(queryValue, ",")
-            return db.Where(column+" IN ?", statuses)
+    if v := c.Query(key); v != "" {
+        switch v {
+        case "active":
+            return db.Where(column+" = ?", 1)
+        case "inactive":
+            return db.Where(column+" = ?", 0)
+        case "all":
+            return db // 不添加任何条件
         }
-        return db.Where(column+" = ?", queryValue)
+        // 单值等号匹配
+        return db.Where(column+" = ?", v)
     }
+
+    // 多值 IN 形式，支持 ?status[]=1&status[]=2 或 ?status=1&status=2
+    values := c.QueryArray(key + "[]")
+    if len(values) == 0 {
+        values = c.QueryArray(key)
+    }
+    if len(values) > 0 {
+        return db.Where(column+" IN ?", values)
+    }
+
+    return db
 }
 
 // 注册筛选器
@@ -192,3 +195,7 @@ type Filter interface {
 2. 如果查询参数为空，应该返回原始的 `db` 实例
 3. 筛选器应该处理错误情况，避免程序崩溃
 4. 建议在 `init()` 函数中注册筛选器，确保在使用前已注册
+5. 查询参数建议遵循：
+   - 对于多值参数使用 `field[]=v1&field[]=v2` 或重复参数 `field=v1&field=v2`；内置 `in`、`between` 均支持两种形式
+   - `fussy` 多值请使用 `field[]` 形式或单值 `field=v`（不支持重复 `field=v1&field=v2`）
+   - 全局搜索使用 `search=keyword`，仅对标记了 `list:search` 的字段生效
