@@ -53,9 +53,10 @@ func (w *SLSWriter) Write(p []byte) (n int, err error) {
 	}
 
 	// Create SLS log
+	now := time.Now()
 	log := &sls.Log{
-		Time:   proto.Uint32(uint32(time.Now().Unix())),
-		TimeNs: proto.Uint32(uint32(time.Now().UnixNano())),
+		Time:   proto.Uint32(uint32(now.Unix())),
+		TimeNs: proto.Uint32(uint32(now.Nanosecond())),
 	}
 
 	// Convert log entry to SLS contents

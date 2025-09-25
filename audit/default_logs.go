@@ -27,6 +27,7 @@ func GetDefaultLogs(c *gin.Context) {
 		Msg      string `form:"msg"`
 		Caller   string `form:"caller"`
 		Server   string `form:"__source__"`
+		Type     string `form:"__tag__:type"`
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		cosy.ErrHandler(c, err)
@@ -56,6 +57,11 @@ func GetDefaultLogs(c *gin.Context) {
 	}
 	if query.Server != "" {
 		if fieldQuery := BuildFieldQuery(query.Server, "__source__"); fieldQuery != "" {
+			filter = append(filter, fieldQuery)
+		}
+	}
+	if query.Type != "" {
+		if fieldQuery := BuildFieldQuery(query.Type, "__tag__:type"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}
