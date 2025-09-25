@@ -98,7 +98,7 @@ func Init(mode string) {
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   encodeCaller,
 	}
-	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime)
+	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime + ".000")
 	encoderConfig.ConsoleSeparator = "\t"
 	encoderConfig.EncodeLevel = colorLevelEncoder
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
