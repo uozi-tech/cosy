@@ -5,36 +5,62 @@ import (
 	"strings"
 )
 
-// BuildFieldQuery builds query expression for a field, handling spaces by splitting into multiple AND terms
+// BuildFieldQuery 构建字段精确匹配表达式，支持多词 AND 链接
 func BuildFieldQuery(value, field string) string {
-	if strings.Contains(value, " ") {
-		words := strings.Fields(value)
-		validTerms := make([]string, 0, len(words))
-		for _, word := range words {
-			// Filter out empty words, words containing colons, and words with only special characters
-			if word != "" && !strings.Contains(word, ":") && strings.TrimSpace(strings.Trim(word, "':\"")) != "" {
-				// Escape special characters
-				cleanWord := strings.ReplaceAll(word, "'", "\\'")
-				cleanWord = strings.ReplaceAll(cleanWord, "\"", "\\\"")
-				validTerms = append(validTerms, fmt.Sprintf("%s:%s*", field, cleanWord))
-			}
-		}
-		if len(validTerms) == 0 {
-			return ""
-		}
-		if len(validTerms) == 1 {
-			return validTerms[0]
-		}
-		return "(" + strings.Join(validTerms, " and ") + ")"
-	}
+	return buildFieldQuery(value, field, false)
+}
 
-	// Return empty string if single word contains colon
-	if strings.Contains(value, ":") {
+// BuildFuzzyFieldQuery 构建字段模糊匹配表达式，使用后缀通配符
+func BuildFuzzyFieldQuery(value, field string) string {
+	return buildFieldQuery(value, field, true)
+}
+
+func buildFieldQuery(value, field string, useSuffix bool) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
 		return ""
 	}
 
-	// Single word also needs to escape special characters
-	cleanValue := strings.ReplaceAll(value, "'", "\\'")
-	cleanValue = strings.ReplaceAll(cleanValue, "\"", "\\\"")
-	return fmt.Sprintf("%s = %s", field, cleanValue)
+	words := strings.Fields(trimmed)
+	if len(words) == 0 {
+		return ""
+	}
+
+	formatted := make([]string, 0, len(words))
+	for _, word := range words {
+		if !isValidTerm(word) {
+			continue
+		}
+		escaped := escapeTerm(word)
+		formatted = append(formatted, formatTerm(field, escaped, useSuffix || len(words) > 1))
+	}
+
+	switch len(formatted) {
+	case 0:
+		return ""
+	case 1:
+		return formatted[0]
+	default:
+		return "(" + strings.Join(formatted, " and ") + ")"
+	}
+}
+
+func isValidTerm(term string) bool {
+	if term == "" || strings.Contains(term, ":") {
+		return false
+	}
+	stripped := strings.TrimSpace(strings.Trim(term, "':\""))
+	return stripped != ""
+}
+
+func escapeTerm(term string) string {
+	escaped := strings.ReplaceAll(term, "'", "\\'")
+	return strings.ReplaceAll(escaped, "\"", "\\\"")
+}
+
+func formatTerm(field, value string, useSuffix bool) string {
+	if useSuffix {
+		return fmt.Sprintf("%s:%s*", field, value)
+	}
+	return fmt.Sprintf("%s = %s", field, value)
 }
