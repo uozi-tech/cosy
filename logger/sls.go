@@ -203,34 +203,52 @@ type ZapLogger struct {
 
 // Log logs the message to console with zap logger from sls
 func (zl ZapLogger) Log(keyvals ...any) error {
+	// Map go-kit style keyvals to zap structured logging.
+	if zl.logger == nil {
+		return nil
+	}
+	zl.logger = zl.logger.WithOptions(zap.AddCallerSkip(1))
 	if len(keyvals)%2 != 0 {
 		return fmt.Errorf("odd number of arguments")
 	}
-	var loggerFunc func(args ...any)
-	logger := zl.logger.WithOptions(zap.AddCallerSkip(1))
+	var (
+		level  string
+		msg    string
+		fields []any
+	)
 	for i := 0; i < len(keyvals); i += 2 {
 		key, ok := keyvals[i].(string)
 		if !ok {
 			return fmt.Errorf("non-string key: %v", keyvals[i])
 		}
-		if key == "level" {
-			switch keyvals[i+1] {
-			case "debug":
-				loggerFunc = logger.Debug
-			case "warn":
-				loggerFunc = logger.Warn
-			case "error":
-				loggerFunc = logger.Error
-			case "info":
-				loggerFunc = logger.Info
-			default:
-				loggerFunc = nil
+		val := keyvals[i+1]
+		switch key {
+		case "level":
+			if s, ok := val.(string); ok {
+				level = s
+			} else {
+				level = fmt.Sprint(val)
 			}
+		case "msg":
+			msg = fmt.Sprint(val)
+		default:
+			fields = append(fields, key, val)
 		}
-		if key == "msg" && loggerFunc != nil {
-			loggerFunc(keyvals[i+1])
-			return nil
-		}
+	}
+	if msg == "" {
+		msg = "sls"
+	}
+	switch level {
+	// case "debug":
+	// 	zl.logger.Debugw(msg, fields...)
+	case "warn", "warning":
+		zl.logger.Warnw(msg, fields...)
+	case "error":
+		zl.logger.Errorw(msg, fields...)
+		// case "info", "":
+		// 	zl.logger.Infow(msg, fields...)
+		// default:
+		// 	zl.logger.Infow(msg, fields...)
 	}
 	return nil
 }
