@@ -28,9 +28,6 @@ func buildFieldQuery(value, field string, useSuffix bool) string {
 
 	formatted := make([]string, 0, len(words))
 	for _, word := range words {
-		if !isValidTerm(word) {
-			continue
-		}
 		escaped := escapeTerm(word)
 		formatted = append(formatted, formatTerm(field, escaped, useSuffix || len(words) > 1))
 	}
@@ -45,14 +42,6 @@ func buildFieldQuery(value, field string, useSuffix bool) string {
 	}
 }
 
-func isValidTerm(term string) bool {
-	if term == "" || strings.Contains(term, ":") {
-		return false
-	}
-	stripped := strings.TrimSpace(strings.Trim(term, "':\""))
-	return stripped != ""
-}
-
 func escapeTerm(term string) string {
 	escaped := strings.ReplaceAll(term, "'", "\\'")
 	return strings.ReplaceAll(escaped, "\"", "\\\"")
@@ -60,7 +49,7 @@ func escapeTerm(term string) string {
 
 func formatTerm(field, value string, useSuffix bool) string {
 	if useSuffix {
-		return fmt.Sprintf("%s:%s*", field, value)
+		return fmt.Sprintf("%s:\"%s\"", field, value)
 	}
 	return fmt.Sprintf("%s = %s", field, value)
 }

@@ -61,7 +61,7 @@ func GetDefaultLogs(c *gin.Context) {
 		}
 	}
 	if query.Type != "" {
-		if fieldQuery := BuildFieldQuery(query.Type, "__tag__:type"); fieldQuery != "" {
+		if fieldQuery := BuildFuzzyFieldQuery(query.Type, "__tag__:type"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}
