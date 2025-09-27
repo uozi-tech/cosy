@@ -36,5 +36,5 @@ func BuildFieldQuery(value, field string) string {
 	// Single word also needs to escape special characters
 	cleanValue := strings.ReplaceAll(value, "'", "\\'")
 	cleanValue = strings.ReplaceAll(cleanValue, "\"", "\\\"")
-	return fmt.Sprintf("%s:%s*", field, cleanValue)
+	return fmt.Sprintf("%s = %s", field, cleanValue)
 }
