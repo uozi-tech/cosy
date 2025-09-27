@@ -290,6 +290,7 @@ func (m *SLSManager) createAPILogStoreIndex() *sls.Index {
 				Token:         []string{"/", "?", "&", "="},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 			// HTTP response info
 			"resp_status_code": {
@@ -312,31 +313,37 @@ func (m *SLSManager) createAPILogStoreIndex() *sls.Index {
 				Token:         []string{" ", "\t", "\r", "\n", ":", ",", "{", "}", "[", "]"},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 			"resp_body": {
 				Token:         []string{" ", "\t", "\r", "\n", ":", ",", "{", "}", "[", "]"},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 			"session_logs": {
 				Token:         []string{" ", "\t", "\r", "\n", ":", ",", "{", "}", "[", "]"},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 			"__source__": {
 				Token:         []string{" ", "\t", "\r", "\n"},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 			"__tag__:type": {
 				Token:         []string{" ", "\t", "\r", "\n"},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 			"__topic__": {
 				Token:         []string{" ", "\t", "\r", "\n"},
 				CaseSensitive: false,
 				Type:          "text",
+				Chn:           true,
 			},
 		},
 		Line: &sls.IndexLine{
