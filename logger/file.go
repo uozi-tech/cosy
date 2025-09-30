@@ -27,7 +27,7 @@ func GetFileEncoder(mode string) zapcore.Encoder {
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   encoderCaller,
 	}
-	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime)
+	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime + ".000")
 
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
