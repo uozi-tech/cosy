@@ -1,7 +1,6 @@
 package debug
 
 import (
-	"log"
 	"time"
 
 	"github.com/uozi-tech/cosy/internal/monitor"
@@ -22,7 +21,6 @@ func InitDebugSystem(config *MonitorConfig) error {
 	// Initialize monitor integration (logger -> debug reporting)
 	monitor.InitIntegration()
 
-	log.Printf("Debug monitoring system initialized with config: %+v", config)
 	return nil
 }
 
@@ -31,8 +29,8 @@ func GetDefaultMonitorConfig() *MonitorConfig {
 	return &MonitorConfig{
 		// History data retention limits - limited to ~1MB stack size
 		// Each RequestTrace ~5-8KB, so 100 records ≈ 500KB-800KB
-		HistoryGoroutineLimit: 200,  // Goroutine traces are smaller
-		HistoryRequestLimit:   100,  // Request traces are larger due to body/headers
+		HistoryGoroutineLimit: 200, // Goroutine traces are smaller
+		HistoryRequestLimit:   100, // Request traces are larger due to body/headers
 
 		// Real-time push configuration
 		EnableRealtime:    true,
