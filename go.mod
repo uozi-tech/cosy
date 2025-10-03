@@ -21,10 +21,10 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oschwald/geoip2-golang v1.13.0
-	github.com/quic-go/quic-go v0.54.1
+	github.com/quic-go/quic-go v0.55.0
 	github.com/redis/go-redis/v9 v9.14.0
 	github.com/samber/lo v1.51.0
-	github.com/shirou/gopsutil/v4 v4.25.8
+	github.com/shirou/gopsutil/v4 v4.25.9
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
@@ -34,7 +34,7 @@ require (
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.1
 	go.uber.org/zap v1.27.0
-	google.golang.org/protobuf v1.36.9
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gen v0.3.27
@@ -53,7 +53,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/ebitengine/purego v0.8.4 // indirect
+	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-kit/kit v0.13.0 // indirect
