@@ -246,7 +246,14 @@ func capitalizeFirst(s string) string {
 	if s == "" {
 		return s
 	}
-	return strings.ToUpper(s[:1]) + s[1:]
+	// Use runes to properly handle Unicode characters (including Chinese)
+	runes := []rune(s)
+	if len(runes) == 0 {
+		return s
+	}
+	// Capitalize the first rune
+	runes[0] = []rune(strings.ToUpper(string(runes[0])))[0]
+	return string(runes)
 }
 
 // generateMarkdown generates Markdown error code documentation for a single scopeName
