@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"mime"
 	"runtime/debug"
 	"runtime/pprof"
 	"strings"
@@ -19,8 +20,8 @@ import (
 
 const (
 	CosyLogBufferKey = "cosy_log_buffer"
-	CosyRequestIDKey   = "cosy_request_id"
-	CosySkipAuditKey   = "cosy_skip_audit"
+	CosyRequestIDKey = "cosy_request_id"
+	CosySkipAuditKey = "cosy_skip_audit"
 	// CosySessionLoggerKey is the key for storing the session logger in a gin.Context
 	CosySessionLoggerKey = "cosy_session_logger"
 )
@@ -61,6 +62,82 @@ func isWebSocketUpgrade(c *gin.Context) bool {
 		strings.ToLower(c.GetHeader("Upgrade")) == "websocket"
 }
 
+// limitedBuffer is an io.Writer that stores up to max bytes in memory.
+// It records whether the content was truncated due to reaching the limit.
+type limitedBuffer struct {
+	buf       bytes.Buffer
+	max       int
+	truncated bool
+}
+
+func newLimitedBuffer(max int) *limitedBuffer {
+	lb := &limitedBuffer{max: max}
+	return lb
+}
+
+func (l *limitedBuffer) Write(p []byte) (int, error) {
+	remaining := l.max - l.buf.Len()
+	if remaining <= 0 {
+		l.truncated = true
+		return len(p), nil
+	}
+	if len(p) > remaining {
+		l.truncated = true
+		_, _ = l.buf.Write(p[:remaining])
+		return len(p), nil
+	}
+	return l.buf.Write(p)
+}
+
+func (l *limitedBuffer) String() string {
+	return l.buf.String()
+}
+
+// teeReadCloser wraps a ReadCloser and tees its reads into w.
+type teeReadCloser struct {
+	rc  io.ReadCloser
+	tee io.Reader
+}
+
+func newTeeReadCloser(rc io.ReadCloser, w io.Writer) io.ReadCloser {
+	return &teeReadCloser{rc: rc, tee: io.TeeReader(rc, w)}
+}
+
+func (t *teeReadCloser) Read(p []byte) (int, error) {
+	return t.tee.Read(p)
+}
+
+func (t *teeReadCloser) Close() error {
+	return t.rc.Close()
+}
+
+// shouldCaptureRequestBody decides whether to capture request body content using an allowlist.
+// Only textual media types are captured; all other types are skipped by default.
+func shouldCaptureRequestBody(contentType string) bool {
+	if contentType == "" {
+		return true
+	}
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil || mediaType == "" {
+		mediaType = strings.ToLower(strings.TrimSpace(contentType))
+	} else {
+		mediaType = strings.ToLower(mediaType)
+	}
+	if strings.HasPrefix(mediaType, "text/") {
+		return true
+	}
+	switch mediaType {
+	case "application/json",
+		"application/xml",
+		"application/x-www-form-urlencoded",
+		"application/graphql",
+		"application/problem+json":
+		return true
+	default:
+		return false
+	}
+}
+
 // SkipAuditMiddleware marks the request to skip audit logging
 func SkipAuditMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -83,16 +160,24 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 		userAgent := c.Request.Header.Get("User-Agent")
 		isWebSocket := isWebSocketUpgrade(c)
 
-		var reqBodyBytes []byte
 		var reqBody string
+		var bodyBuf *limitedBuffer
+		var captureBody bool
+		var skipBodyReason string
 
 		// For WebSocket upgrade requests, don't read the body as it's typically empty
-		// and we don't want to interfere with the upgrade process
+		// and we don't want to interfere with the upgrade process. For normal requests,
+		// avoid loading entire body into memory; use TeeReader to capture up to a limit.
 		if !isWebSocket && c.Request.Body != nil {
-			reqBodyBytes, _ = c.GetRawData()
-			reqBody = string(reqBodyBytes)
-			// re-assigned the request body to the original one, to prevent the request body from being consumed
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
+			contentType := c.GetHeader("Content-Type")
+			if shouldCaptureRequestBody(contentType) {
+				const maxCapture = 64 * 1024 // 64KB preview
+				bodyBuf = newLimitedBuffer(maxCapture)
+				c.Request.Body = newTeeReadCloser(c.Request.Body, bodyBuf)
+				captureBody = true
+			} else {
+				skipBodyReason = contentType
+			}
 		}
 
 		var responseBodyWriter *responseWriter
@@ -118,6 +203,16 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 			c.Set("pprofCtx", ctx)
 			c.Next()
 		})
+
+		// Prepare request body preview after handler consumed the body
+		if captureBody && bodyBuf != nil {
+			reqBody = bodyBuf.String()
+			if bodyBuf.truncated {
+				reqBody += " [truncated]"
+			}
+		} else if skipBodyReason != "" {
+			reqBody = "[body skipped: " + skipBodyReason + "]"
+		}
 
 		// get the response meta
 		respStatusCode := cast.ToString(c.Writer.Status())
