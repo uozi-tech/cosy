@@ -61,9 +61,6 @@ importers:
       '@types/node':
         specifier: ^24.8.1
         version: 24.8.1
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
       '@unocss/preset-attributify':
         specifier: ^66.5.4
         version: 66.5.4
@@ -1314,9 +1311,6 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
-
-  '@types/uuid@10.0.0':
-    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@types/web-bluetooth@0.0.21':
     resolution: {integrity: sha512-oIQLCGWtcFZy2JW77j9k8nHzAOpqMHLQejDA48XXMWH6tjCQHz5RCFz1bzsmROyL6PUm+LLnUiI4BCn221inxA==}
@@ -4358,8 +4352,6 @@ snapshots:
       undici-types: 7.14.0
 
   '@types/unist@3.0.3': {}
-
-  '@types/uuid@10.0.0': {}
 
   '@types/web-bluetooth@0.0.21': {}
 
