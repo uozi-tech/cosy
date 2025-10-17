@@ -17,15 +17,16 @@ func BuildFieldQuery(value, field string) string {
 }
 
 func escapeTerm(term string) string {
-	// Only escape backslashes and double quotes for phrase safety.
-	// Do NOT alter ':' — colons inside quoted phrases are valid in SLS queries.
-	escaped := strings.ReplaceAll(term, `\\`, `\\\\`)
-	escaped = strings.ReplaceAll(escaped, `"`, `\\"`)
+	// Escape all backslashes and all double quotes.
+	// This ensures literal backslashes are preserved (\\) and quotes are safe (\").
+	escaped := strings.ReplaceAll(term, "\\", "\\\\")
+	escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
 	return escaped
 }
 
 func formatTerm(field, value string) string {
-	return fmt.Sprintf("%s:\"%s\"", field, value)
+	// Use SLS phrase search for fielded queries to avoid tokenizer surprises on spaces/non-ASCII
+	return fmt.Sprintf("%s:#\"%s\"", field, value)
 }
 
 // BuildFullTextQuery builds a plain full-text phrase query across all fields
@@ -37,5 +38,6 @@ func BuildFullTextQuery(phrase string) string {
 		return ""
 	}
 	escaped := escapeTerm(trimmed)
-	return fmt.Sprintf("\"%s\"", escaped)
+	// Use global phrase search
+	return fmt.Sprintf("#\"%s\"", escaped)
 }
