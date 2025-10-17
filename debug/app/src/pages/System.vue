@@ -20,11 +20,10 @@ const apiData = computed(() => systemData.value || {})
 
 // Computed system stats
 const systemStats = computed(() => {
-  // Check if WebSocket data has actual content, not just empty object
-  const wsHasData = websocketStore.systemStats
-    && Object.keys(websocketStore.systemStats).length > 0
-
-  return wsHasData ? websocketStore.systemStats : (systemData.value || {})
+  // 使用 unref 解包，兼容 Ref 或对象
+  const ws = unref(websocketStore.systemStats) as any
+  const wsHasData = ws && Object.keys(ws).length > 0
+  return wsHasData ? ws : (systemData.value || {})
 })
 
 const activeGoroutines = computed(() => {

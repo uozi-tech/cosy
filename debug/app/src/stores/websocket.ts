@@ -52,6 +52,19 @@ export const useWebSocketStore = defineStore('websocket', () => {
   function handleOpen() {
     isConnected.value = true
     lastError.value = null
+
+    // Send subscriptions to enable server push
+    sendMessage({
+      type: 'subscribe',
+      data: {
+        subscribe_stats: true,
+        subscribe_goroutines: true,
+        subscribe_requests: true,
+      },
+    })
+
+    // Request an immediate stats snapshot
+    sendMessage({ type: 'get_stats' })
   }
 
   function handleMessage(event: MessageEvent) {
@@ -77,13 +90,19 @@ export const useWebSocketStore = defineStore('websocket', () => {
   function processMessage(message: WebSocketMessage) {
     switch (message.type) {
       case 'stats':
+      case 'stats_update':
         updateSystemStats(message.data)
         break
       case 'goroutine':
+      case 'goroutine_update':
         addRecentGoroutine(message.data)
         break
       case 'request':
+      case 'request_update':
         addRecentRequest(message.data)
+        break
+      case 'pong':
+        // no-op
         break
       default:
         console.warn('Unknown message type:', message.type)
@@ -102,7 +121,13 @@ export const useWebSocketStore = defineStore('websocket', () => {
   }
 
   function addRecentRequest(request: RequestInfo) {
-    recentRequests.value.unshift(request)
+    // Normalize status code to number for UI consistency
+    const normalized: RequestInfo = {
+      ...request,
+      resp_status_code: Number.parseInt(String(request.resp_status_code)) || 0,
+    }
+
+    recentRequests.value.unshift(normalized)
     if (recentRequests.value.length > 10) {
       recentRequests.value = recentRequests.value.slice(0, 10)
     }

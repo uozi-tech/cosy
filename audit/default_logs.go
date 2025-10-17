@@ -46,12 +46,12 @@ func GetDefaultLogs(c *gin.Context) {
 		filter = append(filter, fmt.Sprintf("level:%s", query.Level))
 	}
 	if query.Msg != "" {
-		if fieldQuery := BuildFuzzyFieldQuery(query.Msg, "msg"); fieldQuery != "" {
+		if fieldQuery := BuildFieldQuery(query.Msg, "msg"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}
 	if query.Caller != "" {
-		if fieldQuery := BuildFuzzyFieldQuery(query.Caller, "caller"); fieldQuery != "" {
+		if fieldQuery := BuildFieldQuery(query.Caller, "caller"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}
@@ -61,7 +61,7 @@ func GetDefaultLogs(c *gin.Context) {
 		}
 	}
 	if query.Type != "" {
-		if fieldQuery := BuildFuzzyFieldQuery(query.Type, "__tag__:type"); fieldQuery != "" {
+		if fieldQuery := BuildFieldQuery(query.Type, "__tag__:type"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}

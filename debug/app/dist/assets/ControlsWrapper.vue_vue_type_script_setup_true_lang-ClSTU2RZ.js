@@ -1,1 +1,0 @@
-import{d as r,Y as o,a5 as s,V as t}from"./vue-vendor-gqGt9jxi.js";const a={class:"flex items-center gap-4 p-4 mb-4 bg-white rounded-lg shadow-sm border border-gray-200"},c=r({__name:"ControlsWrapper",setup(n){return(e,d)=>(t(),o("div",a,[s(e.$slots,"default")]))}});export{c as _};

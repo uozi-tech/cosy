@@ -54,7 +54,7 @@ func GetAuditLogs(c *gin.Context, logsHandler func(logs []map[string]string)) {
 		filter = append(filter, fmt.Sprintf("req_method:%s", query.ReqMethod))
 	}
 	if query.ReqUrl != "" {
-		if fieldQuery := BuildFuzzyFieldQuery(query.ReqUrl, "req_url"); fieldQuery != "" {
+		if fieldQuery := BuildFieldQuery(query.ReqUrl, "req_url"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}
@@ -70,7 +70,7 @@ func GetAuditLogs(c *gin.Context, logsHandler func(logs []map[string]string)) {
 		}
 	}
 	if query.SessionContent != "" {
-		if fieldQuery := BuildFuzzyFieldQuery(query.SessionContent, "session_logs"); fieldQuery != "" {
+		if fieldQuery := BuildFieldQuery(query.SessionContent, "session_logs"); fieldQuery != "" {
 			filter = append(filter, fieldQuery)
 		}
 	}

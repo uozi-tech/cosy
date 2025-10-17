@@ -186,27 +186,28 @@ func (mh *MonitorHub) UpdateRequest(requestID string, updates map[string]any) {
 
 // GetCurrentStats gets current statistics information
 func (mh *MonitorHub) GetCurrentStats() *MonitorStats {
-	mh.statsMutex.RLock()
-	defer mh.statsMutex.RUnlock()
+	mh.statsMutex.Lock()
+	defer mh.statsMutex.Unlock()
 
 	// Update system information
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
+	// Uptime 应该基于进程启动时间，而不是上次统计更新时间
 	mh.stats.SystemStats = &SystemStats{
 		MemoryUsage:    m.Alloc,
 		GoroutineCount: runtime.NumGoroutine(),
-		Uptime:         time.Now().Unix() - mh.stats.LastUpdate,
+		Uptime:         time.Now().Unix() - startupTime.Unix(),
 	}
 
 	// Update goroutine statistics
 	mh.stats.GoroutineStats = kernel.GetGoroutineStats()
 
 	// Update request statistics
-	// Use atomic counter to avoid deadlock with Range operations
-	// Note: ActiveRequests count is maintained by RegisterRequest/UpdateRequest methods
-	// No need to traverse the map here, just use the current count from stats
+	// 使用累加计数避免与 Range 操作死锁
+	// ActiveRequests 由 RegisterRequest/UpdateRequest 维护
 
+	// 更新时间戳
 	mh.stats.LastUpdate = time.Now().Unix()
 
 	// Return copy

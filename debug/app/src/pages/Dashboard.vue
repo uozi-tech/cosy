@@ -264,12 +264,12 @@ function closeGoroutineDetail() {
                 <AListItemMeta>
                   <template #title>
                     <div class="flex items-center justify-between">
-                      <ASpace>
+                      <div class="flex items-center gap-2 flex-1 basis-0 min-w-0 overflow-hidden">
                         <ATag :class="getStatusClass(item.status)">
                           {{ item.status }}
                         </ATag>
-                        <span class="font-medium font-mono text-sm">{{ formatGoroutineName(item) }}</span>
-                      </ASpace>
+                        <span class="block font-medium font-mono text-sm truncate w-0 flex-1 basis-0 min-w-0 max-w-[80%]">{{ formatGoroutineName(item) }}</span>
+                      </div>
                       <AButton
                         type="link"
                         size="small"
@@ -318,15 +318,15 @@ function closeGoroutineDetail() {
                 <AListItemMeta>
                   <template #title>
                     <div class="flex items-center justify-between">
-                      <ASpace>
+                      <div class="flex items-center gap-2 flex-1 basis-0 min-w-0 overflow-hidden">
                         <ATag :class="getStatusClass(item.resp_status_code)">
                           {{ item.resp_status_code || item.status }}
                         </ATag>
                         <ATag color="blue">
                           {{ item.req_method }}
                         </ATag>
-                        <span class="font-medium truncate">{{ item.req_url }}</span>
-                      </ASpace>
+                        <span class="block font-medium truncate w-0 flex-1 basis-0 min-w-0 max-w-[80%]">{{ item.req_url }}</span>
+                      </div>
                       <AButton
                         type="link"
                         size="small"
@@ -375,9 +375,5 @@ function closeGoroutineDetail() {
 
 .status-badge {
   @apply text-xs font-medium rounded-full;
-}
-
-.truncate {
-  max-width: 200px;
 }
 </style>

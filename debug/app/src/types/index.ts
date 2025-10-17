@@ -86,7 +86,15 @@ export interface KernelGoroutineStats {
 }
 
 export interface WebSocketMessage {
-  type: 'stats' | 'goroutine' | 'request' | 'error'
+  type:
+    | 'stats'
+    | 'goroutine'
+    | 'request'
+    | 'stats_update'
+    | 'goroutine_update'
+    | 'request_update'
+    | 'pong'
+    | 'error'
   data: any
   timestamp?: number
 }

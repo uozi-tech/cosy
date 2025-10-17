@@ -5,51 +5,37 @@ import (
 	"strings"
 )
 
-// BuildFieldQuery 构建字段精确匹配表达式，支持多词 AND 链接
 func BuildFieldQuery(value, field string) string {
-	return buildFieldQuery(value, field, false)
-}
-
-// BuildFuzzyFieldQuery 构建字段模糊匹配表达式，使用后缀通配符
-func BuildFuzzyFieldQuery(value, field string) string {
-	return buildFieldQuery(value, field, true)
-}
-
-func buildFieldQuery(value, field string, useSuffix bool) string {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
 		return ""
 	}
 
-	words := strings.Fields(trimmed)
-	if len(words) == 0 {
-		return ""
-	}
+	escaped := escapeTerm(trimmed)
 
-	formatted := make([]string, 0, len(words))
-	for _, word := range words {
-		escaped := escapeTerm(word)
-		formatted = append(formatted, formatTerm(field, escaped, useSuffix || len(words) > 1))
-	}
-
-	switch len(formatted) {
-	case 0:
-		return ""
-	case 1:
-		return formatted[0]
-	default:
-		return "(" + strings.Join(formatted, " and ") + ")"
-	}
+	return formatTerm(field, escaped)
 }
 
 func escapeTerm(term string) string {
-	escaped := strings.ReplaceAll(term, "'", "\\'")
-	return strings.ReplaceAll(escaped, "\"", "\\\"")
+	// Only escape backslashes and double quotes for phrase safety.
+	// Do NOT alter ':' — colons inside quoted phrases are valid in SLS queries.
+	escaped := strings.ReplaceAll(term, `\\`, `\\\\`)
+	escaped = strings.ReplaceAll(escaped, `"`, `\\"`)
+	return escaped
 }
 
-func formatTerm(field, value string, useSuffix bool) string {
-	if useSuffix {
-		return fmt.Sprintf("%s:\"%s\"", field, value)
+func formatTerm(field, value string) string {
+	return fmt.Sprintf("%s:\"%s\"", field, value)
+}
+
+// BuildFullTextQuery builds a plain full-text phrase query across all fields
+// by returning an escaped quoted phrase, which can be concatenated with other
+// field conditions using 'and'. Example output: "\"some phrase: with colon\""
+func BuildFullTextQuery(phrase string) string {
+	trimmed := strings.TrimSpace(phrase)
+	if trimmed == "" {
+		return ""
 	}
-	return fmt.Sprintf("%s = %s", field, value)
+	escaped := escapeTerm(trimmed)
+	return fmt.Sprintf("\"%s\"", escaped)
 }
