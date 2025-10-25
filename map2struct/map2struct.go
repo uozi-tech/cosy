@@ -19,6 +19,7 @@ func WeakDecode(input, output any) error {
 			ToPgDatePtrHook(),
 		),
 		TagName: "json",
+		Squash:  true,
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)
