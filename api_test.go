@@ -35,8 +35,7 @@ type TestEmbed struct {
 type User struct {
 	model.Model
 	SchoolID string `json:"school_id" cosy:"add:required;update:omitempty;list:fussy" gorm:"uniqueIndex"`
-	//nolint:staticcheck
-	TestEmbed          `json:",squash"`
+	TestEmbed
 	Name               string     `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
 	Gender             Gender     `json:"gender" cosy:"add:min=0;update:omitempty;list:fussy;batch"`
 	Age                int        `json:"age" cosy:"add:required;update:omitempty;batch"`

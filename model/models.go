@@ -78,8 +78,7 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 		gormTags := field.Tag.Get("gorm")
 
 		if gormTags != "" {
-			tags := strings.Split(gormTags, ";")
-			for _, tag := range tags {
+			for tag := range strings.SplitSeq(gormTags, ";") {
 				// gorm:"uniqueIndex;type:varchar(255);default:0"
 				if strings.Contains(tag, "default") {
 					defaultValueTag := strings.Split(tag, ":")

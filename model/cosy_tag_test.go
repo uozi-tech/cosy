@@ -12,7 +12,7 @@ func TestCosyTag(t *testing.T) {
 	assert.Equal("required,max=100", c.GetAdd())
 	assert.Equal("omitempty,max=100", c.GetUpdate())
 	assert.Equal("fussy", c.GetList()[0])
-	assert.Equal("preload", c.GetItem())
+	assert.Equal("preload", c.GetItem()) 
 
 	tag = "add:required;list:in;update:omitempty"
 	c = NewCosyTag(tag)

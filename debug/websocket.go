@@ -13,23 +13,6 @@ import (
 	"github.com/spf13/cast"
 )
 
-// sync.Pool for WebSocket message optimization
-var (
-	// Pool for WebSocket message buffers
-	wsMessagePool = sync.Pool{
-		New: func() any {
-			return make([]byte, 0, 4096) // 4KB initial capacity for message buffers
-		},
-	}
-
-	// Pool for JSON marshaling buffers
-	jsonBufPool = sync.Pool{
-		New: func() any {
-			return make([]byte, 0, 2048) // 2KB initial capacity for JSON buffers
-		},
-	}
-)
-
 // WSConnection WebSocket connection
 type WSConnection struct {
 	ID        string          `json:"id"`

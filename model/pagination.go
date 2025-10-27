@@ -14,7 +14,7 @@ type DataList struct {
 
 // TotalPage calculate total page
 func TotalPage(total int64, pageSize int) int64 {
-	// fix: divide by zero
+	// "fix": divide by zero
 	if pageSize == 0 {
 		pageSize = 10
 	}

@@ -91,48 +91,38 @@ func TestGoroutineAPIIntegration(t *testing.T) {
 
 			t.Logf("%s: Found %d goroutines (total: %d)", tt.name, len(response.Data), response.Total)
 
-			if tt.query == "" || tt.query == "?type=active" {
-				// For all or active, we should have both kernel and runtime goroutines
+			// Compute presence of kernel/runtime goroutines once
+			hasKernel := false
+			hasRuntime := false
+			for _, item := range response.Data {
+				if itemMap, ok := item.(map[string]any); ok {
+					if id, ok := itemMap["id"].(string); ok {
+						if strings.HasPrefix(id, "runtime-") {
+							hasRuntime = true
+						} else {
+							hasKernel = true
+						}
+					}
+				}
+			}
+
+			switch tt.query {
+			case "", "?type=active":
+				// For all or active, we should have runtime goroutines
 				if response.Total == 0 {
 					t.Error("Expected to find goroutines, but got none")
 				}
-
-				// Check if we have both types
-				hasKernel := false
-				hasRuntime := false
-
-				for _, item := range response.Data {
-					if itemMap, ok := item.(map[string]any); ok {
-						if id, ok := itemMap["id"].(string); ok {
-							if strings.HasPrefix(id, "runtime-") {
-								hasRuntime = true
-							} else {
-								hasKernel = true
-							}
-						}
-					}
+				if !hasRuntime {
+					t.Error("Expected to find runtime goroutines in active/all list")
 				}
-
-				if tt.query == "" || tt.query == "?type=active" {
-					if !hasRuntime {
-						t.Error("Expected to find runtime goroutines in active/all list")
-					}
-				}
-
-				// For our test case, we should have at least the completed kernel goroutine
+				// For our test case, we may have kernel goroutines in all list
 				if tt.query == "" && !hasKernel {
 					t.Log("Note: No kernel goroutines found in all list (may be normal if they were cleaned up)")
 				}
-			} else if tt.query == "?type=history" {
+			case "?type=history":
 				// History should only contain kernel-managed goroutines
-				for _, item := range response.Data {
-					if itemMap, ok := item.(map[string]any); ok {
-						if id, ok := itemMap["id"].(string); ok {
-							if strings.HasPrefix(id, "runtime-") {
-								t.Error("History should not contain runtime goroutines")
-							}
-						}
-					}
+				if hasRuntime {
+					t.Error("History should not contain runtime goroutines")
 				}
 			}
 		})

@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/elliotchance/orderedmap/v3"
 	"strings"
+
+	"github.com/elliotchance/orderedmap/v3"
 )
 
 type CosyTag struct {
@@ -26,8 +27,7 @@ func NewCosyTag(tag string) (c CosyTag) {
 	c.customFilter = orderedmap.NewOrderedMap[string, string]()
 
 	// split tag by ;
-	groups := strings.Split(tag, ";")
-	for _, group := range groups {
+	for group := range strings.SplitSeq(tag, ";") {
 		// now the group is like "add:required,max=100"
 		// we need to get the right side of :
 		directives := strings.Split(group, ":")

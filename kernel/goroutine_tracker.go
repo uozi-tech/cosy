@@ -79,13 +79,6 @@ var (
 	statsMutex           sync.RWMutex
 	historyCleanupTicker *time.Ticker
 
-	// sync.Pool for performance optimization
-	stackBufPool = sync.Pool{
-		New: func() any {
-			return make([]byte, 64*1024) // 64KB buffer for stack traces
-		},
-	}
-
 	stringSlicePool = sync.Pool{
 		New: func() any {
 			return make([]string, 0, 64) // Preallocate capacity for string slices
