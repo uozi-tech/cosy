@@ -5,9 +5,9 @@ import (
 	"embed"
 	"io"
 	"log"
-	"net"
+	"net/netip"
 
-	"github.com/oschwald/geoip2-golang"
+	"github.com/oschwald/geoip2-golang/v2"
 	"github.com/ulikunitz/xz"
 	"github.com/uozi-tech/cosy/logger"
 )
@@ -33,19 +33,23 @@ func init() {
 		log.Fatal(err)
 	}
 
-	db, err = geoip2.FromBytes(dbBytes)
+	db, err = geoip2.OpenBytes(dbBytes)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func ParseIP(input string) string {
-	ip := net.ParseIP(input)
+	ip, err := netip.ParseAddr(input)
+	if err != nil {
+		logger.Error(err)
+		return "Unknown"
+	}
 	record, err := db.Country(ip)
 	if err != nil {
 		logger.Error(err)
 		return "Unknown"
 	}
 
-	return record.Country.IsoCode
+	return record.Country.ISOCode
 }
