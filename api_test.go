@@ -58,7 +58,7 @@ type Product struct {
 	model.Model
 	Name        string          `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
 	Description string          `json:"description" cosy:"add:required;update:omitempty;list:fussy"`
-	Price       decimal.Decimal `json:"price" cosy:"add:required;update:omitempty;list:fussy"`
+	Price       decimal.Decimal `json:"price" cosy:"add:required;update:omitempty;list:between"`
 	Status      string          `json:"status" cosy:"add:required;update:omitempty;list:in,preload"`
 	UserID      int             `json:"user_id" gorm:"index" cosy:"list:eq"`
 	User        *User           `json:"user" cosy:"item:preload;list:preload"`

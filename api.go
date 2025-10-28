@@ -2,7 +2,6 @@ package cosy
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/uozi-tech/cosy/model"
 )
 
 type ICurd[T any] interface {
@@ -29,25 +28,37 @@ type ICurd[T any] interface {
 
 type Curd[T any] struct {
 	ICurd[T]
-	baseUrl       string
-	getHook       []func(*Ctx[T])
-	getListHook   []func(*Ctx[T])
-	createHook    []func(*Ctx[T])
-	modifyHook    []func(*Ctx[T])
-	destroyHook   []func(*Ctx[T])
-	recoverHook   []func(*Ctx[T])
-	beforeCreate  []gin.HandlerFunc
-	beforeModify  []gin.HandlerFunc
-	beforeGet     []gin.HandlerFunc
-	beforeGetList []gin.HandlerFunc
-	beforeDestroy []gin.HandlerFunc
-	beforeRecover []gin.HandlerFunc
+	baseUrl        string
+	getHook        []func(*Ctx[T])
+	getListHook    []func(*Ctx[T])
+	createHook     []func(*Ctx[T])
+	modifyHook     []func(*Ctx[T])
+	destroyHook    []func(*Ctx[T])
+	recoverHook    []func(*Ctx[T])
+	beforeCreate   []gin.HandlerFunc
+	beforeModify   []gin.HandlerFunc
+	beforeGet      []gin.HandlerFunc
+	beforeGetList  []gin.HandlerFunc
+	beforeDestroy  []gin.HandlerFunc
+	beforeRecover  []gin.HandlerFunc
+	getEnabled     bool
+	getListEnabled bool
+	createEnabled  bool
+	modifyEnabled  bool
+	destroyEnabled bool
+	recoverEnabled bool
 }
 
 // Api returns a new instance of Curd
 func Api[T any](baseUrl string) ICurd[T] {
 	return &Curd[T]{
-		baseUrl: baseUrl,
+		baseUrl:        baseUrl,
+		getEnabled:     true,
+		getListEnabled: true,
+		createEnabled:  true,
+		modifyEnabled:  true,
+		destroyEnabled: true,
+		recoverEnabled: true,
 	}
 }
 
@@ -121,12 +132,24 @@ func (c *Curd[T]) RecoverHook(hook ...func(*Ctx[T])) {
 func (c *Curd[T]) InitRouter(r *gin.RouterGroup, middleware ...gin.HandlerFunc) {
 	g := r.Group(c.baseUrl, middleware...)
 	{
-		g.GET("/:id", c.Get()...)
-		g.GET("", c.GetList()...)
-		g.POST("", c.Create()...)
-		g.POST("/:id", c.Modify()...)
-		g.DELETE("/:id", c.Destroy()...)
-		g.PATCH("/:id", c.Recover()...)
+		if c.getEnabled {
+			g.GET("/:id", c.Get()...)
+		}
+		if c.getListEnabled {
+			g.GET("", c.GetList()...)
+		}
+		if c.createEnabled {
+			g.POST("", c.Create()...)
+		}
+		if c.modifyEnabled {
+			g.POST("/:id", c.Modify()...)
+		}
+		if c.destroyEnabled {
+			g.DELETE("/:id", c.Destroy()...)
+		}
+		if c.recoverEnabled {
+			g.PATCH("/:id", c.Recover()...)
+		}
 	}
 }
 
@@ -135,15 +158,9 @@ func (c *Curd[T]) Get() (h []gin.HandlerFunc) {
 	if len(c.beforeGet) > 0 {
 		h = append(h, c.beforeGet...)
 	}
-	var hook = getHook[T]()
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
-		hook(core)
-		if c.getHook != nil {
-			for _, v := range c.getHook {
-				v(core)
-			}
-		}
+		core.PrepareHook(c.getHook...)
 		core.Get()
 	})
 	return
@@ -154,15 +171,9 @@ func (c *Curd[T]) GetList() (h []gin.HandlerFunc) {
 	if len(c.beforeGetList) > 0 {
 		h = append(h, c.beforeGetList...)
 	}
-	var hook = getListHook[T]()
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
-		hook(core)
-		if c.getListHook != nil {
-			for _, v := range c.getListHook {
-				v(core)
-			}
-		}
+		core.PrepareHook(c.getListHook...)
 		core.PagingList()
 	})
 	return
@@ -170,39 +181,10 @@ func (c *Curd[T]) GetList() (h []gin.HandlerFunc) {
 
 // Create returns a gin.HandlerFunc that handles create item requests
 func (c *Curd[T]) Create() (h []gin.HandlerFunc) {
-	resolved := model.GetResolvedModel[T]()
 	h = append(h, c.beforeCreate...)
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
-		validMap := make(gin.H)
-		for _, field := range resolved.Fields {
-			dirs := field.CosyTag.GetAdd()
-			if dirs == "" {
-				continue
-			}
-			key := field.JsonTag
-			// like password field we don't need to response it to client,
-			// but we need to validate it
-			if key == "-" {
-				if field.CosyTag.GetJson() != "" {
-					key = field.CosyTag.GetJson()
-				} else {
-					continue
-				}
-			}
-
-			validMap[key] = dirs
-
-			if field.Unique {
-				core.SetUnique(key)
-			}
-		}
-		core.SetValidRules(validMap)
-		if c.createHook != nil {
-			for _, v := range c.createHook {
-				v(core)
-			}
-		}
+		core.PrepareHook(c.createHook...)
 		core.Create()
 	})
 	return
@@ -210,40 +192,10 @@ func (c *Curd[T]) Create() (h []gin.HandlerFunc) {
 
 // Modify returns a gin.HandlerFunc that handles modify item requests
 func (c *Curd[T]) Modify() (h []gin.HandlerFunc) {
-	resolved := model.GetResolvedModel[T]()
 	h = append(h, c.beforeModify...)
-
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
-		validMap := make(gin.H)
-		for _, field := range resolved.Fields {
-			dirs := field.CosyTag.GetUpdate()
-			if dirs == "" {
-				continue
-			}
-			key := field.JsonTag
-			// like password field, we don't need to response it to the client,
-			// but we need to validate it
-			if key == "-" {
-				if field.CosyTag.GetJson() != "" {
-					key = field.CosyTag.GetJson()
-				} else {
-					continue
-				}
-			}
-
-			validMap[key] = dirs
-
-			if field.Unique {
-				core.SetUnique(key)
-			}
-		}
-		core.SetValidRules(validMap)
-		if c.modifyHook != nil {
-			for _, v := range c.modifyHook {
-				v(core)
-			}
-		}
+		core.PrepareHook(c.modifyHook...)
 		core.Modify()
 	})
 	return
@@ -254,11 +206,7 @@ func (c *Curd[T]) Destroy() (h []gin.HandlerFunc) {
 	h = append(h, c.beforeDestroy...)
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
-		if c.destroyHook != nil {
-			for _, v := range c.destroyHook {
-				v(core)
-			}
-		}
+		core.PrepareHook(c.destroyHook...)
 		core.Destroy()
 	})
 	return
@@ -269,12 +217,44 @@ func (c *Curd[T]) Recover() (h []gin.HandlerFunc) {
 	h = append(h, c.beforeRecover...)
 	h = append(h, func(ginCtx *gin.Context) {
 		core := Core[T](ginCtx)
-		if c.recoverHook != nil {
-			for _, v := range c.recoverHook {
-				v(core)
-			}
-		}
+		core.PrepareHook(c.recoverHook...)
 		core.Recover()
 	})
 	return
+}
+
+// WithoutGet disable get item route
+func (c *Curd[T]) WithoutGet() ICurd[T] {
+	c.getEnabled = false
+	return c
+}
+
+// WithoutGetList disable get items list route
+func (c *Curd[T]) WithoutGetList() ICurd[T] {
+	c.getListEnabled = false
+	return c
+}
+
+// WithoutCreate disable create item route
+func (c *Curd[T]) WithoutCreate() ICurd[T] {
+	c.createEnabled = false
+	return c
+}
+
+// WithoutModify disable modify item route
+func (c *Curd[T]) WithoutModify() ICurd[T] {
+	c.modifyEnabled = false
+	return c
+}
+
+// WithoutDestroy disable delete item route
+func (c *Curd[T]) WithoutDestroy() ICurd[T] {
+	c.destroyEnabled = false
+	return c
+}
+
+// WithoutRecover disable recover item route
+func (c *Curd[T]) WithoutRecover() ICurd[T] {
+	c.recoverEnabled = false
+	return c
 }

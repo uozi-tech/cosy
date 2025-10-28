@@ -43,6 +43,9 @@ func logMode() gormlogger.Interface {
 
 // UseDB return the global db instance
 func UseDB(ctx context.Context) *gorm.DB {
+	if db == nil {
+		return nil
+	}
 	return db.WithContext(ctx)
 }
 

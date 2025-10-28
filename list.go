@@ -2,15 +2,31 @@ package cosy
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/elliotchance/orderedmap/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/model"
 	"github.com/uozi-tech/cosy/settings"
 	"gorm.io/gorm"
-	"net/http"
-	"strings"
 )
+
+type ListService[T any] struct {
+	ctx              *Ctx[T]
+	disableSortOrder bool
+	in               []string
+	eq               []string
+	fussy            []string
+	orIn             []string
+	orEq             []string
+	orFussy          []string
+	search           []string
+	between          []string
+	customFilters    *orderedmap.OrderedMap[string, string]
+}
 
 // GetPagingParams get paging params
 func GetPagingParams(c *gin.Context) (page, offset, pageSize int) {
@@ -47,12 +63,7 @@ func (c *Ctx[T]) combineStdSelectorRequest() {
 }
 
 // result get result
-func (c *Ctx[T]) result() (*gorm.DB, bool) {
-	c.resolvePreloadWithScope()
-	c.resolveJoinsWithScopes()
-
-	c.beforeExecuteHook()
-
+func (c *Ctx[T]) result() *gorm.DB {
 	var dbModel T
 	result := model.UseDB(c.Context)
 
@@ -62,8 +73,8 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 			stmt := &gorm.Statement{DB: model.UseDB(c.Context)}
 			err := stmt.Parse(&dbModel)
 			if err != nil {
-				logger.Error(err)
-				return nil, false
+				c.AbortWithError(err)
+				return nil
 			}
 			tableName = stmt.Schema.Table
 		}
@@ -85,7 +96,7 @@ func (c *Ctx[T]) result() (*gorm.DB, bool) {
 
 	c.applyGormScopes(result)
 
-	return result, true
+	return result
 }
 
 // resolveData resolve data
@@ -112,29 +123,17 @@ func (c *Ctx[T]) resolveData(result *gorm.DB) (data any) {
 }
 
 // ListAllData return list all data
-func (c *Ctx[T]) ListAllData() (data any, ok bool) {
-	result, ok := c.result()
-	if !ok {
-		return nil, false
-	}
-	if !c.disableSortOrder {
-		result = result.Scopes(c.sortOrder)
-	}
+func (c *Ctx[T]) ListAllData() (data any) {
+	result := c.result()
 	data = c.resolveData(result)
-	return data, true
+	return data
 }
 
 // PagingListData return paging list data
-func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
-	result, ok := c.result()
-	if !ok {
-		return nil, false
-	}
+func (c *Ctx[T]) PagingListData() *model.DataList {
+	result := c.result()
 
 	scopesResult := result.Scopes(c.paginate)
-	if !c.disableSortOrder {
-		scopesResult = scopesResult.Scopes(c.sortOrder)
-	}
 
 	data := &model.DataList{}
 	data.Data = c.resolveData(scopesResult)
@@ -160,18 +159,25 @@ func (c *Ctx[T]) PagingListData() (*model.DataList, bool) {
 		CurrentPage: page,
 		TotalPages:  model.TotalPage(totalRecords, pageSize),
 	}
-	return data, true
+	return data
 }
 
 // PagingList return paging list
 func (c *Ctx[T]) PagingList() {
-	data, ok := c.PagingListData()
-	if ok {
-		if c.executedHook() {
-			return
-		}
-		c.JSON(http.StatusOK, data)
-	}
+	NewProcessChain(c).
+		SetPrepare(func(ctx *Ctx[T]) {
+			getListHook[T]()(ctx)
+			ctx.resolvePreloadWithScope()
+			ctx.resolveJoinsWithScopes()
+			prepareHook(ctx)
+		}).
+		SetBeforeExecute(beforeExecuteHook[T]).
+		SetExecuted(executedHook[T]).
+		SetResponse(func(ctx *Ctx[T]) {
+			data := c.PagingListData()
+			c.JSON(http.StatusOK, data)
+		}).
+		GetOrGetList()
 }
 
 // EmptyPagingList return empty list
@@ -184,4 +190,16 @@ func (c *Ctx[T]) EmptyPagingList() {
 	data := &model.DataList{Data: make([]any, 0)}
 	data.Pagination.PerPage = pageSize
 	c.JSON(http.StatusOK, data)
+}
+
+// List return all list data
+func (c *Ctx[T]) List() {
+	NewProcessChain[T](c).
+		SetBeforeExecute(beforeExecuteHook[T]).
+		SetExecuted(executedHook[T]).
+		SetResponse(func(ctx *Ctx[T]) {
+			data := c.ListAllData()
+			c.JSON(http.StatusOK, data)
+		}).
+		GetOrGetList()
 }

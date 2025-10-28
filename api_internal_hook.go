@@ -1,7 +1,7 @@
 package cosy
 
 import (
-	"github.com/elliotchance/orderedmap/v3"
+	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/model"
 )
 
@@ -28,79 +28,97 @@ func getListHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()
 
 	return func(core *Ctx[T]) {
-		var (
-			in            []string
-			eq            []string
-			fussy         []string
-			orIn          []string
-			orEq          []string
-			orFussy       []string
-			preload       []string
-			search        []string
-			between       []string
-			customFilters = orderedmap.NewOrderedMap[string, string]() // key=>filter
-		)
-
 		for _, field := range resolved.OrderedFields {
 			dirs := field.CosyTag.GetList()
 
 			for _, dir := range dirs {
 				switch dir {
 				case In:
-					in = append(in, field.JsonTag)
+					core.SetIn(field.JsonTag)
 				case Equal:
-					eq = append(eq, field.JsonTag)
+					core.SetEqual(field.JsonTag)
 				case Fussy:
-					fussy = append(fussy, field.JsonTag)
+					core.SetFussy(field.JsonTag)
 				case OrIn:
-					orIn = append(orIn, field.JsonTag)
+					core.SetOrIn(field.JsonTag)
 				case OrEqual:
-					orEq = append(orEq, field.JsonTag)
+					core.SetOrEqual(field.JsonTag)
 				case OrFussy:
-					orFussy = append(orFussy, field.JsonTag)
+					core.SetOrFussy(field.JsonTag)
 				case Preload:
-					preload = append(preload, field.Name)
+					core.SetPreloads(field.Name)
 				case Search:
-					search = append(search, field.JsonTag)
+					core.SetSearchFussyKeys(field.JsonTag)
 				case Between:
-					between = append(between, field.JsonTag)
+					core.SetBetween(field.JsonTag)
 				default:
-					customFilters.Set(field.JsonTag, dir)
+					core.SetCustomFilter(field.JsonTag, dir)
 				}
 			}
-		}
 
-		if len(in) > 0 {
-			core.SetIn(in...)
-		}
-		if len(eq) > 0 {
-			core.SetEqual(eq...)
-		}
-		if len(fussy) > 0 {
-			core.SetFussy(fussy...)
-		}
-		if len(orIn) > 0 {
-			core.SetOrIn(orIn...)
-		}
-		if len(orEq) > 0 {
-			core.SetOrEqual(orEq...)
-		}
-		if len(orFussy) > 0 {
-			core.SetOrFussy(orFussy...)
-		}
-		if len(preload) > 0 {
-			core.SetPreloads(preload...)
-		}
-		if len(search) > 0 {
-			core.SetSearchFussyKeys(search...)
-		}
-		if len(between) > 0 {
-			core.SetBetween(between...)
-		}
-		if customFilters.Len() > 0 {
-			for key, filterName := range customFilters.AllFromFront() {
-				core.SetCustomFilter(key, filterName)
+			if field.CosyTag.GetUnique() {
+				core.SetUnique(field.JsonTag)
 			}
 		}
+	}
+}
+
+func createHook[T any]() func(core *Ctx[T]) {
+	resolved := model.GetResolvedModel[T]()
+	return func(core *Ctx[T]) {
+		validMap := make(gin.H)
+		for _, field := range resolved.Fields {
+			dirs := field.CosyTag.GetAdd()
+			if dirs == "" {
+				continue
+			}
+			key := field.JsonTag
+			// like password field we don't need to response it to client,
+			// but we need to validate it
+			if key == "-" {
+				if field.CosyTag.GetJson() != "" {
+					key = field.CosyTag.GetJson()
+				} else {
+					continue
+				}
+			}
+
+			validMap[key] = dirs
+
+			if field.Unique {
+				core.SetUnique(key)
+			}
+		}
+		core.SetValidRules(validMap)
+	}
+}
+
+func modifyHook[T any]() func(core *Ctx[T]) {
+	resolved := model.GetResolvedModel[T]()
+	return func(core *Ctx[T]) {
+		validMap := make(gin.H)
+		for _, field := range resolved.Fields {
+			dirs := field.CosyTag.GetUpdate()
+			if dirs == "" {
+				continue
+			}
+			key := field.JsonTag
+			// like password field, we don't need to response it to the client,
+			// but we need to validate it
+			if key == "-" {
+				if field.CosyTag.GetJson() != "" {
+					key = field.CosyTag.GetJson()
+				} else {
+					continue
+				}
+			}
+
+			validMap[key] = dirs
+
+			if field.Unique {
+				core.SetUnique(key)
+			}
+		}
+		core.SetValidRules(validMap)
 	}
 }

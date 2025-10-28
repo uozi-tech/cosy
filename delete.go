@@ -14,108 +14,82 @@ func (c *Ctx[T]) PermanentlyDelete() {
 }
 
 func (c *Ctx[T]) Destroy() {
-	if c.abort {
-		return
-	}
-	c.ID = c.GetParamID()
+	NewProcessChain(c).
+		SetPrepare(func(ctx *Ctx[T]) {
+			ctx.ID = ctx.GetParamID()
+			if cast.ToBool(c.Query("permanent")) || c.permanentlyDelete {
+				c.Tx = c.Tx.Unscoped()
+			}
+			var err error
+			session := c.Tx.Session(&gorm.Session{})
+			if c.table != "" {
+				err = session.Table(c.table, c.tableArgs...).Take(c.OriginModel, c.ID).Error
+			} else {
+				err = session.First(&c.OriginModel, c.ID).Error
+			}
 
-	c.Tx = model.UseDB(c.Context)
-	if c.useTransaction {
-		c.Tx = c.Tx.Begin()
-	}
-
-	if cast.ToBool(c.Query("permanent")) || c.permanentlyDelete {
-		c.Tx = c.Tx.Unscoped()
-	}
-
-	c.applyGormScopes(c.Tx)
-
-	var err error
-	session := c.Tx.Session(&gorm.Session{})
-	if c.table != "" {
-		err = session.Table(c.table, c.tableArgs...).Take(c.OriginModel, c.ID).Error
-	} else {
-		err = session.First(&c.OriginModel, c.ID).Error
-	}
-
-	if err != nil {
-		errHandler(c.Context, err)
-		return
-	}
-
-	if c.beforeExecuteHook() {
-		return
-	}
-
-	err = c.Tx.Delete(&c.OriginModel).Error
-	if err != nil {
-		errHandler(c.Context, err)
-		return
-	}
-
-	if c.executedHook() {
-		return
-	}
-
-	if c.useTransaction {
-		c.Tx.Commit()
-	}
-
-	c.JSON(http.StatusNoContent, nil)
+			if err != nil {
+				ctx.AbortWithError(err)
+				return
+			}
+			prepareHook(ctx)
+		}).
+		SetBeforeExecute(beforeExecuteHook).
+		SetGormAction(func(ctx *Ctx[T]) {
+			ctx.Tx = ctx.applyGormScopes(ctx.Tx)
+			err := ctx.Tx.Delete(&c.OriginModel).Error
+			if err != nil {
+				ctx.AbortWithError(err)
+				return
+			}
+		}).
+		SetExecuted(executedHook).
+		SetResponse(func(ctx *Ctx[T]) {
+			ctx.JSON(http.StatusNoContent, nil)
+		}).
+		DestroyOrRecover()
 }
 
 func (c *Ctx[T]) Recover() {
-	if c.abort {
-		return
-	}
-	c.ID = c.GetParamID()
+	NewProcessChain(c).
+		SetPrepare(func(ctx *Ctx[T]) {
+			ctx.ID = ctx.GetParamID()
+			c.Tx = c.Tx.Unscoped()
+			c.applyGormScopes(c.Tx)
 
-	c.Tx = model.UseDB(c.Context)
-	if c.useTransaction {
-		c.Tx = c.Tx.Begin()
-	}
+			var err error
+			session := c.Tx.Session(&gorm.Session{})
+			if c.table != "" {
+				err = session.Table(c.table).First(&c.Model, c.ID).Error
+			} else {
+				err = session.First(&c.Model, c.ID).Error
+			}
 
-	c.Tx = c.Tx.Unscoped()
+			if err != nil {
+				ctx.AbortWithError(err)
+				return
+			}
+			prepareHook(ctx)
+		}).
+		SetBeforeExecute(beforeExecuteHook).
+		SetGormAction(func(ctx *Ctx[T]) {
+			var err error
+			resolvedModel := model.GetResolvedModel[T]()
+			if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
+				(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
+				err = c.Tx.Model(&c.Model).Update("deleted_at", nil).Error
+			} else {
+				err = c.Tx.Model(&c.Model).Update("deleted_at", 0).Error
+			}
 
-	c.applyGormScopes(c.Tx)
-
-	var err error
-	session := c.Tx.Session(&gorm.Session{})
-	if c.table != "" {
-		err = session.Table(c.table).First(&c.Model, c.ID).Error
-	} else {
-		err = session.First(&c.Model, c.ID).Error
-	}
-
-	if err != nil {
-		errHandler(c.Context, err)
-		return
-	}
-
-	if c.beforeExecuteHook() {
-		return
-	}
-
-	resolvedModel := model.GetResolvedModel[T]()
-	if deletedAt, ok := resolvedModel.Fields["DeletedAt"]; !ok ||
-		(deletedAt.DefaultValue == "" || deletedAt.DefaultValue == "null") {
-		err = c.Tx.Model(&c.Model).Update("deleted_at", nil).Error
-	} else {
-		err = c.Tx.Model(&c.Model).Update("deleted_at", 0).Error
-	}
-
-	if err != nil {
-		errHandler(c.Context, err)
-		return
-	}
-
-	if c.executedHook() {
-		return
-	}
-
-	if c.useTransaction {
-		c.Tx.Commit()
-	}
-
-	c.JSON(http.StatusNoContent, nil)
+			if err != nil {
+				ctx.AbortWithError(err)
+				return
+			}
+		}).
+		SetExecuted(executedHook).
+		SetResponse(func(ctx *Ctx[T]) {
+			ctx.JSON(http.StatusNoContent, nil)
+		}).
+		DestroyOrRecover()
 }

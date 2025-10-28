@@ -6,62 +6,77 @@ import (
 	"github.com/elliotchance/orderedmap/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
+	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 )
 
 type Ctx[T any] struct {
+	// Place potentially large/aligned generics first to minimize padding
+	Model       T
+	OriginModel T
+
+	// Pointer-heavy fields
 	*gin.Context
-	ID                       uint64
-	rules                    gin.H
-	Payload                  map[string]any
-	Model                    T
-	OriginModel              T
-	BatchEffectedIDs         []string
-	table                    string
-	tableArgs                []any
+	Tx          *gorm.DB
+	nextHandler *gin.HandlerFunc
+	listService *ListService[T]
+
+	// Function pointers
+	scan        func(tx *gorm.DB) any
+	transformer func(*T) any
+
+	// Fixed-size and map headers
+	ID              uint64
+	rules           gin.H
+	Payload         map[string]any
+	selectedFields  map[string]bool
+	columnWhiteList map[string]bool
+
+	// Strings (16B) grouped
+	table   string
+	itemKey string
+
+	// Slice headers (24B) grouped
+	BatchEffectedIDs      []string
+	tableArgs             []any
+	prepareHookFunc       []func(ctx *Ctx[T])
+	beforeDecodeHookFunc  []func(ctx *Ctx[T])
+	beforeExecuteHookFunc []func(ctx *Ctx[T])
+	executedHookFunc      []func(ctx *Ctx[T])
+	gormScopes            []func(tx *gorm.DB) *gorm.DB
+	preloads              []string
+	joins                 []string
+	unique                []string
+
+	// Packed bools at the end to avoid repeated padding
 	useTransaction           bool
-	Tx                       *gorm.DB
 	abort                    bool
-	nextHandler              *gin.HandlerFunc
 	skipAssociationsOnCreate bool
-	beforeDecodeHookFunc     []func(ctx *Ctx[T])
-	beforeExecuteHookFunc    []func(ctx *Ctx[T])
-	executedHookFunc         []func(ctx *Ctx[T])
-	gormScopes               []func(tx *gorm.DB) *gorm.DB
-	preloads                 []string
-	joins                    []string
-	scan                     func(tx *gorm.DB) any
-	transformer              func(*T) any
 	permanentlyDelete        bool
-	selectedFields           map[string]bool
-	itemKey                  string
-	columnWhiteList          map[string]bool
-	disableSortOrder         bool
-	in                       []string
-	eq                       []string
-	fussy                    []string
-	orIn                     []string
-	orEq                     []string
-	orFussy                  []string
-	search                   []string
-	between                  []string
-	unique                   []string
-	customFilters            *orderedmap.OrderedMap[string, string]
 }
 
 func Core[T any](c *gin.Context) *Ctx[T] {
-	return &Ctx[T]{
+	ctx := &Ctx[T]{
 		Context:                  c,
+		Tx:                       model.UseDB(c),
 		rules:                    make(gin.H),
 		gormScopes:               make([]func(tx *gorm.DB) *gorm.DB, 0),
+		prepareHookFunc:          make([]func(ctx *Ctx[T]), 0),
 		beforeExecuteHookFunc:    make([]func(ctx *Ctx[T]), 0),
 		beforeDecodeHookFunc:     make([]func(ctx *Ctx[T]), 0),
+		executedHookFunc:         make([]func(ctx *Ctx[T]), 0),
 		itemKey:                  "id",
 		skipAssociationsOnCreate: true,
 		columnWhiteList:          make(map[string]bool),
 		selectedFields:           make(map[string]bool),
-		customFilters:            orderedmap.NewOrderedMap[string, string](),
 	}
+
+	ctx.listService = &ListService[T]{
+		ctx:           ctx,
+		customFilters: orderedmap.NewOrderedMap[string, string](),
+	}
+
+	return ctx
 }
 
 func (c *Ctx[T]) SetTable(table string, args ...any) *Ctx[T] {
@@ -141,12 +156,13 @@ func (c *Ctx[T]) GetSelectedFields() []string {
 
 // WithoutSortOrder disable sort order for "get list"
 func (c *Ctx[T]) WithoutSortOrder() *Ctx[T] {
-	c.disableSortOrder = true
+	c.listService.disableSortOrder = true
 	return c
 }
 
 // WithTransaction use transaction for "create" and "update"
 func (c *Ctx[T]) WithTransaction() *Ctx[T] {
 	c.useTransaction = true
+	c.Tx = c.Tx.Begin()
 	return c
 }

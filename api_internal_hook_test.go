@@ -38,17 +38,18 @@ func TestInternalListHook(t *testing.T) {
 
 	assert.Equal(t, expected.rules, actual.rules)
 	assert.Equal(t, expected.preloads, actual.preloads)
-	assert.Equal(t, expected.in, actual.in)
-	assert.Equal(t, expected.eq, actual.eq)
-	assert.Equal(t, expected.fussy, actual.fussy)
-	assert.Equal(t, expected.orIn, actual.orIn)
-	assert.Equal(t, expected.orEq, actual.orEq)
-	assert.Equal(t, expected.orFussy, actual.orFussy)
-	assert.Equal(t, expected.search, actual.search)
-	assert.Equal(t, expected.between, actual.between)
+	assert.Equal(t, expected.listService.in, actual.listService.in)
+	assert.Equal(t, expected.listService.eq, actual.listService.eq)
+	assert.Equal(t, expected.listService.fussy, actual.listService.fussy)
+	assert.Equal(t, expected.listService.orIn, actual.listService.orIn)
+	assert.Equal(t, expected.listService.orEq, actual.listService.orEq)
+	assert.Equal(t, expected.listService.orFussy, actual.listService.orFussy)
+	assert.Equal(t, expected.listService.search, actual.listService.search)
+	assert.Equal(t, expected.listService.between, actual.listService.between)
 
 	expected2 := Core[Product](c).
-		SetFussy("name", "description", "price").
+		SetFussy("name", "description").
+		SetBetween("price").
 		SetEqual("user_id").
 		SetIn("status").
 		SetPreloads("Status", "User")
@@ -59,11 +60,12 @@ func TestInternalListHook(t *testing.T) {
 
 	assert.Equal(t, expected2.rules, actual2.rules)
 	assert.Equal(t, expected2.preloads, actual2.preloads)
-	assert.Equal(t, expected2.in, actual2.in)
-	assert.Equal(t, expected2.eq, actual2.eq)
-	assert.Equal(t, expected2.fussy, actual2.fussy)
-	assert.Equal(t, expected2.orIn, actual2.orIn)
-	assert.Equal(t, expected2.orEq, actual2.orEq)
-	assert.Equal(t, expected2.orFussy, actual2.orFussy)
-	assert.Equal(t, expected2.search, actual2.search)
+	assert.Equal(t, expected2.listService.in, actual2.listService.in)
+	assert.Equal(t, expected2.listService.eq, actual2.listService.eq)
+	assert.Equal(t, expected2.listService.fussy, actual2.listService.fussy)
+	assert.Equal(t, expected2.listService.orIn, actual2.listService.orIn)
+	assert.Equal(t, expected2.listService.orEq, actual2.listService.orEq)
+	assert.Equal(t, expected2.listService.orFussy, actual2.listService.orFussy)
+	assert.Equal(t, expected2.listService.search, actual2.listService.search)
+	assert.Equal(t, expected2.listService.between, actual2.listService.between)
 }

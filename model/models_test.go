@@ -34,7 +34,7 @@ type Product struct {
 	Model
 	Name        string          `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
 	Description string          `json:"description" cosy:"add:required;update:omitempty;list:fussy"`
-	Price       decimal.Decimal `json:"price" cosy:"add:required;update:omitempty;list:fussy"`
+	Price       decimal.Decimal `json:"price" cosy:"add:required;update:omitempty;list:between"`
 	Status      string          `json:"status" cosy:"add:required;update:omitempty;list:in"`
 	UserID      int             `json:"user_id" gorm:"index"`
 	User        *User           `json:"user,omitempty" cosy:"item:preload"`
@@ -178,7 +178,7 @@ func TestResolvedModels(t *testing.T) {
 					Name:    "Price",
 					Type:    "decimal.Decimal",
 					JsonTag: "price",
-					CosyTag: NewCosyTag("add:required;update:omitempty;list:fussy"),
+					CosyTag: NewCosyTag("add:required;update:omitempty;list:between"),
 				},
 				{
 					Name:    "Status",

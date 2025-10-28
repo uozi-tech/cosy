@@ -8,5 +8,8 @@ func (c *Ctx[T]) applyGormScopes(result *gorm.DB) *gorm.DB {
 			result = v(result)
 		}
 	}
+	if !c.listService.disableSortOrder {
+		result = result.Scopes(c.sortOrder)
+	}
 	return result
 }

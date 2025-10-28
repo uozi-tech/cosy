@@ -1,62 +1,55 @@
 package cosy
 
 import (
-	"github.com/uozi-tech/cosy/model"
 	"net/http"
 )
 
 func (c *Ctx[T]) Get() {
-	if c.abort {
-		return
-	}
+	NewProcessChain(c).
+		SetPrepare(func(ctx *Ctx[T]) {
+			c.ID = c.GetParamID()
+			getHook[T]()(ctx)
+			prepareHook(ctx)
+		}).
+		SetBeforeExecute(beforeExecuteHook[T]).
+		SetGormAction(func(ctx *Ctx[T]) {
+			db := c.applyGormScopes(c.Tx)
+			if c.table != "" {
+				db = db.Table(c.table)
+			}
+			c.handleTable()
+			db = c.resolvePreload(db)
+			db = c.resolveJoins(db)
 
-	c.ID = c.GetParamID()
+			// scan into custom struct
+			if c.scan != nil {
+				r := c.scan(db)
+				if err, ok := r.(error); ok {
+					ctx.AbortWithError(err)
+					return
+				}
+				c.JSON(http.StatusOK, r)
+				c.Abort()
+				return
+			}
 
-	if c.beforeExecuteHook() {
-		return
-	}
+			err := db.First(&c.Model, c.ID).Error
+			if err != nil {
+				ctx.AbortWithError(err)
+				return
+			}
+		}).
+		SetExecuted(executedHook[T]).
+		SetResponse(func(ctx *Ctx[T]) {
+			// no transformer
+			if c.transformer == nil {
+				c.JSON(http.StatusOK, c.Model)
+				c.Abort()
+				return
+			}
 
-	data := new(T)
+			// use transformer
+			c.JSON(http.StatusOK, c.transformer(&c.Model))
+		}).GetOrGetList()
 
-	db := model.UseDB(c.Context)
-
-	db = c.applyGormScopes(db)
-
-	if c.table != "" {
-		db = db.Table(c.table)
-	}
-
-	c.handleTable()
-	db = c.resolvePreload(db)
-	db = c.resolveJoins(db)
-
-	// scan into custom struct
-	if c.scan != nil {
-		r := c.scan(db)
-		if err, ok := r.(error); ok {
-			errHandler(c.Context, err)
-			return
-		}
-		c.JSON(http.StatusOK, r)
-		return
-	}
-
-	err := db.First(&data, c.ID).Error
-	if err != nil {
-		errHandler(c.Context, err)
-		return
-	}
-
-	if c.executedHook() {
-		return
-	}
-
-	// no transformer
-	if c.transformer == nil {
-		c.JSON(http.StatusOK, data)
-		return
-	}
-
-	// use transformer
-	c.JSON(http.StatusOK, c.transformer(data))
 }
