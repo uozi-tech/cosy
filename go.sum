@@ -44,6 +44,8 @@ github.com/alibabacloud-go/tea-xml v1.1.2 h1:oLxa7JUXm2EDFzMg+7oRsYc+kutgCVwm+bZ
 github.com/alibabacloud-go/tea-xml v1.1.2/go.mod h1:Rq08vgCcCAjHyRi/M7xlHKUykZCEtyBy9+DPF6GgEu8=
 github.com/aliyun/aliyun-log-go-sdk v0.1.109 h1:mzvkGa+30ZQvxze47qdgpIbSBSnLzkVzSZMo/wS7Go8=
 github.com/aliyun/aliyun-log-go-sdk v0.1.109/go.mod h1:7QcyHasd4WLdC+lx4uCmdIBcl7WcgRHctwz8t1zAuPo=
+github.com/aliyun/aliyun-log-go-sdk v0.1.110 h1:zz9dGz8K4pJ2nmbWuEirF6nvXipPW18JD8iJHBLbyN4=
+github.com/aliyun/aliyun-log-go-sdk v0.1.110/go.mod h1:7QcyHasd4WLdC+lx4uCmdIBcl7WcgRHctwz8t1zAuPo=
 github.com/aliyun/credentials-go v1.1.2 h1:qU1vwGIBb3UJ8BwunHDRFtAhS6jnQLnde/yk0+Ih2GY=
 github.com/aliyun/credentials-go v1.1.2/go.mod h1:ozcZaMR5kLM7pwtCMEpVmQ242suV6qTJya2bDq4X1Tw=
 github.com/aws/aws-sdk-go-v2 v1.39.2 h1:EJLg8IdbzgeD7xgvZ+I8M1e0fL0ptn/M47lianzth0I=

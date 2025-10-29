@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/aliyun/aliyun-log-go-sdk v0.1.109
+	github.com/aliyun/aliyun-log-go-sdk v0.1.110
 	github.com/bsm/redislock v0.9.4
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/elliotchance/orderedmap/v3 v3.1.0
