@@ -30,20 +30,15 @@ func BatchRecoverUser(c *gin.Context) {
 }
 ```
 
-### 通过自定义字段恢复
-如果设置了自定义主键字段（通过 `SetItemKey` 方法），可以使用自定义字段：
+### 通过自定义主键列
+可以通过 `SetItemKey("uuid")` 修改用于 SQL 条件的列名（例如从 `id` 改为 `uuid`）。
+注意：请求体的字段名始终为 `ids`，不会因列名变化而改变。
 
 ```go
 func BatchRecoverUser(c *gin.Context) {
-    core := cosy.Core[model.User](c).SetItemKey("uuid")
-    core.BatchRecover()
-}
-```
-
-请求体：
-```json
-{
-  "uuids": ["uuid1", "uuid2", "uuid3"]
+    cosy.Core[model.User](c).
+        SetItemKey("uuid").
+        BatchRecover()
 }
 ```
 
@@ -57,9 +52,20 @@ func BatchRecoverUser(c *gin.Context) {
 4. **ExecutedHook** - 执行后钩子
 5. 返回恢复的记录 ID 列表
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/batch-delete.png" alt="batch-recover" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare 验证请求 ids]
+  P --> OK{绑定成功且 IDs 非空?}
+  OK -- 否 --> NO204[204 No Content]
+  NO204 --> END
+  OK -- 是 --> BE[BeforeExecute Hook]
+  BE --> REC[Unscoped 与 应用 GormScope 并按 ID 条件 将 deleted_at 设置为 nil 或 0]
+  REC --> RERR{恢复出错?}
+  RERR -- 是 --> E500[AbortWithError 错误响应]
+  E500 --> END
+  RERR -- 否 --> EX[Executed Hook]
+  EX --> RESP[204 No Content]
+```
 
 ## 钩子函数
 
@@ -116,17 +122,9 @@ func BatchRecoverUser(c *gin.Context) {
 }
 ```
 
-## 响应格式
+## 响应状态
 
-成功恢复后，接口返回恢复的记录 ID 列表：
-
-```json
-{
-  "ids": [1, 2, 3, 4, 5]
-}
-```
-
-如果某些记录恢复失败（比如记录不存在或没有被删除），只会返回成功恢复的 ID。
+成功时返回 **204 No Content**，响应体为空。
 
 ## 权限控制
 
@@ -162,22 +160,11 @@ func checkRecoverPermission(ctx *cosy.Ctx[model.User]) {
 func initUserRoutes(r *gin.RouterGroup) {
     userGroup := r.Group("/users")
     {
+        // 批量恢复（示例自定义路由）
         userGroup.PATCH("/batch", BatchRecoverUser)
     }
 }
 ```
-
-```go
-type batchDeleteStruct[T] struct {
-   IDs     []string `json:"ids"`
-}
-
-func BatchRecover(c *gin.Context) {
-    core := cosy.Core[model.User](c).Recover()
-}
-```
-
-如果执行成功，将会响应 StatusCode = 204，body 为空。
 
 ## 生命周期
 
@@ -186,9 +173,20 @@ func BatchRecover(c *gin.Context) {
 3. 执行恢复操作
 4. **Executed** (Hook)
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/batch-delete.png" alt="update" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare 验证请求 ids]
+  P --> OK{绑定成功且 IDs 非空?}
+  OK -- 否 --> NO204[204 No Content]
+  NO204 --> END
+  OK -- 是 --> BE[BeforeExecute Hook]
+  BE --> REC[Unscoped 与 应用 GormScope 并按 ID 条件 将 deleted_at 设置为 nil 或 0]
+  REC --> RERR{恢复出错?}
+  RERR -- 是 --> E500[AbortWithError 错误响应]
+  E500 --> END
+  RERR -- 否 --> EX[Executed Hook]
+  EX --> RESP[204 No Content]
+```
 
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。
 

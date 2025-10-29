@@ -32,9 +32,24 @@ func BatchDestroy(c *gin.Context) {
 3. 执行删除操作
 4. **Executed** (Hook)
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/batch-delete.png" alt="update" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare 验证请求 ids]
+  P --> OK{绑定成功且 IDs 非空?}
+  OK -- 否 --> NO204[204 No Content]
+  NO204 --> END
+  OK -- 是 --> PERM{永久删除?}
+  PERM -- 是 --> US[Unscoped 模式]
+  PERM -- 否 --> KEEP[软删除]
+  US --> BE[BeforeExecute Hook]
+  KEEP --> BE
+  BE --> DEL[应用 GormScope 并按 IDs 删除]
+  DEL --> DERR{删除出错?}
+  DERR -- 是 --> E500[AbortWithError 错误响应]
+  E500 --> END
+  DERR -- 否 --> EX[Executed Hook]
+  EX --> RESP[204 No Content]
+```
 
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。
 

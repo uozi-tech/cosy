@@ -16,7 +16,7 @@ func ModifyUser(c *gin.Context) {
       "bio": "omitempty",
       // ... 其他字段
    })
-   BatchModify()
+   core.BatchModify()
 }
 ```
 
@@ -51,9 +51,24 @@ type User struct {
 7. **Executed** (Hook)
 8. 返回响应
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/batch-update.png" alt="update" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare 调用 validateBatchUpdate 校验]
+  P --> PV{校验通过?}
+  PV -- 否 --> V406[返回 406 ValidateError]
+  V406 --> END
+  PV -- 是 --> SEL[根据 cosy batch 标记选择可批量更新字段]
+  SEL --> BD[BeforeDecode Hook]
+  BD --> D{WeakDecode 成功?}
+  D -- 否 --> E1[AbortWithError 错误响应] --> END
+  D -- 是 --> SET[提取 Data 到 Model 与 IDs 到 BatchEffectedIDs]
+  SET --> BE[BeforeExecute Hook]
+  BE --> UPD[应用 GormScope 与 可选表 并按 ID 条件更新 选定字段]
+  UPD --> UERR{更新出错?}
+  UERR -- 是 --> E2[AbortWithError 错误响应] --> END
+  UERR -- 否 --> EX[Executed Hook]
+  EX --> OK200[200 OK 返回 ok]
+```
 
 与**修改**接口类似，我们提供三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。
 
@@ -153,7 +168,7 @@ ctx.AddSelectedFields(fields ...string)
 
 如需获取选定的字段，请在 BeforeExecuteHook 中使用
 ```go
-ctx.GetSelectedFields() string
+ctx.GetSelectedFields() []string
 ```
 
 ## BatchEffectedIDs

@@ -18,9 +18,23 @@ func DestroyUser(c *gin.Context) {
 4. 执行删除操作
 5. **Executed** (Hook)
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/delete.png" alt="delete" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare: 解析 ID 与 Unscoped 与 应用 GormScope]
+  P --> LOAD[加载已删除记录]
+  LOAD --> LERR{加载成功?}
+  LERR -- 否 --> E404[记录不存在 返回 404] --> END
+  LERR -- 是 --> PRE[prepareHook 执行]
+  PRE --> BE[BeforeExecute Hook]
+  BE --> REC[根据模型配置设置 deleted_at 为 nil 或 0]
+  REC --> RERR{恢复出错?}
+  RERR -- 是 --> E500[AbortWithError 错误响应] --> END
+  RERR -- 否 --> EX[Executed Hook]
+  EX --> COMMIT{使用事务?}
+  COMMIT -- 是 --> COM[提交事务]
+  COMMIT -- 否 --> RESP
+  COM --> RESP[返回 204 No Content]
+```
 
 如果执行成功，将会响应 StatusCode = 204，body 为空。
 

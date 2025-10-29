@@ -5,7 +5,7 @@ func GetList() {
    core := cosy.Core[model.User](c).
    SetFussy("name", "phone", "email").
    SetIn("status")
-   
+
    core.PagingList()
 }
 ```
@@ -17,9 +17,20 @@ func GetList() {
 3. **Executed**
 4. 返回响应
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/item.png" alt="list" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare: getListHook + 预加载与关联 + prepareHook]
+  P --> BE[BeforeExecute Hook]
+  BE --> RES[结果集: Model 与 T]
+  RES --> TRASH{是否使用 trash 参数?}
+  TRASH -- 是 --> UNSC[Unscoped 并过滤已删除]
+  TRASH -- 否 --> KEEP[正常查询]
+  UNSC --> PAG[分页查询]
+  KEEP --> PAG
+  PAG --> COUNT[统计总数 移除排序与限制]
+  COUNT --> EX[Executed Hook]
+  EX --> RESP[200 OK 返回数据和分页]
+```
 
 ## 筛选方法
 
@@ -48,6 +59,51 @@ Query 请求参数说明
 - order: desc 倒序，asc 顺序
 - page: 当前页数
 - page_size: 每页数量
+
+:::: tip 提示
+如需同时查看已软删除的数据，可在查询参数中加入 `trash=true`。
+::::
+
+## 非分页列表
+当数据量较小或需要一次性返回全部数据时，可使用 `List()`：
+
+```go
+func GetAllUsers(c *gin.Context) {
+   cosy.Core[model.User](c).
+      SetFussy("name", "phone").
+      SetIn("status").
+      List()
+}
+```
+
+返回为纯数组，未包含分页信息。
+
+## 空分页响应
+当需要返回一个空的分页结构（例如首次加载或无数据时），可使用 `EmptyPagingList()`：
+
+```go
+func GetEmpty(c *gin.Context) {
+   cosy.Core[model.User](c).EmptyPagingList()
+}
+```
+
+返回示例：
+
+```json
+{
+  "data": [],
+  "pagination": {
+    "per_page": 10
+  }
+}
+```
+
+## 标准选择器初始化
+当请求中包含 `id[]` 参数时，列表会优先按这些 ID 过滤，常用于「标准选择器」初始化：
+
+```
+GET /users?page=1&id[]=1&id[]=2&id[]=3
+```
 
 ::: tip 提示
 为了避免数据库注入，只有 Struct 定义了的字段才可以排序，如果你使用了 SQL View 扩展了字段，
@@ -91,7 +147,7 @@ Query 请求参数说明
     "total": 1,
     "per_page": 10,
     "current_page": 1,
-    "last_page": 1
+    "total_pages": 1
   }
 }
 ```

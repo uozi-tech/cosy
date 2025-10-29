@@ -31,9 +31,27 @@ func DestroyUser(c *gin.Context) {
 4. 执行删除操作
 5. **Executed** (Hook)
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/delete.png" alt="delete" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare: 解析 ID 与 是否永久删除]
+  P --> PERM{永久删除?}
+  PERM -- 是 --> US[Unscoped 模式]
+  PERM -- 否 --> KEEP[软删除]
+  US --> LOAD[加载原记录]
+  KEEP --> LOAD
+  LOAD --> LERR{加载成功?}
+  LERR -- 否 --> E404[记录不存在 返回 404] --> END
+  LERR -- 是 --> PRE[prepareHook 执行]
+  PRE --> BE[BeforeExecute Hook]
+  BE --> DEL[应用 GormScope 并执行删除]
+  DEL --> DERR{删除出错?}
+  DERR -- 是 --> E500[AbortWithError 错误响应] --> END
+  DERR -- 否 --> EX[Executed Hook]
+  EX --> COMMIT{使用事务?}
+  COMMIT -- 是 --> COM[提交事务]
+  COMMIT -- 否 --> RESP
+  COM --> RESP[返回 204 No Content]
+```
 
 在这个功能中，我们提供了三个钩子，分别是 `BeforeExecuteHook`，`GormScope` 和 `ExecutedHook`。
 

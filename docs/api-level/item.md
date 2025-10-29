@@ -58,19 +58,18 @@ type APIUser struct {
 
 func GetUser(c *gin.Context) {
    cosy.Core[model.User](c).
-   SetTransformer(user *model.User) any {
-      user.status = "active"
-      group := ""
-      if user.Group != nil {
-		  group = user.Group.Name
-      }
-      return &APIUser{
-		  User: user,
-		  GroupName: group,
-      }
-   }).
-   Preload("Group").
-   Get()
+      SetTransformer(func(user *model.User) any {
+         var group string
+         if user.Group != nil {
+            group = user.Group.Name
+         }
+         return &APIUser{
+            User:      *user,
+            GroupName: group,
+         }
+      }).
+      Preload("Group").
+      Get()
 }
 ```
 
@@ -108,9 +107,28 @@ func GetUser(c *gin.Context) {
 3. **Executed**
 4. 返回响应
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/item.png" alt="item" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare: 解析 ID 与 getHook 与 prepareHook]
+  P --> BE[BeforeExecute Hook]
+  BE --> DB[应用 GormScope 与 可选表 与 预加载与联结]
+  DB --> SCAN{是否配置 Scan?}
+  SCAN -- 是 --> R[调用 scan]
+  R --> RERR{返回错误?}
+  RERR -- 是 --> E[AbortWithError 错误响应] --> END
+  RERR -- 否 --> OK200S[200 OK 返回 scan 结果]
+  OK200S --> AB[Abort]
+  AB --> END
+  SCAN -- 否 --> FIRST[按 ID 查询记录]
+  FIRST --> FERR{查询出错?}
+  FERR -- 是 --> E2[AbortWithError 错误响应] --> END
+  FERR -- 否 --> EX[Executed Hook]
+  EX --> RESP{配置 Transformer?}
+  RESP -- 否 --> OK200[200 OK 返回 Model]
+  OK200 --> AB2[Abort]
+  AB2 --> END
+  RESP -- 是 --> OK200T[200 OK 返回 Transformer 结果]
+```
 
 ## 响应示例
 

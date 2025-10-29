@@ -26,9 +26,33 @@ func GetUser(c *gin.Context) {
 6. **Executed** (Hook)
 7. 返回响应
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/create.png" alt="create" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare: createHook 与 prepareHook]
+  P --> V{校验通过?}
+  V -- 否 --> V406[返回 406 验证错误]
+  V406 --> RB1[Abort 与 回滚 事务时]
+  RB1 --> END1[结束]
+  V -- 是 --> BD[BeforeDecode Hook]
+  BD --> D{映射成功?}
+  D -- 否 --> E1[AbortWithError 错误响应] --> END2[结束]
+  D -- 是 --> BE[BeforeExecute Hook]
+  BE --> ASSOC{跳过关联创建?}
+  ASSOC -- 是 --> C1[忽略关联执行创建]
+  ASSOC -- 否 --> C2[直接创建]
+  C1 --> PL[预加载关联 与 处理 Preload 与 Joins 并查询]
+  C2 --> PL
+  PL --> EX[Executed Hook]
+  EX --> COMMIT{使用事务?}
+  COMMIT -- 是 --> COM[提交事务]
+  COMMIT -- 否 --> RESP
+  COM --> RESP[进入响应阶段]
+  RESP --> NEXT{存在 NextHandler?}
+  NEXT -- 是 --> H[调用下一个 Handler]
+  NEXT -- 否 --> OK200[200 OK 返回 Model]
+  E1 -.-> RB2[回滚 事务时]
+  V406 -.-> RB1
+```
 
 在上述生命周期中，我们提供了三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。
 

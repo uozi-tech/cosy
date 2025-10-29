@@ -24,13 +24,36 @@ func ModifyUser(c *gin.Context) {
 3. **BeforeDecode** (Hook)
 4. 使用 mapstructure 将 `ctx.Payload` 映射到 `ctx.Model` 中
 5. **BeforeExecute** (Hook)
-6. 执行创建操作
+6. 执行更新操作
 7. **Executed** (Hook)
 8. 返回响应
 
-<div style="display: flex;justify-content: center;">
-    <img src="/assets/update.png" alt="update" style="max-width: 500px;width: 95%"/>
-</div>
+```mermaid
+flowchart TD
+  A[请求到达] --> P[Prepare: 解析 ID 与 modifyHook 与 prepareHook]
+  P --> V{校验通过?}
+  V -- 否 --> V406[返回 406 验证错误]
+  V406 --> RB1[Abort 与 回滚 事务时]
+  RB1 --> END
+  V -- 是 --> BD[BeforeDecode Hook]
+  BD --> Q{加载原记录成功?}
+  Q -- 否 --> E404[记录不存在 返回 404] --> END
+  Q -- 是 --> D{映射成功?}
+  D -- 否 --> E1[AbortWithError 错误响应] --> END
+  D -- 是 --> BE[BeforeExecute Hook]
+  BE --> SAVE[保存 已选字段]
+  SAVE --> ER{更新出错?}
+  ER -- 是 --> E2[AbortWithError 错误响应] --> END
+  ER -- 否 --> PL[预加载关联 并处理 Preload 与 Joins 并查询]
+  PL --> EX[Executed Hook]
+  EX --> COMMIT{使用事务?}
+  COMMIT -- 是 --> COM[提交事务]
+  COMMIT -- 否 --> RESP
+  COM --> RESP[进入响应阶段]
+  RESP --> NEXT{存在 NextHandler?}
+  NEXT -- 是 --> H[调用下一个 Handler]
+  NEXT -- 否 --> OK200[200 OK 返回 Model]
+```
 
 与**创建**接口类似，我们提供三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。
 
@@ -136,5 +159,5 @@ ctx.AddSelectedFields(fields ...string)
 
 如需获取选定的字段，请在 BeforeExecuteHook 中使用
 ```go
-ctx.GetSelectedFields() string
+ctx.GetSelectedFields() []string
 ```

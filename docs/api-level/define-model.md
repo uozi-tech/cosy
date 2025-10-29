@@ -37,6 +37,7 @@ type User struct {
 	GroupID    int        `json:"group_id" cosy:"add:required;update:omitempty;list:eq"`
 	Group      *Group     `json:"group" cosy:"item:preload;list:preload"`
 }
+```
 
 ## Cosy 标签说明
 
