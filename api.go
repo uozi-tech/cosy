@@ -23,6 +23,13 @@ type ICurd[T any] interface {
 	ModifyHook(...func(*Ctx[T]))
 	DestroyHook(...func(*Ctx[T]))
 	RecoverHook(...func(*Ctx[T]))
+	WithoutCreate() ICurd[T]
+	WithoutModify() ICurd[T]
+	WithoutGet() ICurd[T]
+	WithoutGetList() ICurd[T]
+	WithoutDestroy() ICurd[T]
+	WithoutRecover() ICurd[T]
+	WithReadonly() ICurd[T]
 	InitRouter(*gin.RouterGroup, ...gin.HandlerFunc)
 }
 
@@ -255,6 +262,15 @@ func (c *Curd[T]) WithoutDestroy() ICurd[T] {
 
 // WithoutRecover disable recover item route
 func (c *Curd[T]) WithoutRecover() ICurd[T] {
+	c.recoverEnabled = false
+	return c
+}
+
+// WithReadonly disable create, modify, destroy, recover item route
+func (c *Curd[T]) WithReadonly() ICurd[T] {
+	c.createEnabled = false
+	c.modifyEnabled = false
+	c.destroyEnabled = false
 	c.recoverEnabled = false
 	return c
 }
