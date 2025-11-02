@@ -31,7 +31,7 @@
     "@unocss/preset-uno": "^66.5.4",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitejs/plugin-vue-jsx": "^5.1.1",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.0",
     "eslint-plugin-format": "^1.0.2",
     "typescript": "^5.9.3",
     "unocss": "^66.5.4",

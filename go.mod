@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/aliyun/aliyun-log-go-sdk v0.1.110
+	github.com/aliyun/aliyun-log-go-sdk v0.1.111
 	github.com/bsm/redislock v0.9.4
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/elliotchance/orderedmap/v3 v3.1.0
@@ -24,7 +24,7 @@ require (
 	github.com/quic-go/quic-go v0.55.0
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/samber/lo v1.52.0
-	github.com/shirou/gopsutil/v4 v4.25.9
+	github.com/shirou/gopsutil/v4 v4.25.10
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
