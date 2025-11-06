@@ -11,7 +11,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/gin-contrib/pprof v1.5.3
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-co-op/gocron/v2 v2.17.0
+	github.com/go-co-op/gocron/v2 v2.18.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/google/pprof v0.0.0-20250923004556-9e5a51aed1e8
@@ -38,15 +38,15 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gen v0.3.27
-	gorm.io/gorm v1.31.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
-	github.com/bytedance/sonic v1.14.1 // indirect
-	github.com/bytedance/sonic/loader v0.3.0 // indirect
+	github.com/bytedance/sonic v1.14.2 // indirect
+	github.com/bytedance/sonic/loader v0.4.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/ebitengine/purego v0.9.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-kit/kit v0.13.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
@@ -95,15 +95,15 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.67.1 // indirect
-	github.com/prometheus/procfs v0.19.1 // indirect
-	github.com/prometheus/prometheus v0.307.2 // indirect
+	github.com/prometheus/common v0.67.2 // indirect
+	github.com/prometheus/procfs v0.19.2 // indirect
+	github.com/prometheus/prometheus v0.307.3 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/ugorji/go/codec v1.3.0 // indirect
+	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect

@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	gormlogger "gorm.io/gorm/logger"
-	"gorm.io/gorm/utils"
 )
 
 // In this gorm logger, we collect the sql logs from gorm and them create or append to a slice in the context.
@@ -91,21 +90,21 @@ func (l *GormLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
 // Info implements the gormlogger.Interface interface
 func (l *GormLogger) Info(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Info {
-		l.Printf(l.infoStr+msg, append([]any{utils.FileWithLineNum()}, data...)...)
+		l.Printf(l.infoStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
 }
 
 // Warn implements the gormlogger.Interface interface
 func (l *GormLogger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Warn {
-		l.Printf(l.warnStr+msg, append([]any{utils.FileWithLineNum()}, data...)...)
+		l.Printf(l.warnStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
 }
 
 // Error implements the gormlogger.Interface interface
 func (l *GormLogger) Error(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Error {
-		l.Printf(l.errStr+msg, append([]any{utils.FileWithLineNum()}, data...)...)
+		l.Printf(l.errStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
 }
 
@@ -118,35 +117,38 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 
+	// Get the actual caller location (skipping gorm internal and logger files)
+	caller := fileWithLineNum()
+
 	logItem := LogItem{
 		Time:   time.Now().Unix(),
-		Caller: utils.FileWithLineNum(),
+		Caller: caller,
 	}
 
 	switch {
 	case err != nil && l.LogLevel >= gormlogger.Error && (!errors.Is(err, gormlogger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
 		if rows == -1 {
-			l.Printf(l.traceErrStr, utils.FileWithLineNum(), err, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			l.Printf(l.traceErrStr, caller, err, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, "-", err, sql)
 		} else {
-			l.Printf(l.traceErrStr, utils.FileWithLineNum(), err, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			l.Printf(l.traceErrStr, caller, err, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, err, sql)
 		}
 	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= gormlogger.Warn:
 		slowLog := fmt.Sprintf("SLOW SQL >= %v", l.SlowThreshold)
 		if rows == -1 {
-			l.Printf(l.traceWarnStr, utils.FileWithLineNum(), slowLog, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			l.Printf(l.traceWarnStr, caller, slowLog, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, "-", slowLog, sql)
 		} else {
-			l.Printf(l.traceWarnStr, utils.FileWithLineNum(), slowLog, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			l.Printf(l.traceWarnStr, caller, slowLog, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, slowLog, sql)
 		}
 	case l.LogLevel == gormlogger.Info:
 		if rows == -1 {
-			l.Printf(l.traceStr, utils.FileWithLineNum(), float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			l.Printf(l.traceStr, caller, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			l.Printf(l.traceStr, utils.FileWithLineNum(), float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			l.Printf(l.traceStr, caller, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	}
