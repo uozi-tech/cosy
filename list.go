@@ -194,12 +194,14 @@ func (c *Ctx[T]) EmptyPagingList() {
 
 // List return all list data
 func (c *Ctx[T]) List() {
-	NewProcessChain[T](c).
+	NewProcessChain(c).
 		SetBeforeExecute(beforeExecuteHook[T]).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {
-			data := c.ListAllData()
-			c.JSON(http.StatusOK, data)
+			c.JSON(http.StatusOK,
+				model.DataList{
+					Data: c.ListAllData(),
+				})
 		}).
 		GetOrGetList()
 }
