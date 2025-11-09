@@ -65,12 +65,12 @@ func getGormSourceDir() string {
 
 	for i := 0; i < depth; i++ {
 		frame, more := frames.Next()
-		// Find the gorm.io/gorm path
-		if strings.Contains(frame.File, "gorm.io/gorm") {
-			// Get the root directory of gorm.io/gorm
-			idx := strings.Index(frame.File, "gorm.io/gorm")
+		// Find the gorm.io path
+		if strings.Contains(frame.File, "gorm.io") {
+			// Get the root directory of gorm.io
+			idx := strings.Index(frame.File, "gorm.io")
 			if idx > 0 {
-				return frame.File[:idx+len("gorm.io/gorm")]
+				return frame.File[:idx+len("gorm.io")]
 			}
 		}
 		if !more {
@@ -78,5 +78,5 @@ func getGormSourceDir() string {
 		}
 	}
 
-	return "gorm.io/gorm"
+	return "gorm.io"
 }
