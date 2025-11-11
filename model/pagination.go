@@ -9,7 +9,7 @@ type Pagination struct {
 
 type DataList struct {
 	Data       any        `json:"data"`
-	Pagination Pagination `json:"pagination,omitempty"`
+	Pagination Pagination `json:"pagination,omitempty,omitzero"`
 }
 
 // TotalPage calculate total page
