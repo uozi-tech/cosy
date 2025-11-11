@@ -162,15 +162,17 @@ func (c *Ctx[T]) PagingListData() *model.DataList {
 	return data
 }
 
+func (c *Ctx[T]) prepareListHook(ctx *Ctx[T]) {
+	getListHook[T]()(ctx)
+	ctx.resolvePreloadWithScope()
+	ctx.resolveJoinsWithScopes()
+	prepareHook(ctx)
+}
+
 // PagingList return paging list
 func (c *Ctx[T]) PagingList() {
 	NewProcessChain(c).
-		SetPrepare(func(ctx *Ctx[T]) {
-			getListHook[T]()(ctx)
-			ctx.resolvePreloadWithScope()
-			ctx.resolveJoinsWithScopes()
-			prepareHook(ctx)
-		}).
+		SetPrepare(c.prepareListHook).
 		SetBeforeExecute(beforeExecuteHook[T]).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {
@@ -195,6 +197,7 @@ func (c *Ctx[T]) EmptyPagingList() {
 // List return all list data
 func (c *Ctx[T]) List() {
 	NewProcessChain(c).
+		SetPrepare(c.prepareListHook).
 		SetBeforeExecute(beforeExecuteHook[T]).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {
