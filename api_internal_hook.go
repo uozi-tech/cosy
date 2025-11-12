@@ -85,7 +85,7 @@ func createHook[T any]() func(core *Ctx[T]) {
 
 			validMap[key] = dirs
 
-			if field.Unique {
+			if field.Unique || field.CosyTag.GetUnique() {
 				core.SetUnique(key)
 			}
 		}
@@ -115,7 +115,7 @@ func modifyHook[T any]() func(core *Ctx[T]) {
 
 			validMap[key] = dirs
 
-			if field.Unique {
+			if field.Unique || field.CosyTag.GetUnique() {
 				core.SetUnique(key)
 			}
 		}

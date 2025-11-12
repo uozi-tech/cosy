@@ -49,7 +49,7 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 		fieldType := field.Type
 
 		// Check if the field is a pointer to a struct
-		if fieldType.Kind() == reflect.Ptr && fieldType.Elem().Kind() == reflect.Struct {
+		if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.Struct {
 			// If it is, we want to resolve the struct it points to
 			fieldType = fieldType.Elem()
 		}
