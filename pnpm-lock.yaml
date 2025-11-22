@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       vite:
-        specifier: ^7.2.2
-        version: 7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+        specifier: ^7.2.4
+        version: 7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vitepress-plugin-legend:
         specifier: ^1.1.0
         version: 1.1.0(@types/node@24.8.1)(jiti@2.6.1)(markmap-common@0.18.9)(typescript@5.9.3)(yaml@2.8.1)
@@ -1876,8 +1876,8 @@ packages:
       terser:
         optional: true
 
-  vite@7.2.2:
-    resolution: {integrity: sha512-BxAKBWmIbrDgrokdGZH1IgkIk/5mMHDreLDmCJ0qpyJaAteP8NvMhkwr/ZCQNqNH97bw/dANTE9PDzqwJghfMQ==}
+  vite@7.2.4:
+    resolution: {integrity: sha512-NL8jTlbo0Tn4dUEXEsUg8KeyG/Lkmc4Fnzb8JXN/Ykm9G4HNImjtABMJgkQoVjOBN/j2WAwDTRytdqJbZsah7w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -2699,10 +2699,10 @@ snapshots:
       vite: 5.4.21(@types/node@24.8.1)(sass@1.93.2)
       vue: 3.5.24(typescript@5.9.3)
 
-  '@vitejs/plugin-vue@6.0.1(vite@7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.24(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.1(vite@7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.24(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
-      vite: 7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+      vite: 7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vue: 3.5.24(typescript@5.9.3)
 
   '@volar/language-core@2.4.23':
@@ -3913,7 +3913,7 @@ snapshots:
       fsevents: 2.3.3
       sass: 1.93.2
 
-  vite@7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1):
+  vite@7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.11
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3930,14 +3930,14 @@ snapshots:
 
   vitepress-markmap-preview@0.1.0(@types/node@24.8.1)(jiti@2.6.1)(markmap-common@0.18.9)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
-      '@vitejs/plugin-vue': 6.0.1(vite@7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.24(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.1(vite@7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.24(typescript@5.9.3))
       js-yaml: 4.1.0
       markdown-it: 14.1.0
       markmap-lib: 0.18.12(markmap-common@0.18.9)
       markmap-toolbar: 0.18.12(markmap-common@0.18.9)
       markmap-view: 0.18.12(markmap-common@0.18.9)
       sass: 1.93.2
-      vite: 7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+      vite: 7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vue: 3.5.24(typescript@5.9.3)
       vue-tsc: 3.1.2(typescript@5.9.3)
     transitivePeerDependencies:
@@ -3957,12 +3957,12 @@ snapshots:
   vitepress-mermaid-preview@0.0.8(@types/node@24.8.1)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
       '@flypeng/tool': 5.7.5
-      '@vitejs/plugin-vue': 6.0.1(vite@7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.24(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.1(vite@7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.24(typescript@5.9.3))
       '@zumer/snapdom': 1.9.14
       markdown-it: 14.1.0
       mermaid: 11.12.1
       sass: 1.93.2
-      vite: 7.2.2(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+      vite: 7.2.4(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vue: 3.5.24(typescript@5.9.3)
       vue-tsc: 3.1.2(typescript@5.9.3)
     transitivePeerDependencies:

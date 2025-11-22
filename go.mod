@@ -4,7 +4,7 @@ go 1.25.4
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/aliyun/aliyun-log-go-sdk v0.1.111
+	github.com/aliyun/aliyun-log-go-sdk v0.1.112
 	github.com/bsm/redislock v0.9.4
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/elliotchance/orderedmap/v3 v3.1.0
@@ -21,8 +21,8 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oschwald/geoip2-golang/v2 v2.0.0
-	github.com/quic-go/quic-go v0.56.0
-	github.com/redis/go-redis/v9 v9.16.0
+	github.com/quic-go/quic-go v0.57.0
+	github.com/redis/go-redis/v9 v9.17.0
 	github.com/samber/lo v1.52.0
 	github.com/shirou/gopsutil/v4 v4.25.10
 	github.com/shopspring/decimal v1.4.0
@@ -33,7 +33,7 @@ require (
 	github.com/uozi-tech/cosy-driver-mysql v0.2.2
 	github.com/uozi-tech/cosy-driver-postgres v0.2.1
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.1
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -98,7 +98,7 @@ require (
 	github.com/prometheus/common v0.67.2 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/prometheus/prometheus v0.307.3 // indirect
-	github.com/quic-go/qpack v0.5.1 // indirect
+	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
