@@ -25,7 +25,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.5.1",
     "@iconify-json/ant-design": "^1.2.5",
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.10.2",
     "@unocss/preset-attributify": "^66.5.10",
     "@unocss/preset-icons": "^66.5.10",
     "@unocss/preset-uno": "^66.5.10",
