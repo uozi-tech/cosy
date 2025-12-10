@@ -1,6 +1,10 @@
 package settings
 
 type LogConfig struct {
+	// EnableRotate controls whether to use size-based log rotation.
+	// Default true to prevent unbounded growth.
+	EnableRotate bool
+
 	// EnableFileLog is a flag to enable file logging.
 	EnableFileLog bool
 
@@ -32,4 +36,6 @@ type LogConfig struct {
 	Compress bool
 }
 
-var LogSettings = &LogConfig{}
+var LogSettings = &LogConfig{
+	EnableRotate: true,
+}

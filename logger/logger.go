@@ -3,14 +3,12 @@ package logger
 import (
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/settings"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var logger *zap.SugaredLogger
@@ -109,34 +107,11 @@ func Init(mode string) {
 	}
 
 	if settings.LogSettings.EnableFileLog {
-		if err := os.MkdirAll(settings.LogSettings.Dir, 0755); err != nil {
-			log.Fatal(err)
+		fileCores, err := NewFileCores(mode, highPriority, lowPriority)
+		if err != nil {
+			log.Fatalf("init file logger: %v", err)
 		}
-
-		errorLogWriter := &lumberjack.Logger{
-			Filename:   filepath.Join(settings.LogSettings.Dir, "error.log"),
-			MaxSize:    settings.LogSettings.MaxSize,
-			MaxBackups: settings.LogSettings.MaxBackups,
-			MaxAge:     settings.LogSettings.MaxAge,
-			LocalTime:  true,
-			Compress:   settings.LogSettings.Compress,
-		}
-
-		infoLogWriter := &lumberjack.Logger{
-			Filename:   filepath.Join(settings.LogSettings.Dir, "info.log"),
-			MaxSize:    settings.LogSettings.MaxSize,
-			MaxBackups: settings.LogSettings.MaxBackups,
-			MaxAge:     settings.LogSettings.MaxAge,
-			LocalTime:  true,
-			Compress:   settings.LogSettings.Compress,
-		}
-
-		fileEncoder := GetFileEncoder(mode)
-
-		cores = append(cores,
-			zapcore.NewCore(fileEncoder, zapcore.AddSync(errorLogWriter), highPriority),
-			zapcore.NewCore(fileEncoder, zapcore.AddSync(infoLogWriter), lowPriority),
-		)
+		cores = append(cores, fileCores...)
 	}
 
 	// Initialize enhanced logger (console + file only)
