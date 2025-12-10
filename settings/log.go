@@ -11,6 +11,10 @@ type LogConfig struct {
 	// Dir is the directory to store the log files.
 	Dir string
 
+	// EnableDateRotate controls whether to use time-based (daily) log rotation.
+	// If enabled, size-based rotation is ignored.
+	EnableDateRotate bool
+
 	// MaxSize is the maximum size in megabytes of the log file before it gets
 	// rotated. It defaults to 100 megabytes.
 	MaxSize int

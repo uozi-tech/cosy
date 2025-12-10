@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/uozi-tech/cosy/settings"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -37,7 +38,7 @@ func GetFileEncoder(mode string) zapcore.Encoder {
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
-// NewFileCores builds zap cores with size-based log rotation.
+// NewFileCores builds zap cores with rotation support.
 // Error and above go to error.log; lower levels go to info.log.
 func NewFileCores(mode string, highPriority, lowPriority zapcore.LevelEnabler) ([]zapcore.Core, error) {
 	if err := os.MkdirAll(settings.LogSettings.Dir, 0755); err != nil {
@@ -52,7 +53,16 @@ func NewFileCores(mode string, highPriority, lowPriority zapcore.LevelEnabler) (
 		err         error
 	)
 
-	if settings.LogSettings.EnableRotate {
+	if settings.LogSettings.EnableDateRotate {
+		errorSyncer, err = newTimeRotateWriteSyncer(filepath.Join(settings.LogSettings.Dir, "error.log"))
+		if err != nil {
+			return nil, fmt.Errorf("init error log rotator: %w", err)
+		}
+		infoSyncer, err = newTimeRotateWriteSyncer(filepath.Join(settings.LogSettings.Dir, "info.log"))
+		if err != nil {
+			return nil, fmt.Errorf("init info log rotator: %w", err)
+		}
+	} else if settings.LogSettings.EnableRotate {
 		errorSyncer = newRotateWriteSyncer(filepath.Join(settings.LogSettings.Dir, "error.log"))
 		infoSyncer = newRotateWriteSyncer(filepath.Join(settings.LogSettings.Dir, "info.log"))
 	} else {
@@ -98,4 +108,25 @@ func newPlainWriteSyncer(filename string) (zapcore.WriteSyncer, error) {
 		return nil, err
 	}
 	return zapcore.AddSync(f), nil
+}
+
+func newTimeRotateWriteSyncer(filename string) (zapcore.WriteSyncer, error) {
+	opts := []rotatelogs.Option{
+		rotatelogs.WithLinkName(filename),
+		rotatelogs.WithRotationTime(24 * time.Hour),
+	}
+
+	if settings.LogSettings.MaxAge > 0 {
+		opts = append(opts, rotatelogs.WithMaxAge(time.Duration(settings.LogSettings.MaxAge)*24*time.Hour))
+	}
+	if settings.LogSettings.MaxBackups > 0 {
+		opts = append(opts, rotatelogs.WithRotationCount(uint(settings.LogSettings.MaxBackups)))
+	}
+
+	writer, err := rotatelogs.New(fmt.Sprintf("%s.%%Y%%m%%d", filename), opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return zapcore.AddSync(writer), nil
 }

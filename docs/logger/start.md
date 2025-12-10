@@ -89,10 +89,11 @@ func initDB() *gorm.DB {
 
 ## 日志文件配置
 
-Logger 支持日志文件轮转功能，可通过以下配置启用或关闭：
+Logger 支持两种轮转方式：按日期轮转或按文件大小轮转，可通过以下配置启用或关闭：
 
 ```ini
 [log]
+EnableDateRotate = false
 EnableRotate = true
 EnableFileLog = true
 Dir = logs
@@ -104,6 +105,7 @@ Compress = true
 
 配置参数说明：
 
+- `EnableDateRotate`: 是否按日期轮转，开启时会忽略 `EnableRotate` 的按大小轮转
 - `EnableRotate`: 是否启用按大小轮转，默认 true；关闭后日志文件仅追加不会分片
 - `EnableFileLog`: 是否启用文件日志（默认：false）
 - `Dir`: 日志文件存储目录
