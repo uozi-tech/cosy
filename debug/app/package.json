@@ -20,7 +20,7 @@
     "uuid": "^13.0.0",
     "vue": "^3.5.25",
     "vue-json-pretty": "^2.6.0",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.6.1",
@@ -29,9 +29,9 @@
     "@unocss/preset-attributify": "^66.5.10",
     "@unocss/preset-icons": "^66.5.10",
     "@unocss/preset-uno": "^66.5.10",
-    "@vitejs/plugin-vue": "^6.0.2",
+    "@vitejs/plugin-vue": "^6.0.3",
     "@vitejs/plugin-vue-jsx": "^5.1.2",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-plugin-format": "^1.1.0",
     "typescript": "^5.9.3",
     "unocss": "^66.5.10",
