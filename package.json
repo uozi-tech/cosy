@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "vitepress": "^1.6.4",
-    "vue": "^3.5.25"
+    "vue": "^3.5.26"
   },
   "scripts": {
     "docs:dev": "vitepress dev docs",
@@ -9,7 +9,7 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "vite": "^7.2.7",
+    "vite": "^7.3.0",
     "vitepress-plugin-legend": "^1.2.1"
   }
 }
