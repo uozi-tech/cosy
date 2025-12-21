@@ -344,7 +344,7 @@ developmentLogger := logger.NewGormLogger(
 ### 自动集成
 
 ```go
-// 在 Gin 上下文中使用 GORM 时，SQL 日志会自动集成到审计记录中
+// 在 Gin 上下文中使用 GORM 时，SQL 日志会自动记录到审计记录中
 func UserHandler(c *gin.Context) {
     // 创建会话日志
     sessionLogger := logger.NewSessionLogger(c)
@@ -354,26 +354,7 @@ func UserHandler(c *gin.Context) {
     var user User
     db.WithContext(c).First(&user, c.Param("id"))
 
-    // 在审计日志中可以看到完整的请求链路，包括 SQL 执行记录
     c.JSON(http.StatusOK, user)
-}
-```
-
-### 查看集成数据
-
-通过审计接口查询时，可以在 `session_logs` 字段中看到相关的 SQL 执行记录：
-
-```json
-{
-  "request_id": "12345-67890",
-  "session_logs": [
-    {
-      "time": 1705296645,
-      "level": 0,
-      "caller": "/app/handlers/user.go:45",
-      "message": "[2.345ms] [rows:1] SELECT * FROM users WHERE id = 123"
-    }
-  ]
 }
 ```
 

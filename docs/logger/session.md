@@ -262,30 +262,6 @@ func ConditionalLoggingHandler(c *gin.Context) {
 }
 ```
 
-## 集成审计系统
-
-会话日志自动集成到审计系统中：
-
-1. **自动关联**：日志自动关联到当前请求的审计记录
-2. **统一查询**：可以通过审计接口查询特定请求的所有日志
-3. **链路追踪**：通过请求 ID 实现完整的请求链路追踪
-
-```go
-// 在审计日志中查看会话日志
-func GetRequestLogs(c *gin.Context) {
-    requestID := c.Query("request_id")
-
-    audit.GetAuditLogs(c, func(logs []map[string]string) {
-        for _, log := range logs {
-            if log["request_id"] == requestID {
-                sessionLogs := log["session_logs"]
-                // 解析和处理会话日志
-            }
-        }
-    })
-}
-```
-
 ## 注意事项
 
 1. **上下文依赖**：需要在 Gin 请求上下文中使用

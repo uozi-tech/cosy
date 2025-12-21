@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
-	"github.com/uozi-tech/cosy/internal/audit"
 	"github.com/uozi-tech/cosy/kernel"
 )
 
@@ -264,21 +263,10 @@ func (mh *MonitorHub) GetHistoryRequests(limit int) []*RequestTrace {
 	return mh.historyRequests.GetRecent(limit)
 }
 
-// SearchRequests searches requests (supports audit system integration)
+// SearchRequests searches requests
 func (mh *MonitorHub) SearchRequests(query *RequestSearchQuery) ([]*RequestTrace, int64, error) {
-	// First search in memory
+	// Search in memory
 	memoryResults := mh.searchMemoryRequests(query)
-
-	// If more historical data is needed, query the audit system
-	if query.IncludeAuditLogs {
-		auditResults, err := mh.searchAuditLogs(query)
-		if err != nil {
-			return memoryResults, int64(len(memoryResults)), err
-		}
-
-		// Merge results
-		memoryResults = append(memoryResults, auditResults...)
-	}
 
 	return memoryResults, int64(len(memoryResults)), nil
 }
@@ -307,9 +295,6 @@ type RequestSearchQuery struct {
 	// Pagination
 	Page     int `json:"page"`
 	PageSize int `json:"page_size"`
-
-	// Whether to include audit logs
-	IncludeAuditLogs bool `json:"include_audit_logs"`
 }
 
 // searchMemoryRequests searches requests in memory
@@ -334,64 +319,6 @@ func (mh *MonitorHub) searchMemoryRequests(query *RequestSearchQuery) []*Request
 	}
 
 	return results
-}
-
-// searchAuditLogs searches in audit system
-func (mh *MonitorHub) searchAuditLogs(query *RequestSearchQuery) ([]*RequestTrace, error) {
-	// Convert query type to internal/audit package
-	auditQuery := &audit.RequestSearchQuery{
-		StartTime:        query.StartTime,
-		EndTime:          query.EndTime,
-		Method:           query.Method,
-		URL:              query.URL,
-		UserID:           query.UserID,
-		ClientIP:         query.ClientIP,
-		StatusCode:       query.StatusCode,
-		MinDuration:      query.MinDuration,
-		MaxDuration:      query.MaxDuration,
-		HasError:         query.HasError,
-		Error:            query.Error,
-		Page:             query.Page,
-		PageSize:         query.PageSize,
-		IncludeAuditLogs: query.IncludeAuditLogs,
-	}
-
-	// Call query functionality from internal/audit package
-	auditTraces, err := audit.SearchAuditLogs(auditQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert audit.RequestTrace to debug.RequestTrace with size limits
-	var results []*RequestTrace
-	for _, auditTrace := range auditTraces {
-		debugTrace := &RequestTrace{
-			RequestID:      auditTrace.RequestID,
-			IP:             auditTrace.IP,
-			ReqURL:         auditTrace.ReqURL,
-			ReqMethod:      auditTrace.ReqMethod,
-			ReqHeader:      limitStringSize(auditTrace.ReqHeader, MaxFieldSize),
-			ReqBody:        limitStringSize(auditTrace.ReqBody, MaxFieldSize),
-			RespHeader:     limitStringSize(auditTrace.RespHeader, MaxFieldSize),
-			RespStatusCode: auditTrace.RespStatusCode,
-			RespBody:       limitStringSize(auditTrace.RespBody, MaxFieldSize),
-			Latency:        auditTrace.Latency,
-			SessionLogs:    limitStringSize(auditTrace.SessionLogs, MaxFieldSize),
-			IsWebSocket:    auditTrace.IsWebSocket,
-			CallStack:      limitStringSize(auditTrace.CallStack, MaxCallStackSize),
-			StartTime:      auditTrace.StartTime,
-			EndTime:        auditTrace.EndTime,
-			Duration:       auditTrace.Duration,
-			Status:         auditTrace.Status,
-			Error:          auditTrace.Error,
-			UserID:         auditTrace.UserID,
-			UserAgent:      auditTrace.UserAgent,
-			GoroutineIDs:   auditTrace.GoroutineIDs,
-		}
-		results = append(results, debugTrace)
-	}
-
-	return results, nil
 }
 
 // matchesSearchQuery checks if request matches search criteria
