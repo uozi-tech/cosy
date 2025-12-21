@@ -1,11 +1,11 @@
 package cosy
 
 import (
-	"github.com/uozi-tech/cosy/logger"
-	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"strings"
 	"sync"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
@@ -26,7 +26,6 @@ func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
 
 	s, _ := schema.Parse(c.Model, &sync.Map{}, schema.NamingStrategy{})
 	if _, ok := s.FieldsByDBName[sortBy]; !ok && sortBy != c.itemKey && !c.columnWhiteList[sortBy] {
-		logger.Error("invalid order field:", sortBy)
 		return db
 	}
 
