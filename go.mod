@@ -13,7 +13,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-co-op/gocron/v2 v2.19.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
-	github.com/go-playground/validator/v10 v10.29.0
+	github.com/go-playground/validator/v10 v10.30.0
 	github.com/google/pprof v0.0.0-20250923004556-9e5a51aed1e8
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
@@ -21,7 +21,7 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/oschwald/geoip2-golang/v2 v2.0.1
+	github.com/oschwald/geoip2-golang/v2 v2.1.0
 	github.com/quic-go/quic-go v0.58.0
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/samber/lo v1.52.0
