@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       vite:
-        specifier: ^7.3.0
-        version: 7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vitepress-plugin-legend:
         specifier: ^1.2.1
         version: 1.2.1(@types/node@24.8.1)(jiti@2.6.1)(markmap-common@0.18.9)(typescript@5.9.3)(yaml@2.8.1)
@@ -1872,8 +1872,8 @@ packages:
       terser:
         optional: true
 
-  vite@7.3.0:
-    resolution: {integrity: sha512-dZwN5L1VlUBewiP6H9s2+B3e3Jg96D0vzN+Ry73sOefebhYr9f94wwkMNN/9ouoU8pV1BqA1d1zGk8928cx0rg==}
+  vite@7.3.1:
+    resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -1984,6 +1984,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
@@ -2689,10 +2690,10 @@ snapshots:
       vite: 5.4.21(@types/node@24.8.1)(sass@1.93.2)
       vue: 3.5.26(typescript@5.9.3)
 
-  '@vitejs/plugin-vue@6.0.1(vite@7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.1(vite@7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
-      vite: 7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+      vite: 7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vue: 3.5.26(typescript@5.9.3)
 
   '@volar/language-core@2.4.23':
@@ -3905,7 +3906,7 @@ snapshots:
       fsevents: 2.3.3
       sass: 1.93.2
 
-  vite@7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1):
+  vite@7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1):
     dependencies:
       esbuild: 0.27.2
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3922,14 +3923,14 @@ snapshots:
 
   vitepress-markmap-preview@0.2.0(@types/node@24.8.1)(jiti@2.6.1)(markmap-common@0.18.9)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
-      '@vitejs/plugin-vue': 6.0.1(vite@7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.1(vite@7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))
       js-yaml: 4.1.0
       markdown-it: 14.1.0
       markmap-lib: 0.18.12(markmap-common@0.18.9)
       markmap-toolbar: 0.18.12(markmap-common@0.18.9)
       markmap-view: 0.18.12(markmap-common@0.18.9)
       sass: 1.93.2
-      vite: 7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+      vite: 7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vue: 3.5.26(typescript@5.9.3)
       vue-tsc: 3.1.2(typescript@5.9.3)
     transitivePeerDependencies:
@@ -3949,12 +3950,12 @@ snapshots:
   vitepress-mermaid-preview@0.1.1(@types/node@24.8.1)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
       '@flypeng/tool': 5.7.5
-      '@vitejs/plugin-vue': 6.0.1(vite@7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.1(vite@7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1))(vue@3.5.26(typescript@5.9.3))
       '@zumer/snapdom': 1.9.14
       markdown-it: 14.1.0
       mermaid: 11.12.1
       sass: 1.93.2
-      vite: 7.3.0(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
+      vite: 7.3.1(@types/node@24.8.1)(jiti@2.6.1)(sass@1.93.2)(yaml@2.8.1)
       vue: 3.5.26(typescript@5.9.3)
       vue-tsc: 3.1.2(typescript@5.9.3)
     transitivePeerDependencies:
