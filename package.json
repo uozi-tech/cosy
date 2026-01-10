@@ -9,7 +9,7 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "vite": "^7.3.0",
+    "vite": "^7.3.1",
     "vitepress-plugin-legend": "^1.2.1"
   }
 }
