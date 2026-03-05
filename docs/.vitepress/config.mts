@@ -21,7 +21,7 @@ const debugDemoDir = path.resolve(__dirname, '../public/debug-demo')
 
 function resolveStaticFile(baseDir: string, urlPrefix: string, url: string): string | null {
   if (!url.startsWith(urlPrefix)) return null
-  let relPath = decodeURIComponent(url.slice(urlPrefix.length))
+  let relPath = decodeURIComponent(url.slice(urlPrefix.length).split('?')[0])
   const filePath = path.join(baseDir, relPath)
   if (!filePath.startsWith(baseDir)) return null
   try {
