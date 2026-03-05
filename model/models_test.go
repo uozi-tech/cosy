@@ -1,12 +1,15 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
+
+var idTypeName = fmt.Sprintf("%T", *new(IDType))
 
 type TestEmbed struct {
 	Avatar string `json:"avatar" cosy:"all:omitempty"`
@@ -51,7 +54,7 @@ func TestResolvedModels(t *testing.T) {
 			OrderedFields: []*ResolvedModelField{
 				{
 					Name:    "ID",
-					Type:    "uint64",
+					Type:    idTypeName,
 					JsonTag: "id",
 					CosyTag: CosyTag{},
 				},
@@ -140,7 +143,7 @@ func TestResolvedModels(t *testing.T) {
 			OrderedFields: []*ResolvedModelField{
 				{
 					Name:    "ID",
-					Type:    "uint64",
+					Type:    idTypeName,
 					JsonTag: "id",
 					CosyTag: CosyTag{},
 				},

@@ -23,6 +23,18 @@ type User struct {
 }
 ```
 
+## 使用 CUID2 作为主键
+
+默认情况下，`model.Model` 的主键 `ID` 为 `uint64` 类型（数据库自增）。通过添加 build tag `cuid2`，可以切换为 CUID2 字符串主键：
+
+```bash
+go build -tags cuid2 ./...
+```
+
+启用后，`Model.ID` 变为 `string` 类型，创建记录时自动生成 25 位 CUID2。模型定义无需任何变更，只需通过 build tag 控制。
+
+更多信息请参阅 [CUID2 文档](/cuid2/)。
+
 ## Tag 分组
 
 分组之间以 `;` 分割，无顺序要求。

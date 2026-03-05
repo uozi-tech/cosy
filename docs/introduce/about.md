@@ -86,6 +86,6 @@ go get -u github.com/uozi-tech/cosy
 ```
 
 ## 版权
-Copyright © 2024 UoziTech
+Copyright © 2024-2025 UoziTech
 
 Cosy 版权属于柚子星云科技（深圳）有限公司，并已取得软件著作权。

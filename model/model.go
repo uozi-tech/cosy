@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/logger"
@@ -16,13 +15,6 @@ var (
 	db            *gorm.DB
 	beforeMigrate []func(*gorm.DB) error
 )
-
-type Model struct {
-	ID        uint64          `gorm:"primary_key" json:"id"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
-	DeletedAt *gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
 
 // BeforeMigrate is a function that will register a function to be executed before db migration
 func BeforeMigrate(f func(*gorm.DB) error) {

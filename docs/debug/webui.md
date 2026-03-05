@@ -4,15 +4,14 @@ Cosy 框架的调试功能提供了一个现代化的 Web UI 界面，让您可�
 
 ## 在线演示
 
-<div style="position: relative; border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 16px 0;">
+<div id="debug-demo-wrapper" style="position: relative; border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 16px 0;">
   <iframe id="debug-demo-iframe" src="/debug-demo/" style="width: 100%; height: 680px; border: none;"></iframe>
   <button
     id="debug-demo-fullscreen"
     title="全屏"
-    style="position: absolute; top: 8px; right: 8px; z-index: 10; width: 32px; height: 32px; border: none; border-radius: 6px; background: rgba(0,0,0,0.45); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.6; transition: opacity 0.2s;"
+    style="position: absolute; top: 8px; right: 8px; z-index: 10; width: 36px; height: 36px; border: none; border-radius: 6px; background: rgba(0,0,0,0.45); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.7; transition: opacity 0.2s;"
     onmouseenter="this.style.opacity='1'"
-    onmouseleave="this.style.opacity='0.6'"
-    onclick="(function(btn){var c=btn.parentElement;if(document.fullscreenElement){document.exitFullscreen()}else{c.requestFullscreen()}})(this)">
+    onmouseleave="this.style.opacity='0.7'">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
       <path id="fs-icon" d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
     </svg>
@@ -22,24 +21,89 @@ Cosy 框架的调试功能提供了一个现代化的 Web UI 界面，让您可�
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 
-function onFullscreenChange() {
+const ICON_EXPAND = 'M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z'
+const ICON_SHRINK = 'M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 0a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z'
+
+let isFakeFullscreen = false
+
+function canNativeFullscreen() {
+  const el = document.documentElement
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen)
+}
+
+function isNativeFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement)
+}
+
+function requestNativeFullscreen(el) {
+  if (el.requestFullscreen) return el.requestFullscreen()
+  if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen()
+}
+
+function exitNativeFullscreen() {
+  if (document.exitFullscreen) return document.exitFullscreen()
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen()
+}
+
+function setFullscreenUI(active) {
   const icon = document.getElementById('fs-icon')
   const iframe = document.getElementById('debug-demo-iframe')
-  if (!icon) return
-  if (document.fullscreenElement) {
-    icon.setAttribute('d', 'M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 0a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z')
-    if (iframe) iframe.style.height = '100vh'
+  if (icon) icon.setAttribute('d', active ? ICON_SHRINK : ICON_EXPAND)
+  if (iframe) iframe.style.height = active ? '100vh' : '680px'
+}
+
+function enterFakeFullscreen() {
+  const wrapper = document.getElementById('debug-demo-wrapper')
+  if (!wrapper) return
+  isFakeFullscreen = true
+  Object.assign(wrapper.style, {
+    position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+    zIndex: '9999', borderRadius: '0', border: 'none', margin: '0'
+  })
+  setFullscreenUI(true)
+}
+
+function exitFakeFullscreen() {
+  const wrapper = document.getElementById('debug-demo-wrapper')
+  if (!wrapper) return
+  isFakeFullscreen = false
+  Object.assign(wrapper.style, {
+    position: 'relative', top: '', left: '', width: '', height: '',
+    zIndex: '', borderRadius: '8px', border: '1px solid var(--vp-c-divider)', margin: '16px 0'
+  })
+  setFullscreenUI(false)
+}
+
+function toggleFullscreen() {
+  if (canNativeFullscreen()) {
+    const wrapper = document.getElementById('debug-demo-wrapper')
+    if (isNativeFullscreen()) exitNativeFullscreen()
+    else if (wrapper) requestNativeFullscreen(wrapper)
   } else {
-    icon.setAttribute('d', 'M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z')
-    if (iframe) iframe.style.height = '680px'
+    if (isFakeFullscreen) exitFakeFullscreen()
+    else enterFakeFullscreen()
   }
+}
+
+function onFullscreenChange() {
+  setFullscreenUI(isNativeFullscreen())
+}
+
+function onKeyDown(e) {
+  if (e.key === 'Escape' && isFakeFullscreen) exitFakeFullscreen()
 }
 
 onMounted(() => {
   document.addEventListener('fullscreenchange', onFullscreenChange)
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange)
+  document.addEventListener('keydown', onKeyDown)
+  const btn = document.getElementById('debug-demo-fullscreen')
+  if (btn) btn.addEventListener('click', toggleFullscreen)
 })
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', onFullscreenChange)
+  document.removeEventListener('webkitfullscreenchange', onFullscreenChange)
+  document.removeEventListener('keydown', onKeyDown)
 })
 </script>
 

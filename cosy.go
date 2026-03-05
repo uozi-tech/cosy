@@ -26,7 +26,7 @@ type Ctx[T any] struct {
 	transformer func(*T) any
 
 	// Fixed-size and map headers
-	ID              uint64
+	ID              model.IDType
 	rules           gin.H
 	Payload         map[string]any
 	selectedFields  map[string]bool
@@ -126,10 +126,6 @@ func (c *Ctx[T]) SetScan(scan func(tx *gorm.DB) any) *Ctx[T] {
 func (c *Ctx[T]) SetTransformer(t func(m *T) any) *Ctx[T] {
 	c.transformer = t
 	return c
-}
-
-func (c *Ctx[T]) GetParamID() uint64 {
-	return cast.ToUint64(c.Param("id"))
 }
 
 func (c *Ctx[T]) AddColWhiteList(cols ...string) *Ctx[T] {

@@ -188,6 +188,12 @@ export default defineConfig({
         ]
       },
       {
+        text: 'CUID2',
+        items: [
+          { text: '接口参考', link: '/cuid2' },
+        ]
+      },
+      {
         text: '沙盒测试',
         items: [
           { text: '接口参考', link: '/sandbox' },
