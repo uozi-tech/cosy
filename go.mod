@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -25,7 +25,7 @@ require (
 	github.com/quic-go/quic-go v0.59.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/samber/lo v1.53.0
-	github.com/shirou/gopsutil/v4 v4.25.12
+	github.com/shirou/gopsutil/v4 v4.26.2
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
@@ -55,7 +55,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/ebitengine/purego v0.9.1 // indirect
+	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-kit/kit v0.13.0 // indirect
