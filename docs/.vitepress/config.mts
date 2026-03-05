@@ -1,9 +1,58 @@
 import { defineConfig } from 'vitepress'
-import { loadEnv } from 'vite'
+import { loadEnv, type Plugin } from 'vite'
 import { vitepressPluginLegend } from 'vitepress-plugin-legend'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 // https://vitepress.dev/reference/site-config
 const mode = process.env.NODE_ENV ?? 'development'
 const env = loadEnv(mode, process.cwd(), '')
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const debugAppDir = path.resolve(__dirname, '../../debug/app')
+
+const contentTypes: Record<string, string> = {
+  '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
+  '.svg': 'image/svg+xml', '.woff': 'font/woff', '.woff2': 'font/woff2',
+  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
+}
+
+const debugDemoDir = path.resolve(__dirname, '../public/debug-demo')
+
+function resolveStaticFile(baseDir: string, urlPrefix: string, url: string): string | null {
+  if (!url.startsWith(urlPrefix)) return null
+  let relPath = decodeURIComponent(url.slice(urlPrefix.length))
+  const filePath = path.join(baseDir, relPath)
+  if (!filePath.startsWith(baseDir)) return null
+  try {
+    const stat = fs.statSync(filePath)
+    if (stat.isFile()) return filePath
+    if (stat.isDirectory()) {
+      const indexPath = path.join(filePath, 'index.html')
+      if (fs.existsSync(indexPath)) return indexPath
+    }
+  } catch {}
+  return null
+}
+
+function serveDebugApp(): Plugin {
+  return {
+    name: 'serve-debug-app',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url || ''
+        const filePath =
+          resolveStaticFile(debugAppDir, '/debug-app/', url) ||
+          resolveStaticFile(debugDemoDir, '/debug-demo/', url) ||
+          resolveStaticFile(debugDemoDir, '/debug-demo', url)
+        if (!filePath) return next()
+        const ext = path.extname(filePath)
+        res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream')
+        fs.createReadStream(filePath).pipe(res)
+      })
+    }
+  }
+}
 export default defineConfig({
   title: "Cosy",
   description: "Documentations of Cosy",
@@ -173,6 +222,7 @@ export default defineConfig({
     }
   },
   vite: {
+    plugins: [serveDebugApp()],
     server: {
       host: '0.0.0.0',
       port: Number.parseInt(env.VITE_PORT) || 5003,

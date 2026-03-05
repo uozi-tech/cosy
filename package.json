@@ -4,8 +4,9 @@
     "vue": "^3.5.26"
   },
   "scripts": {
+    "docs:sync": "mkdir -p docs/public/debug-app && cp -r debug/app/css debug/app/js debug/app/fonts debug/app/assets docs/public/debug-app/",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
+    "docs:build": "npm run docs:sync && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {

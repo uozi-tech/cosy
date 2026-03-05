@@ -9,3 +9,7 @@ coverage.out
 err-docs-dist
 err-ts-dist
 err-js-dist
+playground/tmp
+.air.toml
+tmp
+docs/public/debug-app

@@ -2,6 +2,16 @@
 
 Cosy 框架的调试功能提供了一个现代化的 Web UI 界面，让您可以直观地监控和调试应用程序。
 
+## 在线演示
+
+<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 16px 0;">
+  <iframe src="/debug-demo/" style="width: 100%; height: 680px; border: none;"></iframe>
+</div>
+
+::: tip 提示
+以上为交互式演示，使用模拟数据展示。您可以点击导航栏切换不同的监控页面，点击「查看」按钮查看详细信息。
+:::
+
 ## 界面特性
 
 ### 实时监控仪表板
