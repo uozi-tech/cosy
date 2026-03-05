@@ -28,7 +28,7 @@ func main() {
 
 Cosy 支持多种配置方式：
 
-1. **配置文件**：支持 INI 和 TOML 两种格式
+1. **配置文件**：支持 INI、TOML 和 YAML 三种格式
 2. **环境变量**：支持通过环境变量覆盖配置文件中的设置
 
 配置的优先级为：**环境变量 > 配置文件**
@@ -101,7 +101,7 @@ export DATABASE_HOST="localhost"
 
 ## 配置文件格式
 
-Cosy 支持两种配置文件格式：INI 和 TOML。默认情况下使用 INI 格式，但您可以通过构建标签选择使用 TOML 格式。
+Cosy 支持三种配置文件格式：INI、TOML 和 YAML。默认情况下使用 INI 格式，但您可以通过构建标签选择使用 TOML 或 YAML 格式。
 
 ### 使用 INI 格式 (默认)
 
@@ -179,6 +179,47 @@ Prefix = "my-prefix"
 
 **注意**：与 INI 格式一样，TOML 配置文件中的任何设置都可以通过对应的环境变量进行覆盖。
 
+### 使用 YAML 格式
+
+如果要使用 YAML 格式，需要在构建时添加 `yaml_settings` 标签：
+
+```bash
+go build -tags yaml_settings
+```
+
+然后将 `app.yaml` 放在与二进制文件相同的目录中：
+
+```yaml
+app:
+  pagesize: 20
+  jwtsecret: "39B4F75C-8E51-4E9C-87F5-94E40447B0E0"
+
+server:
+  host: "127.0.0.1"
+  port: 9000
+  runmode: "debug"
+  baseurl: "https://api.example.com"
+  enablehttps: false
+  sslcert: "/path/to/certificate.pem"
+  sslkey: "/path/to/key.pem"
+
+database:
+  user: "postgres"
+  password: ""
+  host: "127.0.0.1"
+  port: 5432
+  name: "my-database"
+  tableprefix: "t_"
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""
+  db: 0
+  prefix: "my-prefix"
+```
+
+**注意**：YAML 格式的键名为 Go 结构体字段名的全小写形式（例如 `PageSize` 对应 `pagesize`，`JwtSecret` 对应 `jwtsecret`）。与其他格式一样，YAML 配置文件中的任何设置都可以通过对应的环境变量进行覆盖。
+
 ## 配置组合使用
 
 ### 最佳实践
@@ -248,6 +289,9 @@ Cosy 支持多种 HTTP 协议，包括 HTTP/1.1、HTTP/2 和 HTTP/3：
 
 # 使用 TOML 格式 (如果使用 toml_settings 构建标签)
 ./main -config app.testing.toml
+
+# 使用 YAML 格式 (如果使用 yaml_settings 构建标签)
+./main -config app.testing.yaml
 
 # 结合环境变量使用
 COSY_DATABASE_HOST="test.db.com" ./main -config app.testing.ini

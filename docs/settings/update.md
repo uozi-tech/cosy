@@ -5,11 +5,11 @@
 如果需要将更新的设置持久化，可以使用 `func Save() (err error)`。
 
 ::: info 配置格式注意事项
-Cosy 支持两种配置格式：INI（默认）和 TOML（使用 `toml_settings` 构建标签）。
+Cosy 支持三种配置格式：INI（默认）、TOML（使用 `toml_settings` 构建标签）和 YAML（使用 `yaml_settings` 构建标签）。
 
 在使用 INI 格式时，`MapTo` 和 `ReflectFrom` 函数完全可用。
 
-在使用 TOML 格式时，`MapTo` 和 `ReflectFrom` 函数仅为兼容性保留，但没有实际功能，因为 TOML 实现直接操作结构体指针。
+在使用 TOML 或 YAML 格式时，`MapTo` 和 `ReflectFrom` 函数仅为兼容性保留，但没有实际功能，因为 TOML 和 YAML 实现直接操作结构体指针。
 :::
 
 ## 示例
@@ -44,4 +44,7 @@ go build
 
 # 使用 TOML 格式
 go build -tags toml_settings
+
+# 使用 YAML 格式
+go build -tags yaml_settings
 ```

@@ -1,4 +1,4 @@
-//go:build toml_settings
+//go:build toml_settings && !yaml_settings
 
 package settings
 
@@ -12,18 +12,19 @@ import (
 func TestEnvironmentVariablesOverrideToml(t *testing.T) {
 	assert := assert.New(t)
 
-	// Clean up environment variables before test
+	// Clean up environment variables before test (using SCREAMING_SNAKE_CASE format)
 	envVars := []string{
-		"APP_PAGESIZE",
-		"APP_JWTSECRET",
+		"APP_PAGE_SIZE",
+		"APP_JWT_SECRET",
 		"SERVER_HOST",
 		"SERVER_PORT",
-		"SERVER_RUNMODE",
+		"SERVER_RUN_MODE",
 		"DATABASE_HOST",
 		"DATABASE_PORT",
 		"DATABASE_USER",
 		"DATABASE_PASSWORD",
 		"DATABASE_NAME",
+		"DATABASE_TABLE_PREFIX",
 		"REDIS_ADDR",
 		"REDIS_PASSWORD",
 		"REDIS_DB",
@@ -70,17 +71,18 @@ DB = 1
 	assert.NoError(err)
 	file.Sync()
 
-	// Set environment variables to override config
-	os.Setenv("APP_PAGESIZE", "25")
-	os.Setenv("APP_JWTSECRET", "env-secret")
+	// Set environment variables to override config (using SCREAMING_SNAKE_CASE format)
+	os.Setenv("APP_PAGE_SIZE", "25")
+	os.Setenv("APP_JWT_SECRET", "env-secret")
 	os.Setenv("SERVER_HOST", "0.0.0.0")
 	os.Setenv("SERVER_PORT", "8080")
-	os.Setenv("SERVER_RUNMODE", "production")
+	os.Setenv("SERVER_RUN_MODE", "production")
 	os.Setenv("DATABASE_HOST", "db.example.com")
 	os.Setenv("DATABASE_PORT", "5432")
 	os.Setenv("DATABASE_USER", "envuser")
 	os.Setenv("DATABASE_PASSWORD", "envpass")
 	os.Setenv("DATABASE_NAME", "envdb")
+	os.Setenv("DATABASE_TABLE_PREFIX", "env_")
 	os.Setenv("REDIS_ADDR", "redis.example.com:6379")
 	os.Setenv("REDIS_PASSWORD", "envredispass")
 	os.Setenv("REDIS_DB", "2")
@@ -99,6 +101,7 @@ DB = 1
 	assert.Equal("envuser", DataBaseSettings.User, "Environment variable should override TOML config file")
 	assert.Equal("envpass", DataBaseSettings.Password, "Environment variable should override TOML config file")
 	assert.Equal("envdb", DataBaseSettings.Name, "Environment variable should override TOML config file")
+	assert.Equal("env_", DataBaseSettings.TablePrefix, "Environment variable should override TOML config file")
 	assert.Equal("redis.example.com:6379", RedisSettings.Addr, "Environment variable should override TOML config file")
 	assert.Equal("envredispass", RedisSettings.Password, "Environment variable should override TOML config file")
 	assert.Equal(2, RedisSettings.DB, "Environment variable should override TOML config file")
@@ -114,8 +117,8 @@ func TestEnvironmentVariablesWithPrefixToml(t *testing.T) {
 
 	// Clean environment
 	envVars := []string{
-		"COSY_APP_PAGESIZE",
-		"COSY_APP_JWTSECRET",
+		"COSY_APP_PAGE_SIZE",
+		"COSY_APP_JWT_SECRET",
 		"COSY_SERVER_HOST",
 		"COSY_SERVER_PORT",
 		"COSY_DATABASE_HOST",
@@ -155,9 +158,9 @@ Addr = "localhost:6379"
 	assert.NoError(err)
 	file.Sync()
 
-	// Set environment variables with prefix
-	os.Setenv("COSY_APP_PAGESIZE", "30")
-	os.Setenv("COSY_APP_JWTSECRET", "prefix-secret")
+	// Set environment variables with prefix (using SCREAMING_SNAKE_CASE format)
+	os.Setenv("COSY_APP_PAGE_SIZE", "30")
+	os.Setenv("COSY_APP_JWT_SECRET", "prefix-secret")
 	os.Setenv("COSY_SERVER_HOST", "192.168.1.1")
 	os.Setenv("COSY_SERVER_PORT", "9000")
 	os.Setenv("COSY_DATABASE_HOST", "prefixdb.example.com")

@@ -1,4 +1,4 @@
-//go:build !toml_settings
+//go:build !toml_settings && !yaml_settings
 
 package settings
 

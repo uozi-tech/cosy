@@ -1,4 +1,4 @@
-//go:build toml_settings && !yaml_settings
+//go:build yaml_settings && !toml_settings
 
 package settings
 
@@ -12,15 +12,16 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	ConfPath = "app.testing.toml"
+	ConfPath = "app.testing.yaml"
 
 	file, err := os.Create(ConfPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer file.Close()
+	defer os.Remove(ConfPath)
 
-	Init("app.testing.toml")
+	Init("app.testing.yaml")
 
 	jwtSecret := uuid.New().String()
 
@@ -78,7 +79,7 @@ func TestIntegration(t *testing.T) {
 
 	assert := assert.New(t)
 
-	assert.Equal("app.testing.toml", ConfPath)
+	assert.Equal("app.testing.yaml", ConfPath)
 	assert.Equal(jwtSecret, AppSettings.JwtSecret)
 	assert.Equal(20, AppSettings.PageSize)
 	assert.Equal("127.0.0.1", ServerSettings.Host)

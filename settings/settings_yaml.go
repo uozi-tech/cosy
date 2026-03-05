@@ -1,4 +1,4 @@
-//go:build toml_settings && !yaml_settings
+//go:build yaml_settings && !toml_settings
 
 package settings
 
@@ -7,8 +7,8 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/BurntSushi/toml"
 	"github.com/elliotchance/orderedmap/v3"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -46,25 +46,21 @@ func load() (err error) {
 		return err
 	}
 
-	// Create a map to temporarily hold the parsed data
 	tmpConfig := make(map[string]any)
-	err = toml.Unmarshal(data, &tmpConfig)
+	err = yaml.Unmarshal(data, &tmpConfig)
 	if err != nil {
 		return err
 	}
 
-	// Map each section to its corresponding struct
 	for name, sectionData := range tmpConfig {
 		ptr, ok := sections.Get(name)
 		if ok {
-			// Convert section data to TOML again
-			bytes, err := toml.Marshal(sectionData)
+			bytes, err := yaml.Marshal(sectionData)
 			if err != nil {
 				return err
 			}
 
-			// Unmarshal into the target struct
-			err = toml.Unmarshal(bytes, ptr)
+			err = yaml.Unmarshal(bytes, ptr)
 			if err != nil {
 				return err
 			}
@@ -83,19 +79,17 @@ func Reload() error {
 func setup() {
 	err := load()
 	if err != nil {
-		log.Fatalf("setting.init, fail to parse TOML file: %v", err)
+		log.Fatalf("setting.init, fail to parse YAML file: %v", err)
 	}
 }
 
 // MapTo the settings (kept for backward compatibility)
 func MapTo(section string, v any) error {
-	// No need to do anything as load() already mapped to the structs
 	return nil
 }
 
 // ReflectFrom the settings (kept for backward compatibility)
 func ReflectFrom(section string, v any) {
-	// Nothing to do as we're directly modifying the struct pointers
 }
 
 // ProtectedFill fill the target settings with new settings
@@ -104,7 +98,6 @@ func ProtectedFill(targetSettings any, newSettings any) {
 	vt := reflect.ValueOf(targetSettings).Elem()
 	vn := reflect.ValueOf(newSettings).Elem()
 
-	// copy the values from new to target settings if it is not protected
 	for i := 0; i < s.NumField(); i++ {
 		if s.Field(i).Tag.Get("protected") != "true" {
 			vt.Field(i).Set(vn.Field(i))
@@ -114,7 +107,6 @@ func ProtectedFill(targetSettings any, newSettings any) {
 
 // Save the settings
 func Save() (err error) {
-	// Create a map to hold all sections for saving
 	configToSave := make(map[string]any)
 
 	for name, ptr := range sections.AllFromFront() {
@@ -127,7 +119,8 @@ func Save() (err error) {
 	}
 	defer f.Close()
 
-	encoder := toml.NewEncoder(f)
+	encoder := yaml.NewEncoder(f)
+	encoder.SetIndent(2)
 	err = encoder.Encode(configToSave)
 	if err != nil {
 		return err
