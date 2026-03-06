@@ -105,8 +105,13 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 // ResolvedModels resolved meta of models
 func ResolvedModels() {
 	for _, model := range collection {
-		// resolve model meta
 		m := reflect.TypeOf(model)
+
+		// Dereference pointer types (e.g. *model.User -> model.User)
+		if m.Kind() == reflect.Pointer {
+			m = m.Elem()
+		}
+
 		r := &ResolvedModel{
 			Name:          m.Name(),
 			Fields:        make(map[string]*ResolvedModelField),

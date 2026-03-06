@@ -33,7 +33,7 @@ func (c *Ctx[T]) Get() {
 				return
 			}
 
-			err := db.First(&c.Model, c.ID).Error
+			err := db.First(&c.Model, "id = ?", c.ID).Error
 			if err != nil {
 				ctx.AbortWithError(err)
 				return

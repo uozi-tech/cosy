@@ -31,7 +31,7 @@ func (c *Ctx[T]) Modify() {
 		}).
 		SetBeforeDecode(func(ctx *Ctx[T]) {
 			tx := c.applyGormScopes(c.Tx)
-			if err := tx.First(&c.OriginModel, c.ID).Error; err != nil {
+			if err := tx.First(&c.OriginModel, "id = ?", c.ID).Error; err != nil {
 				ctx.AbortWithError(err)
 				return
 			}
@@ -66,7 +66,7 @@ func (c *Ctx[T]) Modify() {
 			tx := c.Tx.Preload(clause.Associations)
 			tx = c.resolvePreload(tx)
 			tx = c.resolveJoins(tx)
-			tx.Table(c.table, c.tableArgs...).First(&c.Model, c.ID)
+			tx.Table(c.table, c.tableArgs...).First(&c.Model, "id = ?", c.ID)
 		}).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {

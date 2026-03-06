@@ -25,7 +25,7 @@ func (c *Ctx[T]) Destroy() {
 			if c.table != "" {
 				err = session.Table(c.table, c.tableArgs...).Take(c.OriginModel, c.ID).Error
 			} else {
-				err = session.First(&c.OriginModel, c.ID).Error
+				err = session.First(&c.OriginModel, "id = ?", c.ID).Error
 			}
 
 			if err != nil {
@@ -60,9 +60,9 @@ func (c *Ctx[T]) Recover() {
 			var err error
 			session := c.Tx.Session(&gorm.Session{})
 			if c.table != "" {
-				err = session.Table(c.table).First(&c.Model, c.ID).Error
+				err = session.Table(c.table).First(&c.Model, "id = ?", c.ID).Error
 			} else {
-				err = session.First(&c.Model, c.ID).Error
+				err = session.First(&c.Model, "id = ?", c.ID).Error
 			}
 
 			if err != nil {
