@@ -66,6 +66,9 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 	c.Payload = make(gin.H)
 
 	_ = c.ShouldBindJSON(&c.Payload)
+	if c.Payload == nil {
+		c.Payload = make(gin.H)
+	}
 
 	// logger.Debug(c.Payload, c.rules)
 
@@ -112,6 +115,9 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	c.Payload = make(gin.H)
 
 	_ = c.ShouldBindJSON(&c.Payload)
+	if c.Payload == nil {
+		c.Payload = make(gin.H)
+	}
 
 	// logger.Debug(c.Payload, c.rules)
 
