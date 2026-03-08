@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+
+	"gorm.io/gorm/schema"
 )
 
 var collection []any
@@ -27,6 +29,7 @@ type ResolvedModelField struct {
 	Name         string
 	Type         string
 	JsonTag      string
+	DBName       string
 	CosyTag      CosyTag
 	Unique       bool
 	DefaultValue string
@@ -72,6 +75,7 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 			Name:    field.Name,
 			Type:    field.Type.String(),
 			JsonTag: jsonTag,
+			DBName:  schema.NamingStrategy{}.ColumnName("", field.Name),
 			CosyTag: NewCosyTag(field.Tag.Get("cosy")),
 		}
 
@@ -79,6 +83,9 @@ func deepResolve(r *ResolvedModel, m reflect.Type) {
 
 		if gormTags != "" {
 			for tag := range strings.SplitSeq(gormTags, ";") {
+				if strings.HasPrefix(tag, "column:") {
+					resolvedField.DBName = strings.TrimPrefix(tag, "column:")
+				}
 				// gorm:"uniqueIndex;type:varchar(255);default:0"
 				if strings.Contains(tag, "default") {
 					defaultValueTag := strings.Split(tag, ":")

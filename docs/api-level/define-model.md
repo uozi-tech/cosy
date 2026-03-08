@@ -14,9 +14,9 @@ import (
 
 type Model struct {
 	ID        int             `gorm:"primary_key" json:"id"`
-	CreatedAt *time.Time      `json:"created_at,omitempty"`
-	UpdatedAt *time.Time      `json:"updated_at,omitempty"`
-	DeletedAt *gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	CreatedAt *time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt *time.Time      `json:"updatedAt,omitempty"`
+	DeletedAt *gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
 }
 
 type Group struct {
@@ -31,13 +31,48 @@ type User struct {
 	Email      string     `json:"email" cosy:"add:required,email;update:omitempty,email;list:fussy;db_unique" gorm:"type:varchar(255);uniqueIndex"`
 	Phone      string     `json:"phone" cosy:"add:omitempty;update:omitempty;list:fussy" gorm:"index"`
 	Avatar     string     `json:"avatar" cosy:"add:omitempty;update:omitempty"`
-	LastActive *time.Time `json:"last_active" cosy:"add:omitempty;update:omitempty"`
+	LastActive *time.Time `json:"lastActive" cosy:"add:omitempty;update:omitempty" gorm:"column:last_active"`
 	Power      int        `json:"power" cosy:"add:omitempty;update:omitempty;list:in" gorm:"default:1"`
 	Status     int        `json:"status" cosy:"add:omitempty;update:omitempty;list:in" gorm:"default:1"`
-	GroupID    int        `json:"group_id" cosy:"add:required;update:omitempty;list:eq"`
+	GroupID    int        `json:"groupId" cosy:"add:required;update:omitempty;list:eq" gorm:"column:group_id"`
 	Group      *Group     `json:"group" cosy:"item:preload;list:preload"`
 }
 ```
+
+## 推荐命名方式
+
+推荐在模型中使用：
+
+- `json:"camelCase"`: 面向 API 请求和响应
+- `gorm:"column:snake_case"`: 面向数据库真实列名
+
+例如：
+
+```go
+type Application struct {
+    Model
+    ProjectID   string `json:"projectId" cosy:"add:required;list:eq" gorm:"column:project_id;index"`
+    CreatedByID string `json:"createdById" cosy:"list:eq" gorm:"column:created_by_id;index"`
+    CreatedAt   time.Time `json:"createdAt" gorm:"column:created_at"`
+}
+```
+
+当你这样定义后：
+
+- 创建/更新时，Cosy 会按 `json` tag 读取请求体
+- 列表查询时，Cosy 会自动把 `projectId` 映射到数据库列 `project_id`
+- 排序时，`sort_by=createdAt` 会自动映射到 `created_at`
+- `db_unique` 和 `uniqueIndex` 校验也会走同一套列名映射
+
+查询示例：
+
+```text
+GET /applications?projectId=p_123&createdById=u_001&sort_by=createdAt&order=desc
+```
+
+::: tip 提示
+对于隐藏字段，如果你使用了 `json:"-"`，但仍希望通过请求体接收某个键，可以继续使用 `cosy:"json:xxx"`。该键同样会参与列名映射和唯一性校验。
+:::
 
 ## Cosy 标签说明
 
@@ -97,9 +132,9 @@ type Article struct {
     Title     string    `json:"title" cosy:"add:required;update:omitempty;list:fussy"`
     Content   string    `json:"content" cosy:"add:required;update:omitempty"`
     Status    int       `json:"status" cosy:"add:omitempty;update:omitempty;list:in" gorm:"default:0"`
-    UserID    int       `json:"user_id" cosy:"add:required;list:eq"`
+    UserID    int       `json:"userId" cosy:"add:required;list:eq" gorm:"column:user_id"`
     User      *User     `json:"user" cosy:"item:preload;list:preload"`
-    ViewCount int       `json:"view_count" cosy:"update:omitempty;list:between" gorm:"default:0"`
+    ViewCount int       `json:"viewCount" cosy:"update:omitempty;list:between" gorm:"column:view_count;default:0"`
     Tags      []Tag     `json:"tags" cosy:"item:preload" gorm:"many2many:article_tags;"`
 }
 ```

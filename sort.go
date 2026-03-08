@@ -24,6 +24,8 @@ func (c *Ctx[T]) sortOrder(db *gorm.DB) *gorm.DB {
 		sortBy = c.itemKey
 	}
 
+	sortBy = c.resolveColumn(sortBy)
+
 	s, _ := schema.Parse(c.Model, &sync.Map{}, schema.NamingStrategy{})
 	if _, ok := s.FieldsByDBName[sortBy]; !ok && sortBy != c.itemKey && !c.columnWhiteList[sortBy] {
 		return db

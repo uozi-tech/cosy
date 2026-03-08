@@ -8,17 +8,17 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func QueriesToBetweenSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
-	for _, v := range keys {
-		db = QueryToBetweenSearch(c, db, v)
+func QueriesToBetweenSearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	for _, col := range cols {
+		db = QueryToBetweenSearch(c, db, col)
 	}
 	return db
 }
 
-func QueryToBetweenSearch(c *gin.Context, db *gorm.DB, value string, key ...string) *gorm.DB {
-	queryArray := c.QueryArray(value + "[]")
+func QueryToBetweenSearch(c *gin.Context, db *gorm.DB, col Column) *gorm.DB {
+	queryArray := c.QueryArray(col.QueryKey + "[]")
 	if len(queryArray) == 0 {
-		queryArray = c.QueryArray(value)
+		queryArray = c.QueryArray(col.QueryKey)
 	}
 	if len(queryArray) <= 1 {
 		return db
@@ -28,12 +28,7 @@ func QueryToBetweenSearch(c *gin.Context, db *gorm.DB, value string, key ...stri
 		var builder strings.Builder
 		stmt := db.Statement
 
-		column := value
-		if len(key) != 0 {
-			column = key[0]
-		}
-
-		stmt.QuoteTo(&builder, clause.Column{Table: stmt.Table, Name: column})
+		stmt.QuoteTo(&builder, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 		builder.WriteString(" BETWEEN ? AND ?")
 
 		return db.Where(builder.String(), queryArray[0], queryArray[1])

@@ -11,21 +11,37 @@ import (
 	"gorm.io/gorm"
 )
 
+func resolveColumn(columns map[string]string, key string) string {
+	if column, ok := columns[key]; ok && column != "" {
+		return column
+	}
+
+	return key
+}
+
 // DbUnique checks if the value is unique in the table of the database
-func DbUnique[T any](ctx context.Context, payload gin.H, columns []string) (conflicts []string, err error) {
+func DbUnique[T any](ctx context.Context, payload gin.H, columns []string, columnMapping map[string]string) (conflicts []string, err error) {
 	db := model.UseDB(ctx)
 
 	var m T
 
 	db = db.Model(&m)
 
+	dbColumns := make([]string, 0, len(columns))
 	for _, v := range columns {
 		if payload[v] != nil {
-			db.Or(v, payload[v])
+			dbColumn := resolveColumn(columnMapping, v)
+			dbColumns = append(dbColumns, dbColumn)
+			db = db.Or(dbColumn, payload[v])
 		}
 	}
+
+	if len(dbColumns) == 0 {
+		return nil, nil
+	}
+
 	result := map[string]any{}
-	err = db.Unscoped().Select(strings.Join(append([]string{"id"}, columns...), ", ")).First(&result).Error
+	err = db.Unscoped().Select(strings.Join(append([]string{"id"}, dbColumns...), ", ")).First(&result).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -40,7 +56,8 @@ func DbUnique[T any](ctx context.Context, payload gin.H, columns []string) (conf
 	}
 
 	for _, v := range columns {
-		if cast.ToString(payload[v]) == cast.ToString(result[v]) {
+		dbColumn := resolveColumn(columnMapping, v)
+		if cast.ToString(payload[v]) == cast.ToString(result[dbColumn]) {
 			conflicts = append(conflicts, v)
 		}
 	}

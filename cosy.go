@@ -31,6 +31,7 @@ type Ctx[T any] struct {
 	Payload         map[string]any
 	selectedFields  map[string]bool
 	columnWhiteList map[string]bool
+	columnMapping   map[string]string
 
 	// Strings (16B) grouped
 	table   string
@@ -68,6 +69,7 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 		itemKey:                  "id",
 		skipAssociationsOnCreate: true,
 		columnWhiteList:          make(map[string]bool),
+		columnMapping:            make(map[string]string),
 		selectedFields:           make(map[string]bool),
 	}
 
@@ -133,6 +135,14 @@ func (c *Ctx[T]) AddColWhiteList(cols ...string) *Ctx[T] {
 		c.columnWhiteList[col] = true
 	}
 	return c
+}
+
+func (c *Ctx[T]) resolveColumn(queryKey string) string {
+	if column, ok := c.columnMapping[queryKey]; ok && column != "" {
+		return column
+	}
+
+	return queryKey
 }
 
 func (c *Ctx[T]) AddSelectedFields(fields ...string) *Ctx[T] {

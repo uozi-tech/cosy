@@ -12,8 +12,8 @@ import (
 
 type User struct {
 	model.Model
-	Name  string `json:"name" cosy:"add:required;update:omitempty;list:fussy" gorm:"type:varchar(255);uniqueIndex"`
-	Email string `json:"email" cosy:"add:required;update:omitempty;list:fussy" gorm:"type:varchar(255);uniqueIndex"`
+	Name  string `json:"displayName" cosy:"add:required;update:omitempty;list:fussy" gorm:"column:display_name;type:varchar(255);uniqueIndex"`
+	Email string `json:"emailAddress" cosy:"add:required;update:omitempty;list:fussy" gorm:"column:email_address;type:varchar(255);uniqueIndex"`
 }
 
 func TestDbUnique(t *testing.T) {
@@ -32,40 +32,45 @@ func TestDbUnique(t *testing.T) {
 
 	db.Create(&User{Name: "test", Email: "test@test.com"})
 
+	columnMapping := map[string]string{
+		"displayName":  "display_name",
+		"emailAddress": "email_address",
+	}
+
 	payload := gin.H{
-		"name":  "test",
-		"email": "test@test.com",
+		"displayName":  "test",
+		"emailAddress": "test@test.com",
 	}
 
-	conflicts, err := DbUnique[User](t.Context(), payload, []string{"email", "name"})
+	conflicts, err := DbUnique[User](t.Context(), payload, []string{"emailAddress", "displayName"}, columnMapping)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	assert.Equal(t, []string{"email", "name"}, conflicts)
+	assert.Equal(t, []string{"emailAddress", "displayName"}, conflicts)
 
 	payload = gin.H{
-		"name":  "test",
-		"email": "test2@test.com",
+		"displayName":  "test",
+		"emailAddress": "test2@test.com",
 	}
 
-	conflicts, err = DbUnique[User](t.Context(), payload, []string{"email", "name"})
+	conflicts, err = DbUnique[User](t.Context(), payload, []string{"emailAddress", "displayName"}, columnMapping)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	assert.Equal(t, []string{"name"}, conflicts)
+	assert.Equal(t, []string{"displayName"}, conflicts)
 
 	payload = gin.H{
-		"name":  "test2",
-		"email": "test2@test.com",
+		"displayName":  "test2",
+		"emailAddress": "test2@test.com",
 	}
 
-	conflicts, err = DbUnique[User](t.Context(), payload, []string{"email", "name"})
+	conflicts, err = DbUnique[User](t.Context(), payload, []string{"emailAddress", "displayName"}, columnMapping)
 
 	if err != nil {
 		t.Error(err)

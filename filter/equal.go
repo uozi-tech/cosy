@@ -8,31 +8,31 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func QueryToEqualSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
-	for _, v := range keys {
-		if c.Query(v) != "" {
+func QueryToEqualSearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	for _, col := range cols {
+		if c.Query(col.QueryKey) != "" {
 			var sb strings.Builder
 			stmt := db.Statement
 
-			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 			sb.WriteString(" = ?")
 
-			db = db.Where(sb.String(), c.Query(v))
+			db = db.Where(sb.String(), c.Query(col.QueryKey))
 		}
 	}
 	return db
 }
 
-func QueryToOrEqualSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
-	for _, v := range keys {
-		if c.Query(v) != "" {
+func QueryToOrEqualSearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	for _, col := range cols {
+		if c.Query(col.QueryKey) != "" {
 			var sb strings.Builder
 			stmt := db.Statement
 
-			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 			sb.WriteString(" = ?")
 
-			db = db.Or(sb.String(), c.Query(v))
+			db = db.Or(sb.String(), c.Query(col.QueryKey))
 		}
 	}
 	return db

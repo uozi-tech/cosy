@@ -11,11 +11,11 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func QueryToFussySearch(c *gin.Context, db *gorm.DB, key string) *gorm.DB {
-	if qArr := c.QueryArray(key + "[]"); qArr != nil {
-		db = applyFuzzyCondition(c, db, key, qArr)
-	} else if q := c.Query(key); q != "" {
-		db = applyFuzzyCondition(c, db, key, []string{q})
+func QueryToFussySearch(c *gin.Context, db *gorm.DB, col Column) *gorm.DB {
+	if qArr := c.QueryArray(col.QueryKey + "[]"); qArr != nil {
+		db = applyFuzzyCondition(c, db, col.DBColumn, qArr)
+	} else if q := c.Query(col.QueryKey); q != "" {
+		db = applyFuzzyCondition(c, db, col.DBColumn, []string{q})
 	}
 	return db
 }
@@ -44,7 +44,7 @@ func applyFuzzyCondition(c *gin.Context, tx *gorm.DB, column string, values []st
 	return tx.Where(db)
 }
 
-func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, keys ...string) *gorm.DB {
+func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, cols ...Column) *gorm.DB {
 	value := c.Query("search")
 	if value == "" {
 		return tx
@@ -59,11 +59,12 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, keys ...string) *gorm.D
 
 	db := model.UseDB(c)
 	var colBuilder strings.Builder
+	stmt := tx.Statement
 
-	for _, v := range keys {
+	for _, col := range cols {
 		// build column name (column LIKE ?)
 		colBuilder.Reset()
-		colBuilder.WriteString(v)
+		stmt.QuoteTo(&colBuilder, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 		colBuilder.WriteString(" LIKE ?")
 
 		db = db.Or(colBuilder.String(), likeValue)
@@ -72,19 +73,19 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, keys ...string) *gorm.D
 	return tx.Where(db)
 }
 
-func QueryToOrFussySearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
-	for _, v := range keys {
-		if c.Query(v) != "" {
+func QueryToOrFussySearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	for _, col := range cols {
+		if c.Query(col.QueryKey) != "" {
 			var sb strings.Builder
 			stmt := db.Statement
 
-			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 
 			sb.WriteString(" LIKE ?")
 
 			var sbValue strings.Builder
 
-			_, err := fmt.Fprintf(&sbValue, "%%%s%%", c.Query(v))
+			_, err := fmt.Fprintf(&sbValue, "%%%s%%", c.Query(col.QueryKey))
 
 			if err != nil {
 				logger.Error(err)

@@ -8,17 +8,17 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func QueriesToInSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
-	for _, v := range keys {
-		QueryToInSearch(c, db, v)
+func QueriesToInSearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	for _, col := range cols {
+		db = QueryToInSearch(c, db, col)
 	}
 	return db
 }
 
-func QueryToInSearch(c *gin.Context, db *gorm.DB, value string, key ...string) *gorm.DB {
-	queryArray := c.QueryArray(value + "[]")
+func QueryToInSearch(c *gin.Context, db *gorm.DB, col Column) *gorm.DB {
+	queryArray := c.QueryArray(col.QueryKey + "[]")
 	if len(queryArray) == 0 {
-		queryArray = c.QueryArray(value)
+		queryArray = c.QueryArray(col.QueryKey)
 	}
 	if len(queryArray) == 1 && queryArray[0] == "" {
 		return db
@@ -28,12 +28,7 @@ func QueryToInSearch(c *gin.Context, db *gorm.DB, value string, key ...string) *
 		var builder strings.Builder
 		stmt := db.Statement
 
-		column := value
-		if len(key) != 0 {
-			column = key[0]
-		}
-
-		stmt.QuoteTo(&builder, clause.Column{Table: stmt.Table, Name: column})
+		stmt.QuoteTo(&builder, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 		builder.WriteString(" IN ?")
 
 		return db.Where(builder.String(), queryArray)
@@ -41,11 +36,11 @@ func QueryToInSearch(c *gin.Context, db *gorm.DB, value string, key ...string) *
 	return db
 }
 
-func QueryToOrInSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
-	for _, v := range keys {
-		queryArray := c.QueryArray(v + "[]")
+func QueryToOrInSearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	for _, col := range cols {
+		queryArray := c.QueryArray(col.QueryKey + "[]")
 		if len(queryArray) == 0 {
-			queryArray = c.QueryArray(v)
+			queryArray = c.QueryArray(col.QueryKey)
 		}
 		if len(queryArray) == 1 && queryArray[0] == "" {
 			continue
@@ -54,7 +49,7 @@ func QueryToOrInSearch(c *gin.Context, db *gorm.DB, keys ...string) *gorm.DB {
 			var sb strings.Builder
 			stmt := db.Statement
 
-			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: v})
+			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 			sb.WriteString(" IN ?")
 
 			db = db.Or(sb.String(), queryArray)

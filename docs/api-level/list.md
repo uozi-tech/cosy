@@ -53,6 +53,35 @@ flowchart TD
 7. SetSearchFussyKeys(keys ...string)
     - 设置多个字段的模糊搜索，使用子查询 OR 连接。
 
+## Query 参数与数据库列的自动映射
+
+如果模型使用的是 `json:"camelCase"` + `gorm:"column:snake_case"`，那么列表查询时可以直接使用 camelCase 参数，Cosy 会自动映射到数据库列。
+
+```go
+type Project struct {
+   Model
+   EnvironmentID string    `json:"environmentId" cosy:"list:eq" gorm:"column:environment_id;index"`
+   CreatedByID   string    `json:"createdById" cosy:"list:eq" gorm:"column:created_by_id;index"`
+   CreatedAt     time.Time `json:"createdAt" gorm:"column:created_at"`
+}
+```
+
+请求示例：
+
+```text
+GET /projects?environmentId=prod&createdById=u_123&sort_by=createdAt&order=desc
+```
+
+实际查询会使用数据库列：
+
+- `environmentId` -> `environment_id`
+- `createdById` -> `created_by_id`
+- `createdAt` -> `created_at`
+
+:::: tip 提示
+`SetEqual("environmentId")`、`SetIn("createdById")`、`SetBetween("createdAt")` 等方法，都会优先按 query key 读取请求参数，再按模型中的 GORM 列名拼接 SQL。
+::::
+
 ## 排序和分页
 Query 请求参数说明
 - sort_by: 排序字段
@@ -63,6 +92,8 @@ Query 请求参数说明
 :::: tip 提示
 如需同时查看已软删除的数据，可在查询参数中加入 `trash=true`。
 ::::
+
+如果你的 API 使用 camelCase JSON，可以直接传 `sort_by=createdAt` 这类参数，Cosy 会自动映射为对应的数据库列 `created_at`。
 
 ## 非分页列表
 当数据量较小或需要一次性返回全部数据时，可使用 `List()`：
@@ -94,6 +125,23 @@ func GetEmpty(c *gin.Context) {
   "data": [],
   "pagination": {
     "per_page": 10
+  }
+}
+```
+
+如果你希望分页字段也输出 camelCase，可以在构建时使用 `camelcase_json` build tag：
+
+```shell
+go build -tags=camelcase_json ./...
+```
+
+开启后分页字段会变为：
+
+```json
+{
+  "data": [],
+  "pagination": {
+    "perPage": 10
   }
 }
 ```

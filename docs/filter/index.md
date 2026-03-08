@@ -18,6 +18,29 @@ Cosy 提供了以下内置筛选器：
 | `search` | 全局模糊搜索 | `cosy:"list:search"` | 在标记了 `search` 的多个字段上使用 `?search=keyword` 进行模糊匹配（OR 组合） |
 | `preload` | 预加载关联 | `cosy:"list:preload"` | 预加载该字段对应的关联数据 |
 
+## CamelCase Query 参数
+
+当模型字段定义为 `json:"camelCase"` 且数据库列通过 `gorm:"column:snake_case"` 指定时，内置筛选器会自动完成 query key 到数据库列的映射。
+
+```go
+type Deployment struct {
+    Model
+    ProjectID string `json:"projectId" cosy:"list:eq" gorm:"column:project_id;index"`
+    CreatedAt time.Time `json:"createdAt" cosy:"list:between" gorm:"column:created_at"`
+}
+```
+
+请求可以直接写成：
+
+```text
+GET /deployments?projectId=p_123&createdAt[]=2024-01-01&createdAt[]=2024-12-31
+```
+
+内置筛选器实际会使用：
+
+- `project_id = ?`
+- `created_at BETWEEN ? AND ?`
+
 ## 自定义筛选器
 
 ### 实现筛选器接口

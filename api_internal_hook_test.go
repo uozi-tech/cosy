@@ -12,14 +12,14 @@ func TestInternalGetHook(t *testing.T) {
 	model.RegisterModels(User{}, Product{})
 	model.ResolvedModels()
 	c := &gin.Context{}
-	expected := Core[Product](c).
-		SetPreloads("User")
-
 	actual := Core[Product](c)
 
 	getHook[Product]()(actual)
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, []string{"User"}, actual.preloads)
+	assert.Equal(t, "id", actual.columnMapping["id"])
+	assert.Equal(t, "user_id", actual.columnMapping["user_id"])
+	assert.Equal(t, "name", actual.columnMapping["name"])
 }
 
 func TestInternalListHook(t *testing.T) {

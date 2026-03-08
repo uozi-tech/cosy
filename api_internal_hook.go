@@ -5,10 +5,24 @@ import (
 	"github.com/uozi-tech/cosy/model"
 )
 
+func populateColumnMapping[T any](core *Ctx[T], resolved *model.ResolvedModel) {
+	for _, field := range resolved.OrderedFields {
+		if field.JsonTag != "" && field.JsonTag != "-" && field.DBName != "" {
+			core.columnMapping[field.JsonTag] = field.DBName
+		}
+
+		if field.CosyTag.GetJson() != "" && field.DBName != "" {
+			core.columnMapping[field.CosyTag.GetJson()] = field.DBName
+		}
+	}
+}
+
 func getHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()
 
 	return func(core *Ctx[T]) {
+		populateColumnMapping(core, resolved)
+
 		var preloads []string
 
 		for _, field := range resolved.OrderedFields {
@@ -28,6 +42,8 @@ func getListHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()
 
 	return func(core *Ctx[T]) {
+		populateColumnMapping(core, resolved)
+
 		for _, field := range resolved.OrderedFields {
 			dirs := field.CosyTag.GetList()
 
@@ -66,6 +82,8 @@ func getListHook[T any]() func(core *Ctx[T]) {
 func createHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()
 	return func(core *Ctx[T]) {
+		populateColumnMapping(core, resolved)
+
 		validMap := make(gin.H)
 		for _, field := range resolved.Fields {
 			dirs := field.CosyTag.GetAdd()
@@ -96,6 +114,8 @@ func createHook[T any]() func(core *Ctx[T]) {
 func modifyHook[T any]() func(core *Ctx[T]) {
 	resolved := model.GetResolvedModel[T]()
 	return func(core *Ctx[T]) {
+		populateColumnMapping(core, resolved)
+
 		validMap := make(gin.H)
 		for _, field := range resolved.Fields {
 			dirs := field.CosyTag.GetUpdate()
