@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "vitepress": "^1.6.4",
-    "vue": "^3.5.29"
+    "vue": "^3.5.30"
   },
   "scripts": {
     "docs:sync": "mkdir -p docs/public/debug-app && cp -r debug/app/css debug/app/js debug/app/fonts debug/app/assets docs/public/debug-app/",
