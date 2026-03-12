@@ -35,6 +35,18 @@ go build -tags cuid2 ./...
 
 更多信息请参阅 [CUID2 文档](/cuid2/)。
 
+## 使用 UUID 作为主键
+
+通过添加 build tag `uuid`，可以将 `model.Model` 的主键切换为 UUID 字符串：
+
+```bash
+go build -tags uuid ./...
+```
+
+启用后，`Model.ID` 变为 `string` 类型，创建记录时自动生成 UUID v7（例如 `550e8400-e29b-41d4-a716-446655440000`）。模型定义同样无需额外改动。
+
+更多信息请参阅 [UUID 文档](/uuid/)。
+
 ## Tag 分组
 
 分组之间以 `;` 分割，无顺序要求。

@@ -194,6 +194,12 @@ export default defineConfig({
         ]
       },
       {
+        text: 'UUID',
+        items: [
+          { text: '接口参考', link: '/uuid' },
+        ]
+      },
+      {
         text: '沙盒测试',
         items: [
           { text: '接口参考', link: '/sandbox' },
