@@ -4,6 +4,7 @@ package settings
 
 import (
 	"log"
+	"os"
 	"reflect"
 
 	"github.com/elliotchance/orderedmap/v3"
@@ -83,6 +84,9 @@ func ReflectFrom(section string, v any) {
 
 // ProtectedFill fill the target settings with new settings
 func ProtectedFill(targetSettings any, newSettings any) {
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+
 	s := reflect.TypeOf(targetSettings).Elem()
 	vt := reflect.ValueOf(targetSettings).Elem()
 	vn := reflect.ValueOf(newSettings).Elem()
@@ -97,10 +101,17 @@ func ProtectedFill(targetSettings any, newSettings any) {
 
 // Save the settings
 func Save() (err error) {
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+
 	for name, ptr := range sections.AllFromFront() {
 		ReflectFrom(name, ptr)
 	}
-	err = Conf.SaveTo(ConfPath)
+
+	err = writeAtomically(ConfPath, func(f *os.File) error {
+		_, err := Conf.WriteTo(f)
+		return err
+	})
 	if err != nil {
 		return
 	}

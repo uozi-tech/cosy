@@ -13,13 +13,20 @@ import (
 
 func TestIntegration(t *testing.T) {
 	ConfPath = "app.testing.yaml"
+	tmpPath := ConfPath + ".tmp"
 
 	file, err := os.Create(ConfPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
-	defer os.Remove(ConfPath)
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		_ = os.Remove(ConfPath)
+		_ = os.Remove(tmpPath)
+	})
 
 	Init("app.testing.yaml")
 
@@ -80,6 +87,10 @@ func TestIntegration(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.Equal("app.testing.yaml", ConfPath)
+	assert.True(os.IsNotExist(func() error {
+		_, err := os.Stat(tmpPath)
+		return err
+	}()))
 	assert.Equal(jwtSecret, AppSettings.JwtSecret)
 	assert.Equal(20, AppSettings.PageSize)
 	assert.Equal("127.0.0.1", ServerSettings.Host)

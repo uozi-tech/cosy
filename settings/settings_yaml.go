@@ -94,6 +94,9 @@ func ReflectFrom(section string, v any) {
 
 // ProtectedFill fill the target settings with new settings
 func ProtectedFill(targetSettings any, newSettings any) {
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+
 	s := reflect.TypeOf(targetSettings).Elem()
 	vt := reflect.ValueOf(targetSettings).Elem()
 	vn := reflect.ValueOf(newSettings).Elem()
@@ -107,26 +110,26 @@ func ProtectedFill(targetSettings any, newSettings any) {
 
 // Save the settings
 func Save() (err error) {
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+
 	configToSave := make(map[string]any)
 
 	for name, ptr := range sections.AllFromFront() {
 		configToSave[name] = ptr
 	}
 
-	f, err := os.Create(ConfPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	return writeAtomically(ConfPath, func(f *os.File) error {
+		encoder := yaml.NewEncoder(f)
+		encoder.SetIndent(2)
 
-	encoder := yaml.NewEncoder(f)
-	encoder.SetIndent(2)
-	err = encoder.Encode(configToSave)
-	if err != nil {
-		return err
-	}
+		if err := encoder.Encode(configToSave); err != nil {
+			_ = encoder.Close()
+			return err
+		}
 
-	return nil
+		return encoder.Close()
+	})
 }
 
 // WithoutRedis remove the redis settings
