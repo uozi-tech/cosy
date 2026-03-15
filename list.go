@@ -174,10 +174,20 @@ func (c *Ctx[T]) PagingList() {
 	NewProcessChain(c).
 		SetPrepare(c.prepareListHook).
 		SetBeforeExecute(beforeExecuteHook[T]).
+		SetGormAction(func(ctx *Ctx[T]) {
+			data := c.PagingListData()
+			defaultData := model.DataList{
+				Data:       data.Data,
+				Pagination: data.Pagination,
+			}
+			c.DefaultResponseData = defaultData
+			c.ResultData = defaultData
+		}).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {
-			data := c.PagingListData()
-			c.JSON(http.StatusOK, data)
+			c.dispatchQueryResponse(func(ctx *Ctx[T]) {
+				c.JSON(http.StatusOK, c.ResultData)
+			})
 		}).
 		GetOrGetList()
 }
@@ -199,12 +209,18 @@ func (c *Ctx[T]) List() {
 	NewProcessChain(c).
 		SetPrepare(c.prepareListHook).
 		SetBeforeExecute(beforeExecuteHook[T]).
+		SetGormAction(func(ctx *Ctx[T]) {
+			defaultData := model.DataList{
+				Data: c.ListAllData(),
+			}
+			c.DefaultResponseData = defaultData
+			c.ResultData = defaultData
+		}).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {
-			c.JSON(http.StatusOK,
-				model.DataList{
-					Data: c.ListAllData(),
-				})
+			c.dispatchQueryResponse(func(ctx *Ctx[T]) {
+				c.JSON(http.StatusOK, c.ResultData)
+			})
 		}).
 		GetOrGetList()
 }

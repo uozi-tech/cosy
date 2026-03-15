@@ -118,6 +118,7 @@ func (c *ProcessChain[T]) GetOrGetList() {
 		c.prepare,
 		c.beforeExecute,
 		c.gormAction,
+		c.executed,
 	}
 
 	for _, fn := range chain {

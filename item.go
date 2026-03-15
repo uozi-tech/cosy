@@ -28,8 +28,8 @@ func (c *Ctx[T]) Get() {
 					ctx.AbortWithError(err)
 					return
 				}
-				c.JSON(http.StatusOK, r)
-				c.Abort()
+				c.DefaultResponseData = r
+				c.ResultData = r
 				return
 			}
 
@@ -38,18 +38,22 @@ func (c *Ctx[T]) Get() {
 				ctx.AbortWithError(err)
 				return
 			}
+
+			// make query result available before ExecutedHook
+			if c.transformer == nil {
+				c.DefaultResponseData = c.Model
+				c.ResultData = c.Model
+				return
+			}
+			transformed := c.transformer(&c.Model)
+			c.DefaultResponseData = transformed
+			c.ResultData = transformed
 		}).
 		SetExecuted(executedHook[T]).
 		SetResponse(func(ctx *Ctx[T]) {
-			// no transformer
-			if c.transformer == nil {
-				c.JSON(http.StatusOK, c.Model)
-				c.Abort()
-				return
-			}
-
-			// use transformer
-			c.JSON(http.StatusOK, c.transformer(&c.Model))
+			c.dispatchQueryResponse(func(ctx *Ctx[T]) {
+				c.JSON(http.StatusOK, c.ResultData)
+			})
 		}).GetOrGetList()
 
 }

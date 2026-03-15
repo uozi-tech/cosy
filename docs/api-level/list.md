@@ -168,6 +168,33 @@ GET /users?page=1&id[]=1&id[]=2&id[]=3
 - SetTransformer(fx func(user *model.User) any)
 - SetScan(fx func(tx *gorm.DB) any)
 - GormScope(fx func(tx *gorm.DB) *gorm.DB)
+- SetResponseBuilder(func(ctx *cosy.Ctx[model.User]))
+
+## 自定义响应构建
+当你需要对列表结果做整体后处理时，可以使用 `SetResponseBuilder` 接管最终响应。
+
+```go
+func GetUsers(c *gin.Context) {
+   cosy.Core[model.User](c).
+      SetFussy("name", "phone").
+      SetResponseBuilder(func(ctx *cosy.Ctx[model.User]) {
+         // 原始默认响应（PagingList 场景包含 pagination）
+         origin := ctx.GetDefaultResponseData()
+         listData, _ := origin.(model.DataList)
+
+         // 在这里仅改 data，不丢分页
+         ctx.JSON(http.StatusOK, model.DataList{
+            Data:       listData.Data,
+            Pagination: listData.Pagination,
+         })
+      }).
+      PagingList()
+}
+```
+
+::: tip 提示
+`SetResponseBuilder` 不会改变查询逻辑，只会覆盖最终输出。若未设置，仍使用 Cosy 默认响应格式。你也可以通过 `ctx.GetDefaultResponseData()` 获取原始默认响应，避免分页等信息丢失。
+:::
 
 ## 响应示例
 

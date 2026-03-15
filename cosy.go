@@ -12,8 +12,10 @@ import (
 
 type Ctx[T any] struct {
 	// Place potentially large/aligned generics first to minimize padding
-	Model       T
-	OriginModel T
+	Model               T
+	OriginModel         T
+	ResultData          any
+	DefaultResponseData any
 
 	// Pointer-heavy fields
 	*gin.Context
@@ -22,8 +24,9 @@ type Ctx[T any] struct {
 	listService *ListService[T]
 
 	// Function pointers
-	scan        func(tx *gorm.DB) any
-	transformer func(*T) any
+	scan            func(tx *gorm.DB) any
+	transformer     func(*T) any
+	responseBuilder func(ctx *Ctx[T])
 
 	// Fixed-size and map headers
 	ID              model.IDType

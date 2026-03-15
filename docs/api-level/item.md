@@ -100,6 +100,25 @@ func GetUser(c *gin.Context) {
 `setScan` 不能和 `setTransformer` 一起使用，若同时使用，将只执行 `setScan` 函数。
 :::
 
+## 自定义响应构建
+获取单条记录时，也可以使用 `SetResponseBuilder` 自定义最终输出。
+
+```go
+func GetUser(c *gin.Context) {
+   cosy.Core[model.User](c).
+      SetResponseBuilder(func(ctx *cosy.Ctx[model.User]) {
+         // 对单条查询结果做后处理
+         result := ctx.ResultData
+         ctx.JSON(http.StatusOK, result)
+      }).
+      Get()
+}
+```
+
+::: tip 提示
+在查询流程中，`ExecutedHook` 与 `SetResponseBuilder` 都可以读取 `ctx.ResultData`。若需要原始默认响应，可使用 `ctx.GetDefaultResponseData()`。
+:::
+
 ## 生命周期
 
 1. **BeforeExecute**
@@ -116,18 +135,16 @@ flowchart TD
   SCAN -- 是 --> R[调用 scan]
   R --> RERR{返回错误?}
   RERR -- 是 --> E[AbortWithError 错误响应] --> END
-  RERR -- 否 --> OK200S[200 OK 返回 scan 结果]
-  OK200S --> AB[Abort]
-  AB --> END
+  RERR -- 否 --> RDATA1[写入 ctx.ResultData]
   SCAN -- 否 --> FIRST[按 ID 查询记录]
   FIRST --> FERR{查询出错?}
   FERR -- 是 --> E2[AbortWithError 错误响应] --> END
-  FERR -- 否 --> EX[Executed Hook]
-  EX --> RESP{配置 Transformer?}
-  RESP -- 否 --> OK200[200 OK 返回 Model]
-  OK200 --> AB2[Abort]
-  AB2 --> END
-  RESP -- 是 --> OK200T[200 OK 返回 Transformer 结果]
+  FERR -- 否 --> RDATA2[写入 ctx.ResultData]
+  RDATA1 --> EX[Executed Hook]
+  RDATA2 --> EX
+  EX --> RESP{是否配置 ResponseBuilder?}
+  RESP -- 是 --> CUST[执行自定义响应]
+  RESP -- 否 --> OK200[200 OK 返回 ctx.ResultData]
 ```
 
 ## 响应示例
