@@ -18,7 +18,7 @@ func (c *Ctx[T]) Custom(fx func(ctx *Ctx[T])) {
 		SetBeforeDecode(beforeDecodeHook[T]).
 		SetDecode(func(ctx *Ctx[T]) {
 			for k := range c.Payload {
-				c.AddSelectedFields(k)
+				c.AddSelectedFields(c.resolveColumn(k))
 			}
 			if err := map2struct.WeakDecode(c.Payload, &c.Model); err != nil {
 				ctx.AbortWithError(err)

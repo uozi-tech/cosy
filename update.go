@@ -39,7 +39,8 @@ func (c *Ctx[T]) Modify() {
 		}).
 		SetDecode(func(ctx *Ctx[T]) {
 			for k := range c.Payload {
-				c.AddSelectedFields(k)
+				// Map JSON / cosy json:* keys to GORM column names so Select() updates the right columns.
+				c.AddSelectedFields(c.resolveColumn(k))
 			}
 			if err := map2struct.WeakDecode(c.Payload, &c.Model); err != nil {
 				ctx.AbortWithError(err)
