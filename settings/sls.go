@@ -1,7 +1,7 @@
 package settings
 
 import (
-	sls "github.com/aliyun/aliyun-log-go-sdk"
+	"github.com/uozi-tech/cosy/sls"
 )
 
 type SLS struct {
@@ -26,6 +26,9 @@ func (s *SLS) Enable() bool {
 		s.Source != ""
 }
 
-func (s *SLS) GetCredentialsProvider() *sls.StaticCredentialsProvider {
-	return sls.NewStaticCredentialsProvider(s.AccessKeyId, s.AccessKeySecret, "")
+func (s *SLS) GetCredentials() sls.Credentials {
+	return sls.Credentials{
+		AccessKeyID:     s.AccessKeyId,
+		AccessKeySecret: s.AccessKeySecret,
+	}
 }

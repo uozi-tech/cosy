@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aliyun/aliyun-log-go-sdk/producer"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/spf13/cast"
 	"github.com/uozi-tech/cosy/settings"
+	"github.com/uozi-tech/cosy/sls"
 )
 
 const (
@@ -275,13 +275,13 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 				return
 			}
 
-			log := producer.GenerateLog(uint32(time.Now().Unix()), logMap)
+			slsLog := sls.GenerateLog(uint32(time.Now().Unix()), logMap)
 
 			// Use audit producer for API audit logs
 			auditProducer := GetAuditProducer()
 			if auditProducer != nil {
 				err := auditProducer.SendLog(settings.SLSSettings.ProjectName,
-					settings.SLSSettings.APILogStoreName, Topic, settings.SLSSettings.Source, log)
+					settings.SLSSettings.APILogStoreName, Topic, settings.SLSSettings.Source, slsLog)
 				if err != nil {
 					logger.Error(err)
 				}
