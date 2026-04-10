@@ -1,18 +1,18 @@
 module github.com/uozi-tech/cosy
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/bsm/redislock v0.9.4
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/elliotchance/orderedmap/v3 v3.1.0
-	github.com/fatih/color v1.18.0
-	github.com/gin-contrib/pprof v1.5.3
+	github.com/fatih/color v1.19.0
+	github.com/gin-contrib/pprof v1.5.4
 	github.com/gin-gonic/gin v1.12.0
-	github.com/go-co-op/gocron/v2 v2.19.1
+	github.com/go-co-op/gocron/v2 v2.20.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
-	github.com/go-playground/validator/v10 v10.30.1
+	github.com/go-playground/validator/v10 v10.30.2
 	github.com/google/pprof v0.0.0-20260202012954-cb029daf43ef
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
@@ -21,18 +21,18 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oschwald/geoip2-golang/v2 v2.1.0
-	github.com/pierrec/lz4/v4 v4.1.25
+	github.com/pierrec/lz4/v4 v4.1.26
 	github.com/quic-go/quic-go v0.59.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/samber/lo v1.53.0
-	github.com/shirou/gopsutil/v4 v4.26.2
+	github.com/shirou/gopsutil/v4 v4.26.3
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
 	github.com/ulikunitz/xz v0.5.15
-	github.com/uozi-tech/cosy-driver-mysql v0.2.2
-	github.com/uozi-tech/cosy-driver-postgres v0.2.1
+	github.com/uozi-tech/cosy-driver-mysql v0.2.3
+	github.com/uozi-tech/cosy-driver-postgres v0.2.2
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.1
 	go.uber.org/zap v1.27.1
 	gopkg.in/ini.v1 v1.67.1
@@ -63,7 +63,7 @@ require (
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.7.1 // indirect
+	github.com/jackc/pgx/v5 v5.9.1 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -94,17 +94,17 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.24.0 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gorm.io/datatypes v1.2.7 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
-	gorm.io/driver/postgres v1.5.9 // indirect
+	gorm.io/driver/postgres v1.6.0 // indirect
 	gorm.io/driver/sqlite v1.6.0 // indirect
 	gorm.io/hints v1.1.2 // indirect
 	gorm.io/plugin/dbresolver v1.6.2 // indirect
