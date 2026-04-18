@@ -13,8 +13,16 @@ import (
 
 var (
 	db            *gorm.DB
+	dialectName   string
 	beforeMigrate []func(*gorm.DB) error
 )
+
+// DialectName returns the name of the database dialect in use (e.g. "postgres",
+// "mysql", "sqlite"). It is cached once during Init so callers can branch on
+// dialect without paying a per-query lookup.
+func DialectName() string {
+	return dialectName
+}
 
 // BeforeMigrate is a function that will register a function to be executed before db migration
 func BeforeMigrate(f func(*gorm.DB) error) {
@@ -57,6 +65,8 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+	dialectName = db.Dialector.Name()
 
 	if len(beforeMigrate) > 0 {
 		for _, f := range beforeMigrate {

@@ -3,6 +3,7 @@ package filter
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/logger"
@@ -10,6 +11,30 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+var (
+	fuzzyLikeClause = " LIKE ?"
+	fuzzyLikeOnce   sync.Once
+)
+
+// resolveFuzzyClause picks the fuzzy-match clause for a given dialect name.
+// PostgreSQL's LIKE is case-sensitive, so ILIKE keeps behavior consistent with
+// MySQL / SQLite (whose LIKE is case-insensitive by default).
+func resolveFuzzyClause(dialect string) string {
+	if dialect == "postgres" {
+		return " ILIKE ?"
+	}
+	return " LIKE ?"
+}
+
+// fuzzyLike returns the fuzzy match clause for the active dialect, resolved
+// once per process so callers pay no per-query cost.
+func fuzzyLike() string {
+	fuzzyLikeOnce.Do(func() {
+		fuzzyLikeClause = resolveFuzzyClause(model.DialectName())
+	})
+	return fuzzyLikeClause
+}
 
 func QueryToFussySearch(c *gin.Context, db *gorm.DB, col Column) *gorm.DB {
 	if qArr := c.QueryArray(col.QueryKey + "[]"); qArr != nil {
@@ -26,7 +51,7 @@ func applyFuzzyCondition(c *gin.Context, tx *gorm.DB, column string, values []st
 	// build column name (column LIKE ?)
 	var colBuilder strings.Builder
 	stmt.QuoteTo(&colBuilder, clause.Column{Table: stmt.Table, Name: column})
-	colBuilder.WriteString(" LIKE ?")
+	colBuilder.WriteString(fuzzyLike())
 
 	db := model.UseDB(c)
 	var valueBuilder strings.Builder
@@ -57,6 +82,7 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, cols ...Column) *gorm.D
 	valueBuilder.WriteString("%")
 	likeValue := valueBuilder.String()
 
+	likeClause := fuzzyLike()
 	db := model.UseDB(c)
 	var colBuilder strings.Builder
 	stmt := tx.Statement
@@ -65,7 +91,7 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, cols ...Column) *gorm.D
 		// build column name (column LIKE ?)
 		colBuilder.Reset()
 		stmt.QuoteTo(&colBuilder, clause.Column{Table: stmt.Table, Name: col.DBColumn})
-		colBuilder.WriteString(" LIKE ?")
+		colBuilder.WriteString(likeClause)
 
 		db = db.Or(colBuilder.String(), likeValue)
 	}
@@ -74,6 +100,7 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, cols ...Column) *gorm.D
 }
 
 func QueryToOrFussySearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB {
+	likeClause := fuzzyLike()
 	for _, col := range cols {
 		if c.Query(col.QueryKey) != "" {
 			var sb strings.Builder
@@ -81,7 +108,7 @@ func QueryToOrFussySearch(c *gin.Context, db *gorm.DB, cols ...Column) *gorm.DB 
 
 			stmt.QuoteTo(&sb, clause.Column{Table: stmt.Table, Name: col.DBColumn})
 
-			sb.WriteString(" LIKE ?")
+			sb.WriteString(likeClause)
 
 			var sbValue strings.Builder
 
