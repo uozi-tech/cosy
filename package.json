@@ -10,7 +10,7 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "vite": "^8.0.8",
-    "vitepress-plugin-legend": "^1.4.1"
+    "vite": "^8.0.9",
+    "vitepress-plugin-legend": "^1.4.2"
   }
 }
