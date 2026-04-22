@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "vite": "^8.0.9",
-    "vitepress-plugin-legend": "^1.4.2"
+    "vitepress-plugin-legend": "^2.0.0"
   }
 }

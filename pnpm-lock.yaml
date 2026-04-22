@@ -12,8 +12,8 @@ importers:
         specifier: ^8.0.9
         version: 8.0.9(@types/node@24.8.1)(esbuild@0.27.3)(jiti@2.6.1)(sass@1.97.3)(yaml@2.8.2)
       vitepress-plugin-legend:
-        specifier: ^1.4.2
-        version: 1.4.2(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(markmap-common@0.18.9)(typescript@5.9.3)(vitepress@1.6.4(@algolia/client-search@5.49.1)(@types/node@24.8.1)(async-validator@4.2.5)(axios@1.12.2)(change-case@5.4.4)(lightningcss@1.32.0)(postcss@8.5.10)(sass@1.97.3)(search-insights@2.14.0)(typescript@5.9.3))(yaml@2.8.2)
+        specifier: ^2.0.0
+        version: 2.0.0(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(markmap-common@0.18.9)(typescript@5.9.3)(vitepress@1.6.4(@algolia/client-search@5.49.1)(@types/node@24.8.1)(async-validator@4.2.5)(axios@1.12.2)(change-case@5.4.4)(lightningcss@1.32.0)(postcss@8.5.10)(sass@1.97.3)(search-insights@2.14.0)(typescript@5.9.3))(yaml@2.8.2)
     devDependencies:
       vitepress:
         specifier: ^1.6.4
@@ -1901,6 +1901,9 @@ packages:
   package-manager-detector@1.6.0:
     resolution: {integrity: sha512-61A5ThoTiDG/C8s8UMZwSorAGwMJ0ERVGj2OjoW5pAalsNOg15+iQiPzrLJ4jhZ1HJzmC2PIHT2oEiH3R5fzNA==}
 
+  pako@2.1.0:
+    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
+
   parse5-htmlparser2-tree-adapter@7.1.0:
     resolution: {integrity: sha512-ruw5xyKs6lrpo9x9rCZqZZnIUntICjQAd0Wsmp396Ul9lN/h+ifgVV1x1gZHi8euej6wTfpqX8j+BFQxF0NS/g==}
 
@@ -2232,8 +2235,11 @@ packages:
   vitepress-mermaid-preview@0.2.1:
     resolution: {integrity: sha512-uzRsyC2/q9Le32m1kFSjZ1DtDoeySFBLHCW3yVEUeLOE0LEMVNw3ogK7twamCsaZ26YviK/cd0ZCaxhSTHYg9Q==}
 
-  vitepress-plugin-legend@1.4.2:
-    resolution: {integrity: sha512-QD56i2VWC6uNXYMJG5oR1zNrRT69SnecADtIfNxRvM2SGd3WdrslHqcsPaKOEctqW0E8tQRzl2kHI5uwQZY/Ew==}
+  vitepress-plantuml-preview@1.0.0:
+    resolution: {integrity: sha512-lTX0vZbm0xMT1MeYybhqx3ek0xUrHaKBUIJksxgA1cNDz1PD0Iu336OAcPBvJdHUNPYzyfssE9DiWmBavEprlw==}
+
+  vitepress-plugin-legend@2.0.0:
+    resolution: {integrity: sha512-TN6fV8u8eMfceUR4m0CcDyHIhMpx/SboMrlUdgoM+LMR3792UJ9NIgtlJ3vxjtU8DUYAm/iRK12PJlvwpBIWrQ==}
 
   vitepress@1.6.4:
     resolution: {integrity: sha512-+2ym1/+0VVrbhNyRoFFesVvBvHAVMZMK0rw60E3X/5349M1GuVdKeazuksqopEdvkKwKGs21Q729jX81/bkBJg==}
@@ -2452,7 +2458,7 @@ snapshots:
       linkedom: 0.18.12
       lodash-es: 4.17.23
       measury: 0.1.5
-      postcss: 8.5.9
+      postcss: 8.5.10
       roughjs: 4.6.6
       round-polygon: 0.6.7
       tinycolor2: 1.6.0
@@ -4182,6 +4188,8 @@ snapshots:
 
   package-manager-detector@1.6.0: {}
 
+  pako@2.1.0: {}
+
   parse5-htmlparser2-tree-adapter@7.1.0:
     dependencies:
       domhandler: 5.0.3
@@ -4443,7 +4451,7 @@ snapshots:
       esbuild: 0.27.3
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.9
+      postcss: 8.5.10
       rollup: 4.59.0
       tinyglobby: 0.2.16
     optionalDependencies:
@@ -4536,7 +4544,38 @@ snapshots:
       - typescript
       - yaml
 
-  vitepress-plugin-legend@1.4.2(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(markmap-common@0.18.9)(typescript@5.9.3)(vitepress@1.6.4(@algolia/client-search@5.49.1)(@types/node@24.8.1)(async-validator@4.2.5)(axios@1.12.2)(change-case@5.4.4)(lightningcss@1.32.0)(postcss@8.5.10)(sass@1.97.3)(search-insights@2.14.0)(typescript@5.9.3))(yaml@2.8.2):
+  vitepress-plantuml-preview@1.0.0(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(typescript@5.9.3)(yaml@2.8.2):
+    dependencies:
+      '@flypeng/tool': 5.7.5
+      '@iconify/vue': 5.0.0(vue@3.5.32(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.4(vite@7.3.2(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(yaml@2.8.2))(vue@3.5.32(typescript@5.9.3))
+      '@vueuse/components': 13.9.0(vue@3.5.32(typescript@5.9.3))
+      '@vueuse/core': 13.9.0(vue@3.5.32(typescript@5.9.3))
+      '@zumer/snapdom': 1.9.14
+      markdown-it: 14.1.1
+      pako: 2.1.0
+      sass: 1.97.3
+      vite: 7.3.2(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(yaml@2.8.2)
+      vue: 3.5.32(typescript@5.9.3)
+      vue-sonner: 2.0.9
+      vue-tsc: 3.2.5(typescript@5.9.3)
+    transitivePeerDependencies:
+      - '@nuxt/kit'
+      - '@nuxt/schema'
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - nuxt
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - typescript
+      - yaml
+
+  vitepress-plugin-legend@2.0.0(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(markmap-common@0.18.9)(typescript@5.9.3)(vitepress@1.6.4(@algolia/client-search@5.49.1)(@types/node@24.8.1)(async-validator@4.2.5)(axios@1.12.2)(change-case@5.4.4)(lightningcss@1.32.0)(postcss@8.5.10)(sass@1.97.3)(search-insights@2.14.0)(typescript@5.9.3))(yaml@2.8.2):
     dependencies:
       '@flypeng/tool': 5.7.5
       '@iconify/vue': 5.0.0(vue@3.5.32(typescript@5.9.3))
@@ -4548,6 +4587,7 @@ snapshots:
       vitepress-infographic-preview: 1.1.1(vitepress@1.6.4(@algolia/client-search@5.49.1)(@types/node@24.8.1)(async-validator@4.2.5)(axios@1.12.2)(change-case@5.4.4)(lightningcss@1.32.0)(postcss@8.5.10)(sass@1.97.3)(search-insights@2.14.0)(typescript@5.9.3))(vue@3.5.32(typescript@5.9.3))
       vitepress-markmap-preview: 0.2.1(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(markmap-common@0.18.9)(typescript@5.9.3)(yaml@2.8.2)
       vitepress-mermaid-preview: 0.2.1(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(typescript@5.9.3)(yaml@2.8.2)
+      vitepress-plantuml-preview: 1.0.0(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(typescript@5.9.3)(yaml@2.8.2)
       vue: 3.5.32(typescript@5.9.3)
       vue-sonner: 2.0.9
     transitivePeerDependencies:
