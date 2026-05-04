@@ -66,9 +66,13 @@ func Boot(confPath string) {
 	logger.Init(settings.ServerSettings.RunMode)
 	defer logger.Sync()
 
-	// Initialize audit SLS producer
-	if err := logger.InitAuditSLSProducer(ctx); err != nil {
-		logger.Warnf("Failed to initialize audit SLS producer: %v", err)
+	// Initialize audit SLS producer when SLS is configured.
+	if settings.SLSSettings.Enable() {
+		if err := logger.InitAuditSLSProducer(ctx); err != nil {
+			logger.Warnf("Failed to initialize audit SLS producer: %v", err)
+		} else {
+			logger.Info("Audit SLS producer initialized")
+		}
 	}
 
 	// If redis settings addr is not empty, init redis
