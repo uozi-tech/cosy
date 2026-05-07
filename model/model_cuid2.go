@@ -1,4 +1,4 @@
-//go:build cuid2
+//go:build cuid2 && !uuid && !sonyflake_str
 
 package model
 

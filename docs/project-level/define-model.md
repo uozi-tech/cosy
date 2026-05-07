@@ -35,6 +35,18 @@ go build -tags cuid2 ./...
 
 更多信息请参阅 [CUID2 文档](/cuid2/)。
 
+## 使用 Sonyflake 字符串作为主键
+
+通过添加 build tag `sonyflake_str`，可以继续使用 Sonyflake 生成有序 `uint64` ID，但将 `model.Model` 的主键保存为十进制字符串：
+
+```bash
+go build -tags sonyflake_str ./...
+```
+
+启用后，`Model.ID` 变为 `string` 类型，创建记录时自动调用 `sonyflake.NextID()` 并写入字符串形式的 ID。模型定义无需额外改动。
+
+更多信息请参阅 [Sonyflake 文档](/sonyflake/)。
+
 ## 使用 UUID 作为主键
 
 通过添加 build tag `uuid`，可以将 `model.Model` 的主键切换为 UUID 字符串：

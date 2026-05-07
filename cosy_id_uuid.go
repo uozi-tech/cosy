@@ -1,4 +1,4 @@
-//go:build uuid && !cuid2
+//go:build uuid && !cuid2 && !sonyflake_str
 
 package cosy
 

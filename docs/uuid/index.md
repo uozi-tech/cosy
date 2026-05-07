@@ -35,4 +35,5 @@ type User struct {
 
 - 需要更强可读性、生态通用性（日志/链路/外部系统常见）时，优先 UUID。
 - 需要更短、更 URL 友好的主键时，可优先 CUID2。
-- `uuid` 与 `cuid2` build tag 互斥，不能同时启用。
+- 需要保留 Sonyflake 的时间有序特性，但对外以字符串传递主键时，可使用 `sonyflake_str`。
+- `uuid`、`cuid2`、`sonyflake_str` build tag 互斥，不能同时启用。
