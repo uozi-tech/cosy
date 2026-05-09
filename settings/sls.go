@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"os"
+
 	"github.com/uozi-tech/cosy/sls"
 )
 
@@ -22,8 +24,20 @@ func (s *SLS) Enable() bool {
 		s.EndPoint != "" &&
 		s.ProjectName != "" &&
 		s.APILogStoreName != "" &&
-		s.DefaultLogStoreName != "" &&
-		s.Source != ""
+		s.DefaultLogStoreName != ""
+}
+
+func (s *SLS) GetSource() string {
+	if s.Source != "" {
+		return s.Source
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return ""
+	}
+
+	return hostname
 }
 
 func (s *SLS) GetCredentials() sls.Credentials {

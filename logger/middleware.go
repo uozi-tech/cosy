@@ -281,7 +281,7 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 			auditProducer := GetAuditProducer()
 			if auditProducer != nil {
 				err := auditProducer.SendLog(settings.SLSSettings.ProjectName,
-					settings.SLSSettings.APILogStoreName, Topic, settings.SLSSettings.Source, slsLog)
+					settings.SLSSettings.APILogStoreName, Topic, settings.SLSSettings.GetSource(), slsLog)
 				if err != nil {
 					logger.Error(err)
 				}

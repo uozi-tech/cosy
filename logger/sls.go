@@ -62,7 +62,7 @@ func (w *SLSWriter) Write(p []byte) (n int, err error) {
 		settings.SLSSettings.ProjectName,
 		w.logStore,
 		"",
-		settings.SLSSettings.Source,
+		settings.SLSSettings.GetSource(),
 		l,
 	)
 
