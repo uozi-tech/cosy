@@ -57,6 +57,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: cloudflare/wrangler-action@v3
         with:
+          wranglerVersion: latest
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages deploy "docs/.vitepress/dist/" --branch=main --commit-dirty=true --project-name=cosy-docs

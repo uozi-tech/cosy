@@ -1,6 +1,7 @@
 package cosy
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -35,13 +36,13 @@ func TestCtx_BatchDeleteAndRecover(t *testing.T) {
 		g.PATCH("/users", func(c *gin.Context) {
 			Core[User](c).BatchRecover()
 		})
-		prepareData(t, instance)
-		testBatchDestroySoftDelete(t, instance)
-		testBatchDestroyHardDelete(t, instance)
+		ids := prepareData(t, instance)
+		testBatchDestroySoftDelete(t, instance, ids)
+		testBatchDestroyHardDelete(t, instance, ids)
 	})
 }
 
-func prepareData(t *testing.T, instance *sandbox.Instance) {
+func prepareData(t *testing.T, instance *sandbox.Instance) []string {
 	body := map[string]any{
 		"school_id":           "0281876",
 		"avatar":              "",
@@ -66,10 +67,16 @@ func prepareData(t *testing.T, instance *sandbox.Instance) {
 
 	c := instance.GetClient()
 
-	_, err := c.Post("/users", body)
+	resp, err := c.Post("/users", body)
 	if err != nil {
 		t.Error(err)
-		return
+		return nil
+	}
+	var firstUser User
+	err = resp.To(&firstUser)
+	if err != nil {
+		t.Error(err)
+		return nil
 	}
 
 	body = map[string]any{
@@ -94,16 +101,24 @@ func prepareData(t *testing.T, instance *sandbox.Instance) {
 		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
-	_, err = c.Post("/users", body)
+	resp, err = c.Post("/users", body)
 	if err != nil {
 		t.Error(err)
-		return
+		return nil
 	}
+	var secondUser User
+	err = resp.To(&secondUser)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+
+	return []string{fmt.Sprint(firstUser.ID), fmt.Sprint(secondUser.ID)}
 }
 
-func testBatchDestroySoftDelete(t *testing.T, instance *sandbox.Instance) {
+func testBatchDestroySoftDelete(t *testing.T, instance *sandbox.Instance, ids []string) {
 	c := instance.GetClient()
-	_, err := c.Delete("/users", gin.H{"ids": []string{"1", "2"}})
+	_, err := c.Delete("/users", gin.H{"ids": ids})
 	if err != nil {
 		t.Error(err)
 		return
@@ -120,7 +135,7 @@ func testBatchDestroySoftDelete(t *testing.T, instance *sandbox.Instance) {
 		return
 	}
 	assert.Equal(t, int64(0), data.Pagination.Total)
-	_, err = c.Patch("/users", gin.H{"ids": []string{"1", "2"}})
+	_, err = c.Patch("/users", gin.H{"ids": ids})
 	if err != nil {
 		t.Error(err)
 		return
@@ -139,9 +154,9 @@ func testBatchDestroySoftDelete(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, int64(2), data.Pagination.Total)
 }
 
-func testBatchDestroyHardDelete(t *testing.T, instance *sandbox.Instance) {
+func testBatchDestroyHardDelete(t *testing.T, instance *sandbox.Instance, ids []string) {
 	c := instance.GetClient()
-	_, err := c.Delete("/users?permanent=true", gin.H{"ids": []string{"1", "2"}})
+	_, err := c.Delete("/users?permanent=true", gin.H{"ids": ids})
 	if err != nil {
 		t.Error(err)
 		return
@@ -158,7 +173,7 @@ func testBatchDestroyHardDelete(t *testing.T, instance *sandbox.Instance) {
 		return
 	}
 	assert.Equal(t, int64(0), data.Pagination.Total)
-	_, err = c.Patch("/users", gin.H{"ids": []string{"1", "2"}})
+	_, err = c.Patch("/users", gin.H{"ids": ids})
 	if err != nil {
 		t.Error(err)
 		return

@@ -15,11 +15,11 @@ func TestCosyIntegration(t *testing.T) {
 			Api[User]("users").InitRouter(g)
 
 			// test curd
-			testCreate(t, instance)
-			testGet(t, instance)
+			userID := testCreate(t, instance)
+			testGet(t, instance, userID)
 			testGetList(t, instance)
-			testModify(t, instance)
-			testDestroy(t, instance)
-			testRecover(t, instance)
+			testModify(t, instance, userID)
+			testDestroy(t, instance, userID)
+			testRecover(t, instance, userID)
 		})
 }

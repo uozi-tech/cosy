@@ -8,6 +8,7 @@ import (
 	postgres "github.com/uozi-tech/cosy-driver-postgres"
 	"github.com/uozi-tech/cosy/model"
 	"github.com/uozi-tech/cosy/settings"
+	"github.com/uozi-tech/cosy/sonyflake"
 )
 
 type User struct {
@@ -19,6 +20,7 @@ type User struct {
 func TestDbUnique(t *testing.T) {
 	model.RegisterModels(User{})
 	settings.Init("../app.ini")
+	sonyflake.Init()
 	settings.DataBaseSettings.TablePrefix = "db_unique_test_"
 	db := model.Init(postgres.Open(settings.DataBaseSettings))
 

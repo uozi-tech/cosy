@@ -14,7 +14,7 @@ import (
 type IDType = string
 
 type Model struct {
-	ID        string          `gorm:"primaryKey;type:varchar(20)" json:"id"`
+	ID        string          `gorm:"primaryKey;type:bigint" json:"id"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 	DeletedAt *gorm.DeletedAt `gorm:"index" json:"deleted_at"`

@@ -51,13 +51,13 @@ func main() {
 
 ## 作为字符串模型主键
 
-默认情况下，`model.Model` 的主键 `ID` 为 `uint64` 类型（数据库自增）。如果希望使用 Sonyflake 生成 ID，但在 API、路由参数和数据库中都以字符串形式保存，可以启用 `sonyflake_str` build tag：
+默认情况下，`model.Model` 的主键 `ID` 为 `uint64` 类型（数据库自增）。如果希望使用 Sonyflake 生成 ID，但在 API 和路由参数中都以字符串形式传递，可以启用 `sonyflake_str` build tag：
 
 ```bash
 go build -tags sonyflake_str ./...
 ```
 
-启用后，`model.Model` 的 `ID` 字段将变为 `string` 类型，并在创建记录时自动将 `sonyflake.NextID()` 生成的 `uint64` 转为十进制字符串。
+启用后，`model.Model` 的 `ID` 字段将变为 `string` 类型，并在创建记录时自动将 `sonyflake.NextID()` 生成的 `uint64` 转为十进制字符串。数据库列仍使用 `bigint`，用于保留 Sonyflake ID 的数值排序能力。
 
 ```go
 package model
@@ -72,6 +72,10 @@ type User struct {
 
 ::: tip
 启用 `sonyflake_str` build tag 后，所有嵌入 `model.Model` 的结构体都会自动通过 GORM `BeforeCreate` 钩子生成 Sonyflake 字符串主键，无需额外代码。
+:::
+
+::: warning
+如果项目曾经使用 `varchar(20)` 保存 `sonyflake_str` 主键，需要先确认所有现有 ID 都是十进制数字，再手动将数据库中的 `id` 列迁移回 `bigint`，否则按 `id` 排序时会继续使用字符串字典序。
 :::
 
 ::: warning

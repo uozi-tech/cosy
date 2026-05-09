@@ -155,19 +155,19 @@ func TestApi(t *testing.T) {
 			c.InitRouter(g)
 
 			// test curd
-			testCreate(t, instance)
+			userID := testCreate(t, instance)
 			testConflict(t, instance)
-			testGet(t, instance)
+			testGet(t, instance, userID)
 			testGetList(t, instance)
-			testModify(t, instance)
-			testDestroy(t, instance)
-			testRecover(t, instance)
-			testGormScope(t, instance)
-			testAbortWithError(t, instance)
+			testModify(t, instance, userID)
+			testDestroy(t, instance, userID)
+			testRecover(t, instance, userID)
+			testGormScope(t, instance, userID)
+			testAbortWithError(t, instance, userID)
 		})
 }
 
-func testCreate(t *testing.T, instance *sandbox.Instance) {
+func testCreate(t *testing.T, instance *sandbox.Instance) string {
 	body := map[string]any{
 		"school_id":           "0281876",
 		"avatar":              "",
@@ -195,14 +195,14 @@ func testCreate(t *testing.T, instance *sandbox.Instance) {
 	resp, err := c.Post("/users", body)
 	if err != nil {
 		t.Error(err)
-		return
+		return ""
 	}
 
 	var data User
 	err = resp.To(&data)
 	if err != nil {
 		t.Error(err)
-		return
+		return ""
 	}
 
 	assert.Equal(t, "0281876", data.SchoolID)
@@ -222,11 +222,14 @@ func testCreate(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, "13125372516", data.Phone)
 	assert.Equal(t, 1, data.Status)
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
+	assert.NotEmpty(t, fmt.Sprint(data.ID))
+
+	return fmt.Sprint(data.ID)
 }
 
-func testGet(t *testing.T, instance *sandbox.Instance) {
+func testGet(t *testing.T, instance *sandbox.Instance, userID string) {
 	c := instance.GetClient()
-	resp, err := c.Get("/users/1")
+	resp, err := c.Get("/users/" + userID)
 	if err != nil {
 		t.Error(err)
 		return
@@ -304,7 +307,7 @@ func testGetList(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *user.EmployedAt)
 }
 
-func testModify(t *testing.T, instance *sandbox.Instance) {
+func testModify(t *testing.T, instance *sandbox.Instance, userID string) {
 	c := instance.GetClient()
 
 	body := map[string]any{
@@ -328,7 +331,7 @@ func testModify(t *testing.T, instance *sandbox.Instance) {
 		"employed_at":         "2024-03-13T11:22:44.405374+08:00",
 	}
 
-	resp, err := c.Post("/users/1", body)
+	resp, err := c.Post("/users/"+userID, body)
 	if err != nil {
 		t.Error(err)
 		return
@@ -359,16 +362,16 @@ func testModify(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *data.EmployedAt)
 }
 
-func testDestroy(t *testing.T, instance *sandbox.Instance) {
+func testDestroy(t *testing.T, instance *sandbox.Instance, userID string) {
 	c := instance.GetClient()
-	resp, err := c.Delete("/users/1", nil)
+	resp, err := c.Delete("/users/"+userID, nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	resp, err = c.Get("/users/1")
+	resp, err = c.Get("/users/" + userID)
 	if err != nil {
 		t.Error(err)
 		return
@@ -376,16 +379,16 @@ func testDestroy(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
-func testRecover(t *testing.T, instance *sandbox.Instance) {
+func testRecover(t *testing.T, instance *sandbox.Instance, userID string) {
 	c := instance.GetClient()
-	resp, err := c.Patch("/users/1", nil)
+	resp, err := c.Patch("/users/"+userID, nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	resp, err = c.Get("/users/1")
+	resp, err = c.Get("/users/" + userID)
 	if err != nil {
 		t.Error(err)
 		return
@@ -434,9 +437,9 @@ func testConflict(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, "db_unique", data["errors"].(map[string]any)["email"])
 }
 
-func testGormScope(t *testing.T, instance *sandbox.Instance) {
+func testGormScope(t *testing.T, instance *sandbox.Instance, userID string) {
 	c := instance.GetClient()
-	resp, err := c.Get("/users/1?test_gorm_scope=true")
+	resp, err := c.Get("/users/" + userID + "?test_gorm_scope=true")
 	if err != nil {
 		t.Error(err)
 		return
@@ -444,9 +447,9 @@ func testGormScope(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
-func testAbortWithError(t *testing.T, instance *sandbox.Instance) {
+func testAbortWithError(t *testing.T, instance *sandbox.Instance, userID string) {
 	c := instance.GetClient()
-	resp, err := c.Get("/users/1?test_abort_error=true")
+	resp, err := c.Get("/users/" + userID + "?test_abort_error=true")
 	if err != nil {
 		t.Error(err)
 		return

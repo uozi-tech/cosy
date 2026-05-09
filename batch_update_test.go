@@ -1,6 +1,7 @@
 package cosy
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -67,6 +68,12 @@ func testBatchModify(t *testing.T, instance *sandbox.Instance) {
 		t.Error(err)
 		return
 	}
+	var firstUser User
+	err = resp.To(&firstUser)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	body = map[string]any{
 		"school_id":           "0281877",
@@ -95,6 +102,12 @@ func testBatchModify(t *testing.T, instance *sandbox.Instance) {
 		t.Error(err)
 		return
 	}
+	var secondUser User
+	err = resp.To(&secondUser)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	body = map[string]any{
 		"gender": 0,
@@ -103,7 +116,7 @@ func testBatchModify(t *testing.T, instance *sandbox.Instance) {
 	}
 
 	resp, err = c.Put("/users", gin.H{
-		"ids":  []uint{1, 2},
+		"ids":  []string{fmt.Sprint(firstUser.ID), fmt.Sprint(secondUser.ID)},
 		"data": body,
 	})
 	if err != nil {
