@@ -144,12 +144,6 @@ export default defineConfig({
         ]
       },
       {
-        text: '审计日志',
-        items: [
-          { text: '接口参考', link: '/audit' },
-        ]
-      },
-      {
         text: '验证器',
         items: [
           { text: '数据库 Unique', link: '/validator/db_unique' },
@@ -182,21 +176,11 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Sonyflake',
+        text: '主键类型',
         items: [
-          { text: '接口参考', link: '/sonyflake' },
-        ]
-      },
-      {
-        text: 'CUID2',
-        items: [
-          { text: '接口参考', link: '/cuid2' },
-        ]
-      },
-      {
-        text: 'UUID',
-        items: [
-          { text: '接口参考', link: '/uuid' },
+          { text: 'Sonyflake', link: '/sonyflake' },
+          { text: 'CUID2', link: '/cuid2' },
+          { text: 'UUID', link: '/uuid' },
         ]
       },
       {

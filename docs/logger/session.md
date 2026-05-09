@@ -127,7 +127,6 @@ type SessionLogger struct {
 ### LogBuffer 和 LogItem
 
 日志相关的数据结构已移至独立模块。详见 [LogBuffer 文档](./log-buffer.md)。
-```
 
 ## 日志级别
 
