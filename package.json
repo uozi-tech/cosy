@@ -1,7 +1,9 @@
 {
   "devDependencies": {
+    "vite": "^8.0.11",
     "vitepress": "^1.6.4",
-    "vue": "^3.5.33"
+    "vitepress-plugin-legend": "^2.0.0",
+    "vue": "^3.5.34"
   },
   "scripts": {
     "docs:sync": "mkdir -p docs/public/debug-app && cp -r debug/app/css debug/app/js debug/app/fonts debug/app/assets docs/public/debug-app/",
@@ -9,8 +11,10 @@
     "docs:build": "npm run docs:sync && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
-  "dependencies": {
-    "vite": "^8.0.10",
-    "vitepress-plugin-legend": "^2.0.0"
+  "pnpm": {
+    "overrides": {
+      "axios": "^1.16.0",
+      "vitepress>vite": "^6.4.2"
+    }
   }
 }
