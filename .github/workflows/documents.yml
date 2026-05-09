@@ -43,14 +43,14 @@ jobs:
       - name: Install Dependencies
         run: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@10 --activate
           pnpm config set store-dir .pnpm-store
           pnpm install
 
       - name: Build Documentation
         run: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@10 --activate
           pnpm docs:build
 
       - name: Deploy to server
