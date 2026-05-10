@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.26.2
+go 1.26.3
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -38,6 +38,7 @@ require (
 	gopkg.in/ini.v1 v1.67.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
+	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gen v0.3.27
 	gorm.io/gorm v1.31.1
 )
@@ -104,7 +105,6 @@ require (
 	gorm.io/datatypes v1.2.7 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
-	gorm.io/driver/sqlite v1.6.0 // indirect
 	gorm.io/hints v1.1.2 // indirect
 	gorm.io/plugin/dbresolver v1.6.2 // indirect
 )
