@@ -57,13 +57,15 @@ func main() {
 go build -tags sonyflake_str ./...
 ```
 
-启用后，`model.Model` 的 `ID` 字段将变为 `string` 类型，并在创建记录时自动将 `sonyflake.NextID()` 生成的 `uint64` 转为十进制字符串。数据库列仍使用 `bigint`，用于保留 Sonyflake ID 的数值排序能力。
+启用后，`model.Model` 的 `ID` 字段将变为自定义的 string-like 类型 `model.SonyflakeID`，并在创建记录时自动将 `sonyflake.NextID()` 生成的 `uint64` 转为十进制字符串。JSON 响应和路由参数仍以字符串形式传递，数据库列则仍按数值类型存储，用于保留 Sonyflake ID 的数值排序能力。
+
+在 MySQL 下，GORM 自动迁移会将该字段声明为 `bigint unsigned`；SQLite 下会使用 `integer`；PostgreSQL 没有 unsigned bigint，会使用 `numeric(20)` 作为兼容类型。
 
 ```go
 package model
 
 type User struct {
-	Model // ID 为 string 类型，自动生成 Sonyflake 十进制字符串
+	Model // ID 为 model.SonyflakeID 类型，自动生成 Sonyflake 十进制字符串
 
 	Name  string `json:"name" cosy:"add:required;update:omitempty;list:fussy"`
 	Email string `json:"email" cosy:"add:required;update:omitempty;list:fussy"`
@@ -75,7 +77,7 @@ type User struct {
 :::
 
 ::: warning
-如果项目曾经使用 `varchar(20)` 保存 `sonyflake_str` 主键，需要先确认所有现有 ID 都是十进制数字，再手动将数据库中的 `id` 列迁移回 `bigint`，否则按 `id` 排序时会继续使用字符串字典序。
+如果项目曾经使用 `varchar(20)` 保存 `sonyflake_str` 主键，或曾经使用 signed `bigint` 保存主键，需要先确认所有现有 ID 都是非负十进制数字，再手动将数据库中的 `id` 列迁移为数值列。MySQL 项目建议迁移为 `bigint unsigned`，否则按 `id` 排序时可能会继续使用字符串字典序，或与新版本的自动迁移类型不一致。
 :::
 
 ::: warning

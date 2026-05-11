@@ -53,7 +53,7 @@ func (c *Ctx[T]) BatchModify() {
 				ctx.Tx = ctx.Tx.Table(c.table, c.tableArgs...)
 			}
 
-			err := ctx.Tx.Model(&c.Model).Where(c.itemKey+" IN ?", c.BatchEffectedIDs).
+			err := ctx.Tx.Model(&c.Model).Where(c.itemKey+" IN ?", toBatchIDs(c.BatchEffectedIDs)).
 				Select(c.GetSelectedFields()).Updates(&c.Model).Error
 			if err != nil {
 				ctx.AbortWithError(err)

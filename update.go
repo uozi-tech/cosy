@@ -56,7 +56,12 @@ func (c *Ctx[T]) Modify() {
 			v := reflect.ValueOf(&c.Model).Elem()
 			idField := v.FieldByName("ID")
 			if idField.IsValid() && idField.CanSet() {
-				idField.Set(reflect.ValueOf(c.ID))
+				idValue := reflect.ValueOf(c.ID)
+				if idValue.Type().AssignableTo(idField.Type()) {
+					idField.Set(idValue)
+				} else if idValue.Type().ConvertibleTo(idField.Type()) {
+					idField.Set(idValue.Convert(idField.Type()))
+				}
 			}
 
 			if err := c.Tx.Select(c.GetSelectedFields()).Save(&c.Model).Error; err != nil {

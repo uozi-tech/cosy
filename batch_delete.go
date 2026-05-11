@@ -38,7 +38,7 @@ func (c *Ctx[T]) BatchDestroy() {
 				ctx.Tx = ctx.Tx.Unscoped()
 			}
 			ctx.Tx = ctx.applyGormScopes(ctx.Tx)
-			err := ctx.Tx.Delete(&c.OriginModel, c.BatchEffectedIDs).Error
+			err := ctx.Tx.Delete(&c.OriginModel, toBatchIDs(c.BatchEffectedIDs)).Error
 			if err != nil {
 				ctx.AbortWithError(err)
 				return
@@ -72,7 +72,7 @@ func (c *Ctx[T]) BatchRecover() {
 		SetGormAction(func(ctx *Ctx[T]) {
 			ctx.Tx = ctx.Tx.Unscoped()
 			ctx.Tx = ctx.applyGormScopes(ctx.Tx)
-			result := ctx.Tx.Where(c.itemKey+" in ?", c.BatchEffectedIDs).Model(&c.Model)
+			result := ctx.Tx.Where(c.itemKey+" in ?", toBatchIDs(c.BatchEffectedIDs)).Model(&c.Model)
 
 			var err error
 			resolvedModel := model.GetResolvedModel[T]()

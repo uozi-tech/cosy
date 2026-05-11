@@ -7,5 +7,5 @@ import (
 )
 
 func (c *Ctx[T]) GetParamID() model.IDType {
-	return c.Param("id")
+	return model.IDType(c.Param("id"))
 }
