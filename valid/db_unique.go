@@ -51,7 +51,7 @@ func DbUnique[T any](ctx context.Context, payload gin.H, columns []string, colum
 
 	// for "modify", if the id is the same, we don't need to check for conflicts
 	id, ok := payload["id"]
-	if ok && id == result["id"] {
+	if ok && cast.ToString(id) == cast.ToString(result["id"]) {
 		return nil, nil
 	}
 

@@ -60,14 +60,17 @@ func TestSonyflakeIDValue(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, value)
 
-	_, err = SonyflakeID("abc").Value()
-	assert.Error(t, err)
+	value, err = SonyflakeID("abc").Value()
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), value)
 
-	_, err = SonyflakeID("-1").Value()
-	assert.Error(t, err)
+	value, err = SonyflakeID("-1").Value()
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), value)
 
-	_, err = SonyflakeID("9223372036854775808").Value()
-	assert.Error(t, err)
+	value, err = SonyflakeID("9223372036854775808").Value()
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), value)
 }
 
 func TestSonyflakeIDScan(t *testing.T) {

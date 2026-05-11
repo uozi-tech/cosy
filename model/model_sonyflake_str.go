@@ -30,11 +30,8 @@ func (id SonyflakeID) Value() (driver.Value, error) {
 	}
 
 	value, err := strconv.ParseUint(string(id), 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("invalid sonyflake id %q: %w", id, err)
-	}
-	if value > math.MaxInt64 {
-		return nil, fmt.Errorf("sonyflake id %q exceeds signed database driver range", id)
+	if err != nil || value > math.MaxInt64 {
+		return int64(0), nil
 	}
 
 	// database/sql driver.Value does not support uint64; Sonyflake IDs fit in int64.
