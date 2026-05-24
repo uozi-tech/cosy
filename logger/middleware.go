@@ -27,9 +27,13 @@ const (
 )
 
 type cosySessionLoggerCtxKey struct{}
+type cosyLogBufferCtxKey struct{}
 
 // CosySessionLoggerCtxKey is the key for storing the session logger in a context.Context
 var CosySessionLoggerCtxKey = cosySessionLoggerCtxKey{}
+
+// CosyLogBufferCtxKey is the key for storing the request log buffer in a context.Context
+var CosyLogBufferCtxKey = cosyLogBufferCtxKey{}
 
 // MonitorReporter function type for reporting to MonitorHub
 type MonitorReporter func(requestID string, logMap map[string]string)
@@ -194,9 +198,17 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 
 		logBuffer := NewLogBuffer()
 		c.Set(CosyLogBufferKey, logBuffer)
+		sessionLogger := &SessionLogger{
+			RequestID: requestId,
+			Logs:      logBuffer,
+			Logger:    GetLogger(),
+		}
+		c.Set(CosySessionLoggerKey, sessionLogger)
 
 		pprofLabels := pprof.Labels("request_id", requestId, "method", reqMethod, "path", reqURL)
-		ctx := pprof.WithLabels(c.Request.Context(), pprofLabels)
+		ctx := context.WithValue(c.Request.Context(), CosyLogBufferCtxKey, logBuffer)
+		ctx = context.WithValue(ctx, CosySessionLoggerCtxKey, sessionLogger)
+		ctx = pprof.WithLabels(ctx, pprofLabels)
 		c.Request = c.Request.WithContext(ctx)
 
 		pprof.Do(ctx, pprofLabels, func(ctx context.Context) {

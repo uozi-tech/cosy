@@ -70,6 +70,7 @@ func NewGormLogger(writer gormlogger.Writer, config gormlogger.Config) *GormLogg
 	}
 
 	return &GormLogger{
+		LogLevel:     config.LogLevel,
 		Writer:       writer,
 		Config:       config,
 		infoStr:      infoStr,
@@ -83,8 +84,10 @@ func NewGormLogger(writer gormlogger.Writer, config gormlogger.Config) *GormLogg
 
 // LogMode implements the gormlogger.Interface interface
 func (l *GormLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
-	l.LogLevel = level
-	return l
+	newLogger := *l
+	newLogger.LogLevel = level
+	newLogger.Config.LogLevel = level
+	return &newLogger
 }
 
 // Info implements the gormlogger.Interface interface
@@ -106,6 +109,15 @@ func (l *GormLogger) Error(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Error {
 		l.Printf(l.errStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
+}
+
+// ParamsFilter implements gorm.ParamsFilter so ParameterizedQueries works with
+// the custom logger the same way it does with GORM's default logger.
+func (l *GormLogger) ParamsFilter(ctx context.Context, sql string, params ...any) (string, []any) {
+	if l.Config.ParameterizedQueries {
+		return sql, nil
+	}
+	return sql, params
 }
 
 // Trace implements the gormlogger.Interface interface
@@ -153,16 +165,26 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 		}
 	}
 
-	ginContext, ok := ctx.(*gin.Context)
-	if !ok {
+	logs := logBufferFromContext(ctx)
+	if logs == nil {
 		return
 	}
 
-	ctxLogs, ok := ginContext.Get(CosyLogBufferKey)
-	if !ok {
-		return
-	}
-
-	logs := ctxLogs.(*LogBuffer)
 	logs.Append(logItem)
+}
+
+func logBufferFromContext(ctx context.Context) *LogBuffer {
+	if ginContext, ok := ctx.(*gin.Context); ok {
+		if ctxLogs, ok := ginContext.Get(CosyLogBufferKey); ok {
+			if logs, ok := ctxLogs.(*LogBuffer); ok {
+				return logs
+			}
+		}
+	}
+
+	if logs, ok := ctx.Value(CosyLogBufferCtxKey).(*LogBuffer); ok {
+		return logs
+	}
+
+	return nil
 }
