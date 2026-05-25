@@ -70,6 +70,23 @@ func TestGormLoggerTraceAppendsErrorSQLFromRequestContext(t *testing.T) {
 	}
 }
 
+func TestGormLoggerTraceSkipsUnloggedSQLFromRequestContext(t *testing.T) {
+	buffer := NewLogBuffer()
+	ctx := context.WithValue(context.Background(), CosyLogBufferCtxKey, buffer)
+	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{
+		LogLevel:      gormlogger.Warn,
+		SlowThreshold: time.Second,
+	})
+
+	gormLog.Trace(ctx, time.Now(), func() (string, int64) {
+		return `SELECT * FROM "users" WHERE "id" = 1`, 1
+	}, nil)
+
+	if len(buffer.Items) != 0 {
+		t.Fatalf("expected unlogged SQL to be skipped, got %#v", buffer.Items)
+	}
+}
+
 func TestGormLoggerLogModeDoesNotMutateDefaultLogger(t *testing.T) {
 	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{
 		LogLevel: gormlogger.Warn,

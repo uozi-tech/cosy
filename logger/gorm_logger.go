@@ -169,6 +169,9 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	if logs == nil {
 		return
 	}
+	if logItem.Message == "" {
+		return
+	}
 
 	logs.Append(logItem)
 }
