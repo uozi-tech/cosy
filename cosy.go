@@ -29,12 +29,13 @@ type Ctx[T any] struct {
 	responseBuilder func(ctx *Ctx[T])
 
 	// Fixed-size and map headers
-	ID              model.IDType
-	rules           gin.H
-	Payload         map[string]any
-	selectedFields  map[string]bool
-	columnWhiteList map[string]bool
-	columnMapping   map[string]string
+	ID                      model.IDType
+	rules                   gin.H
+	Payload                 map[string]any
+	selectedFields          map[string]bool
+	selectedFieldCandidates map[string]bool
+	columnWhiteList         map[string]bool
+	columnMapping           map[string]string
 
 	// Strings (16B) grouped
 	table   string
@@ -74,6 +75,7 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 		columnWhiteList:          make(map[string]bool),
 		columnMapping:            make(map[string]string),
 		selectedFields:           make(map[string]bool),
+		selectedFieldCandidates:  make(map[string]bool),
 	}
 
 	ctx.listService = &ListService[T]{
@@ -149,18 +151,60 @@ func (c *Ctx[T]) resolveColumn(queryKey string) string {
 }
 
 func (c *Ctx[T]) AddSelectedFields(fields ...string) *Ctx[T] {
+	selectedFields := c.selectedFields
+	if c.Payload == nil {
+		selectedFields = c.selectedFieldCandidates
+	}
+
 	for _, field := range fields {
-		c.selectedFields[field] = true
+		selectedFields[field] = true
 	}
 	return c
 }
 
 func (c *Ctx[T]) GetSelectedFields() []string {
-	var fields []string
+	selectedFields := make(map[string]bool, len(c.selectedFields)+len(c.selectedFieldCandidates))
 	for field := range c.selectedFields {
+		selectedFields[field] = true
+	}
+	for field := range c.selectedFieldCandidates {
+		if c.payloadContainsSelectedField(field) {
+			selectedFields[field] = true
+		}
+	}
+
+	var fields []string
+	for field := range selectedFields {
 		fields = append(fields, field)
 	}
 	return fields
+}
+
+func (c *Ctx[T]) payloadContainsSelectedField(field string) bool {
+	if c.Payload == nil {
+		return false
+	}
+
+	if c.payloadMapContainsSelectedField(c.Payload, field) {
+		return true
+	}
+
+	data, ok := c.Payload["data"].(map[string]any)
+	return ok && c.payloadMapContainsSelectedField(data, field)
+}
+
+func (c *Ctx[T]) payloadMapContainsSelectedField(payload map[string]any, field string) bool {
+	if _, ok := payload[field]; ok {
+		return true
+	}
+
+	for key := range payload {
+		if c.resolveColumn(key) == field {
+			return true
+		}
+	}
+
+	return false
 }
 
 // WithoutSortOrder disable sort order for "get list"
