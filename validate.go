@@ -65,7 +65,10 @@ type ValidError struct {
 func (c *Ctx[T]) validate() (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	_ = c.ShouldBindJSON(&c.Payload)
+	if err := c.ShouldBindJSON(&c.Payload); err != nil {
+		logJSONBindError(c.Context, err)
+		return gin.H{"body": err.Error()}
+	}
 	if c.Payload == nil {
 		c.Payload = make(gin.H)
 	}
@@ -114,7 +117,10 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	_ = c.ShouldBindJSON(&c.Payload)
+	if err := c.ShouldBindJSON(&c.Payload); err != nil {
+		logJSONBindError(c.Context, err)
+		return gin.H{"body": err.Error()}
+	}
 	if c.Payload == nil {
 		c.Payload = make(gin.H)
 	}
@@ -151,6 +157,10 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	c.Payload["data"] = validated
 
 	return
+}
+
+func logJSONBindError(c *gin.Context, err error) {
+	logger.NewSessionLogger(c).Errorf("failed to bind JSON request body: %v", err)
 }
 
 func BindAndValid(c *gin.Context, target any) bool {
