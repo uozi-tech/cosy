@@ -30,7 +30,7 @@ on:
       - ".github/workflows/doc*.yml"
 jobs:
   documents:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v6
