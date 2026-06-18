@@ -14,7 +14,7 @@
   "pnpm": {
     "overrides": {
       "axios": "^1.16.0",
-      "vitepress>vite": "^6.4.2"
+      "vitepress>vite": "^8.0.16"
     }
   }
 }
