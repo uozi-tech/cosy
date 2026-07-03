@@ -55,7 +55,7 @@ jobs:
 
       - name: Deploy to server
         if: github.event_name != 'pull_request'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           wranglerVersion: latest
           apiToken: ${{ secrets.CF_API_TOKEN }}
