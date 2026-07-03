@@ -218,6 +218,9 @@ export default defineConfig({
     }
   },
   vite: {
+    build: {
+      target: 'esnext',
+    },
     plugins: [serveDebugApp()],
     server: {
       host: '0.0.0.0',
