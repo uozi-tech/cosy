@@ -2,11 +2,11 @@
 
 a **C**omfortable **O**bject-oriented **S**implified framework for **Y**ou
 
-Designed by @0xJacky 2024-2025
+Designed by @0xJacky 2024-2026
 
 Cosy 是一个方便的工具，基于泛型，面相对象，旨在简化基于 Gin 框架并使用 Gorm 作为 ORM 的 Web API 的创建、更新和列出数据库记录的过程。
 
-目标是简化繁琐重复的 CURD 过程，并且对 ChatGPT 友好。
+目标是简化繁琐重复的 CURD 过程，并且对 Agent 友好。
 
 ## 特点
 
@@ -46,6 +46,6 @@ go get -u github.com/uozi-tech/cosy
 ```
 
 ## 版权
-Copyright © 2024-2025 UoziTech
+Copyright © 2024-2026 UoziTech
 
 Cosy 版权属于柚子星云科技（深圳）有限公司，并已取得软件著作权。
