@@ -219,6 +219,9 @@ export default defineConfig({
   },
   vite: {
     plugins: [serveDebugApp()],
+    build: {
+      target: 'esnext',
+    },
     server: {
       host: '0.0.0.0',
       port: Number.parseInt(env.VITE_PORT) || 5003,
