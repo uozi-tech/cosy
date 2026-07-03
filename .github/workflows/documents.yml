@@ -30,10 +30,10 @@ on:
       - ".github/workflows/doc*.yml"
 jobs:
   documents:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up nodejs
         uses: actions/setup-node@v6
@@ -55,7 +55,7 @@ jobs:
 
       - name: Deploy to server
         if: github.event_name != 'pull_request'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           wranglerVersion: latest
           apiToken: ${{ secrets.CF_API_TOKEN }}
