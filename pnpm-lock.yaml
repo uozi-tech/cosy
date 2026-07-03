@@ -8,7 +8,7 @@ overrides:
   axios: ^1.16.0
   esbuild: ^0.28.1
   dompurify: ^3.4.8
-  js-yaml: 4.2.0
+  js-yaml: 5.2.1
   linkify-it: ^5.0.1
   markdown-it: ^14.2.0
   mermaid: ^11.15.0
@@ -1423,8 +1423,8 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
-  js-yaml@4.2.0:
-    resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
+  js-yaml@5.2.1:
+    resolution: {integrity: sha512-zfLtNfQqxVqq3uaTqSkh4x4hZw3KHobGUA0fJUj4wawW8bsQLTVqpHdXSIzidh7o+4lEW36tANuAGdaFx6Zgnw==}
     hasBin: true
 
   katex@0.16.45:
@@ -3425,7 +3425,7 @@ snapshots:
   jiti@2.6.1:
     optional: true
 
-  js-yaml@4.2.0:
+  js-yaml@5.2.1:
     dependencies:
       argparse: 2.0.1
 
@@ -3977,7 +3977,7 @@ snapshots:
   vitepress-markmap-preview@0.2.1(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(markmap-common@0.18.9)(typescript@5.9.3)(yaml@2.8.4):
     dependencies:
       '@vitejs/plugin-vue': 6.0.6(vite@7.3.6(@types/node@24.8.1)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.99.0)(yaml@2.8.4))(vue@3.5.34(typescript@5.9.3))
-      js-yaml: 4.2.0
+      js-yaml: 5.2.1
       markdown-it: 14.3.0
       markmap-lib: 0.18.12(markmap-common@0.18.9)
       markmap-toolbar: 0.18.12(markmap-common@0.18.9)
