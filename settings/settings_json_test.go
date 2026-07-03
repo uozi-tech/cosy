@@ -1,4 +1,4 @@
-//go:build toml_settings && !yaml_settings && !json_settings
+//go:build json_settings && !toml_settings && !yaml_settings
 
 package settings
 
@@ -12,7 +12,7 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	ConfPath = "app.testing.toml"
+	ConfPath = "app.testing.json"
 	tmpPath := ConfPath + ".tmp"
 
 	file, err := os.Create(ConfPath)
@@ -28,7 +28,7 @@ func TestIntegration(t *testing.T) {
 		_ = os.Remove(tmpPath)
 	})
 
-	Init("app.testing.toml")
+	Init("app.testing.json")
 
 	jwtSecret := uuid.New().String()
 
@@ -82,11 +82,28 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	AppSettings.JwtSecret = ""
+	AppSettings.PageSize = 0
+	ServerSettings.Host = ""
+	ServerSettings.Port = 0
+	ServerSettings.RunMode = ""
+	DataBaseSettings.Host = ""
+	DataBaseSettings.Port = 0
+	DataBaseSettings.User = ""
+	DataBaseSettings.Password = ""
+	DataBaseSettings.Name = ""
+	RedisSettings.DB = 0
+	RedisSettings.Addr = ""
+	RedisSettings.Password = ""
+	SonyflakeSettings.MachineID = 0
+	SonyflakeSettings.StartTime = time.Time{}
+	wechatSettings = map[string]wechat{}
+
 	Reload()
 
 	assert := assert.New(t)
 
-	assert.Equal("app.testing.toml", ConfPath)
+	assert.Equal("app.testing.json", ConfPath)
 	assert.True(os.IsNotExist(func() error {
 		_, err := os.Stat(tmpPath)
 		return err

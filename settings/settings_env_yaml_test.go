@@ -1,4 +1,4 @@
-//go:build yaml_settings && !toml_settings
+//go:build yaml_settings && !toml_settings && !json_settings
 
 package settings
 

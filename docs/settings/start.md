@@ -28,7 +28,7 @@ func main() {
 
 Cosy 支持多种配置方式：
 
-1. **配置文件**：支持 INI、TOML 和 YAML 三种格式
+1. **配置文件**：支持 INI、TOML、YAML 和 JSON 四种格式
 2. **环境变量**：支持通过环境变量覆盖配置文件中的设置
 
 配置的优先级为：**环境变量 > 配置文件**
@@ -101,7 +101,7 @@ export DATABASE_HOST="localhost"
 
 ## 配置文件格式
 
-Cosy 支持三种配置文件格式：INI、TOML 和 YAML。默认情况下使用 INI 格式，但您可以通过构建标签选择使用 TOML 或 YAML 格式。
+Cosy 支持四种配置文件格式：INI、TOML、YAML 和 JSON。默认情况下使用 INI 格式，但您可以通过构建标签选择使用 TOML、YAML 或 JSON 格式。
 
 ### 使用 INI 格式 (默认)
 
@@ -220,6 +220,54 @@ redis:
 
 **注意**：YAML 格式的键名为 Go 结构体字段名的全小写形式（例如 `PageSize` 对应 `pagesize`，`JwtSecret` 对应 `jwtsecret`）。与其他格式一样，YAML 配置文件中的任何设置都可以通过对应的环境变量进行覆盖。
 
+### 使用 JSON 格式
+
+如果要使用 JSON 格式，需要在构建时添加 `json_settings` 标签：
+
+```bash
+go build -tags json_settings
+```
+
+然后将 `app.json` 放在与二进制文件相同的目录中：
+
+```json
+{
+  "app": {
+    "PageSize": 20,
+    "JwtSecret": "39B4F75C-8E51-4E9C-87F5-94E40447B0E0"
+  },
+  "server": {
+    "Host": "127.0.0.1",
+    "Port": 9000,
+    "RunMode": "debug",
+    "BaseUrl": "https://api.example.com",
+    "EnableHTTPS": false,
+    "SSLCert": "/path/to/certificate.pem",
+    "SSLKey": "/path/to/key.pem"
+  },
+  "database": {
+    "User": "postgres",
+    "Password": "",
+    "Host": "127.0.0.1",
+    "Port": 5432,
+    "Name": "my-database",
+    "TablePrefix": "t_"
+  },
+  "redis": {
+    "Addr": "127.0.0.1:6379",
+    "Password": "",
+    "DB": 0,
+    "Prefix": "my-prefix"
+  }
+}
+```
+
+**注意**：JSON 格式支持使用 Go 结构体字段名（例如 `PageSize`）或结构体 `json` 标签名称（例如 `page_size`）作为键名。与其他格式一样，JSON 配置文件中的任何设置都可以通过对应的环境变量进行覆盖。
+
+::: warning 构建标签互斥
+`toml_settings`、`yaml_settings` 和 `json_settings` 三个构建标签互斥。一次构建只能选择其中一种非默认配置格式；不传入这些标签时使用默认 INI 格式。
+:::
+
 ## 配置组合使用
 
 ### 最佳实践
@@ -292,6 +340,9 @@ Cosy 支持多种 HTTP 协议，包括 HTTP/1.1、HTTP/2 和 HTTP/3：
 
 # 使用 YAML 格式 (如果使用 yaml_settings 构建标签)
 ./main -config app.testing.yaml
+
+# 使用 JSON 格式 (如果使用 json_settings 构建标签)
+./main -config app.testing.json
 
 # 结合环境变量使用
 COSY_DATABASE_HOST="test.db.com" ./main -config app.testing.ini

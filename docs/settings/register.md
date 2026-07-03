@@ -8,7 +8,7 @@ func Register(name string, ptr any)
 - `ptr`：结构体指针
 
 ::: info 注意
-无论使用 INI 还是 TOML 配置格式（通过 `toml_settings` 构建标签选择），注册设置的方法都是相同的。区别仅在于配置文件的格式和内部实现。
+无论使用 INI、TOML、YAML 还是 JSON 配置格式，注册设置的方法都是相同的。区别仅在于配置文件的格式和内部实现。
 :::
 
 ## 示例
@@ -59,3 +59,32 @@ AccessKeySecret = "minioadmin"
 BucketName = "mybucket"
 Secure = true
 ```
+
+### YAML 格式 (使用 yaml_settings 构建标签)
+
+```yaml
+minio:
+  endpoint: "play.min.io"
+  accesskeyid: "minioadmin"
+  accesskeysecret: "minioadmin"
+  bucketname: "mybucket"
+  secure: true
+```
+
+### JSON 格式 (使用 json_settings 构建标签)
+
+```json
+{
+  "minio": {
+    "Endpoint": "play.min.io",
+    "AccessKeyID": "minioadmin",
+    "AccessKeySecret": "minioadmin",
+    "BucketName": "mybucket",
+    "Secure": true
+  }
+}
+```
+
+::: warning 构建标签互斥
+`toml_settings`、`yaml_settings` 和 `json_settings` 三个构建标签互斥。一次构建只能选择其中一种非默认配置格式；不传入这些标签时使用默认 INI 格式。
+:::
