@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -11,8 +11,8 @@ require (
 	github.com/gin-contrib/pprof v1.5.4
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-co-op/gocron/v2 v2.21.2
-	github.com/go-gormigrate/gormigrate/v2 v2.1.5
-	github.com/go-playground/validator/v10 v10.30.2
+	github.com/go-gormigrate/gormigrate/v2 v2.1.6
+	github.com/go-playground/validator/v10 v10.30.3
 	github.com/google/pprof v0.0.0-20260507013755-92041b743c96
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
@@ -20,12 +20,12 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/oschwald/geoip2-golang/v2 v2.1.0
-	github.com/pierrec/lz4/v4 v4.1.26
+	github.com/oschwald/geoip2-golang/v2 v2.2.0
+	github.com/pierrec/lz4/v4 v4.1.27
 	github.com/quic-go/quic-go v0.60.0
-	github.com/redis/go-redis/v9 v9.19.0
+	github.com/redis/go-redis/v9 v9.21.0
 	github.com/samber/lo v1.53.0
-	github.com/shirou/gopsutil/v4 v4.26.4
+	github.com/shirou/gopsutil/v4 v4.26.6
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
@@ -35,12 +35,12 @@ require (
 	github.com/uozi-tech/cosy-driver-postgres v0.2.2
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.1
 	go.uber.org/zap v1.28.0
-	gopkg.in/ini.v1 v1.67.2
+	gopkg.in/ini.v1 v1.67.3
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.6.0
-	gorm.io/gen v0.3.27
-	gorm.io/gorm v1.31.1
+	gorm.io/gen v0.3.28
+	gorm.io/gorm v1.31.2
 )
 
 require (
@@ -79,7 +79,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.44 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
-	github.com/oschwald/maxminddb-golang/v2 v2.2.0 // indirect
+	github.com/oschwald/maxminddb-golang/v2 v2.3.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -97,6 +97,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.27.0 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
