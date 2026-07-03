@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "vite": "^8.0.11",
+    "vite": "^8.0.16",
     "vitepress": "^1.6.4",
     "vitepress-plugin-legend": "^2.0.0",
     "vue": "^3.5.34"
@@ -14,7 +14,14 @@
   "pnpm": {
     "overrides": {
       "axios": "^1.16.0",
-      "vitepress>vite": "^6.4.2"
+      "esbuild": "^0.28.1",
+      "dompurify": "^3.4.8",
+      "linkify-it": "^5.0.1",
+      "markdown-it": "^14.2.0",
+      "mermaid": "^11.15.0",
+      "undici": "^6.27.0",
+      "vite@^7.0.0": "^7.3.5",
+      "vitepress>vite": "^6.4.3"
     }
   }
 }
