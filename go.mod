@@ -1,16 +1,16 @@
 module github.com/uozi-tech/cosy
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/bsm/redislock v0.10.0
 	github.com/caarlos0/env/v11 v11.4.1
-	github.com/elliotchance/orderedmap/v3 v3.1.0
+	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fatih/color v1.19.0
 	github.com/gin-contrib/pprof v1.5.4
 	github.com/gin-gonic/gin v1.12.0
-	github.com/go-co-op/gocron/v2 v2.21.2
+	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.6
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/google/pprof v0.0.0-20260507013755-92041b743c96
