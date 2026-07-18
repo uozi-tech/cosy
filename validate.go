@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/uozi-tech/cosy/internal/rulecheck"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/valid"
 )
@@ -77,7 +78,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 
 	c.Payload["id"] = c.ID
 
-	errs = v.ValidateMap(c.Payload, c.rules)
+	errs = rulecheck.ValidateMap(v, c.Payload, c.rules)
 
 	if len(errs) > 0 {
 		// logger.Debug(errs)
@@ -137,7 +138,7 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 		return
 	}
 
-	errs = v.ValidateMap(c.Payload["data"].(map[string]any), c.rules)
+	errs = rulecheck.ValidateMap(v, c.Payload["data"].(map[string]any), c.rules)
 
 	if len(errs) > 0 {
 		// logger.Debug(errs)
