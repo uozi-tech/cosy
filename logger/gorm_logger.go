@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap/zapcore"
 	gormlogger "gorm.io/gorm/logger"
 )
 
-// In this gorm logger, we collect the sql logs from gorm and them create or append to a slice in the context.
-// We will send the sql logs to SLS in AuditMiddleware.
+// Request-scoped SQL logs are written to the default logger with correlation
+// fields so they do not accumulate in memory until the request completes.
 var (
 	// Default Default logger
 	DefaultGormLogger = NewGormLogger(log.New(os.Stdout, "\r\n", log.LstdFlags), gormlogger.Config{
@@ -93,6 +94,10 @@ func (l *GormLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
 // Info implements the gormlogger.Interface interface
 func (l *GormLogger) Info(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Info {
+		if sessionLogger := sessionLoggerFromContext(ctx); sessionLogger != nil {
+			sessionLogger.logSQL(zapcore.InfoLevel, fmt.Sprintf(msg, data...), fileWithLineNum())
+			return
+		}
 		l.Printf(l.infoStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
 }
@@ -100,6 +105,10 @@ func (l *GormLogger) Info(ctx context.Context, msg string, data ...any) {
 // Warn implements the gormlogger.Interface interface
 func (l *GormLogger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Warn {
+		if sessionLogger := sessionLoggerFromContext(ctx); sessionLogger != nil {
+			sessionLogger.logSQL(zapcore.WarnLevel, fmt.Sprintf(msg, data...), fileWithLineNum())
+			return
+		}
 		l.Printf(l.warnStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
 }
@@ -107,6 +116,10 @@ func (l *GormLogger) Warn(ctx context.Context, msg string, data ...any) {
 // Error implements the gormlogger.Interface interface
 func (l *GormLogger) Error(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= gormlogger.Error {
+		if sessionLogger := sessionLoggerFromContext(ctx); sessionLogger != nil {
+			sessionLogger.logSQL(zapcore.ErrorLevel, fmt.Sprintf(msg, data...), fileWithLineNum())
+			return
+		}
 		l.Printf(l.errStr+msg, append([]any{fileWithLineNum()}, data...)...)
 	}
 }
@@ -132,61 +145,69 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	// Get the actual caller location (skipping gorm internal and logger files)
 	caller := fileWithLineNum()
 
-	logItem := LogItem{
-		Time:   time.Now().Unix(),
-		Caller: caller,
-	}
+	var logLevel zapcore.Level
+	var message string
+	sessionLogger := sessionLoggerFromContext(ctx)
 
 	switch {
 	case err != nil && l.LogLevel >= gormlogger.Error && (!errors.Is(err, gormlogger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
+		logLevel = zapcore.ErrorLevel
 		if rows == -1 {
-			l.Printf(l.traceErrStr, caller, err, float64(elapsed.Nanoseconds())/1e6, "-", sql)
-			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, "-", err, sql)
+			if sessionLogger == nil {
+				l.Printf(l.traceErrStr, caller, err, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			}
+			message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, "-", err, sql)
 		} else {
-			l.Printf(l.traceErrStr, caller, err, float64(elapsed.Nanoseconds())/1e6, rows, sql)
-			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, err, sql)
+			if sessionLogger == nil {
+				l.Printf(l.traceErrStr, caller, err, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			}
+			message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, err, sql)
 		}
 	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= gormlogger.Warn:
+		logLevel = zapcore.WarnLevel
 		slowLog := fmt.Sprintf("SLOW SQL >= %v", l.SlowThreshold)
 		if rows == -1 {
-			l.Printf(l.traceWarnStr, caller, slowLog, float64(elapsed.Nanoseconds())/1e6, "-", sql)
-			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, "-", slowLog, sql)
+			if sessionLogger == nil {
+				l.Printf(l.traceWarnStr, caller, slowLog, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			}
+			message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, "-", slowLog, sql)
 		} else {
-			l.Printf(l.traceWarnStr, caller, slowLog, float64(elapsed.Nanoseconds())/1e6, rows, sql)
-			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, slowLog, sql)
+			if sessionLogger == nil {
+				l.Printf(l.traceWarnStr, caller, slowLog, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			}
+			message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, slowLog, sql)
 		}
 	case l.LogLevel == gormlogger.Info:
+		logLevel = zapcore.InfoLevel
 		if rows == -1 {
-			l.Printf(l.traceStr, caller, float64(elapsed.Nanoseconds())/1e6, "-", sql)
-			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			if sessionLogger == nil {
+				l.Printf(l.traceStr, caller, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			}
+			message = fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			l.Printf(l.traceStr, caller, float64(elapsed.Nanoseconds())/1e6, rows, sql)
-			logItem.Message = fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			if sessionLogger == nil {
+				l.Printf(l.traceStr, caller, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			}
+			message = fmt.Sprintf("[%.3fms] [rows:%v] %s", float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	}
 
-	logs := logBufferFromContext(ctx)
-	if logs == nil {
-		return
+	if sessionLogger != nil && message != "" {
+		sessionLogger.logSQL(logLevel, message, caller)
 	}
-	if logItem.Message == "" {
-		return
-	}
-
-	logs.Append(logItem)
 }
 
-func logBufferFromContext(ctx context.Context) *LogBuffer {
+func sessionLoggerFromContext(ctx context.Context) *SessionLogger {
 	if ginContext, ok := ctx.(*gin.Context); ok {
-		if ctxLogs, ok := ginContext.Get(CosyLogBufferKey); ok {
-			if logs, ok := ctxLogs.(*LogBuffer); ok {
-				return logs
+		if value, exists := ginContext.Get(CosySessionLoggerKey); exists {
+			if sessionLogger, ok := value.(*SessionLogger); ok {
+				return sessionLogger
 			}
 		}
 	}
 
-	if logs, ok := ctx.Value(CosyLogBufferCtxKey).(*LogBuffer); ok {
-		return logs
+	if sessionLogger, ok := ctx.Value(CosySessionLoggerCtxKey).(*SessionLogger); ok {
+		return sessionLogger
 	}
 
 	return nil

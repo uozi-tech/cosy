@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"runtime/debug"
 	"time"
 
@@ -14,11 +15,30 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// SessionLogger is a logger that logs to the SLS with the request id
+// SessionLogger writes request and background-task logs to the default logger.
+// CorrelationID links those entries to API audit records without buffering the
+// full log stream in process memory.
 type SessionLogger struct {
-	RequestID string
-	Logs      *LogBuffer
-	Logger    *zap.SugaredLogger
+	RequestID     string
+	CorrelationID string
+	Logs          *LogBuffer // Bounded fallback when the default SLS producer is unavailable.
+	Logger        *zap.SugaredLogger
+}
+
+func newSessionLogger(requestID, correlationID string, logs *LogBuffer, base *zap.SugaredLogger) *SessionLogger {
+	if correlationID == "" {
+		correlationID = uuid.New().String()
+	}
+	fields := []any{FieldCorrelationID, correlationID}
+	if requestID != "" {
+		fields = append(fields, FieldRequestID, requestID)
+	}
+	return &SessionLogger{
+		RequestID:     requestID,
+		CorrelationID: correlationID,
+		Logs:          logs,
+		Logger:        base.With(fields...),
+	}
 }
 
 // NewSessionLogger creates a new session logger
@@ -31,11 +51,7 @@ func NewSessionLogger(ctx context.Context) *SessionLogger {
 				return sessionLogger
 			}
 		}
-		return &SessionLogger{
-			RequestID: "",
-			Logs:      NewLogBuffer(),
-			Logger:    GetLogger(),
-		}
+		return newSessionLogger("", "", NewLimitedLogBuffer(DefaultSessionLogBufferBytes), GetLogger())
 	}
 
 	// Check if there's already a session logger in the gin context
@@ -49,27 +65,24 @@ func NewSessionLogger(ctx context.Context) *SessionLogger {
 	}
 	logBuffer, ok := c.Get(CosyLogBufferKey)
 	if !ok {
-		logBuffer = NewLogBuffer()
+		logBuffer = NewLimitedLogBuffer(DefaultSessionLogBufferBytes)
 	}
-	return &SessionLogger{
-		RequestID: requestId.(string),
-		Logs:      logBuffer.(*LogBuffer),
-		Logger:    GetLogger(),
-	}
+	requestID := requestId.(string)
+	return newSessionLogger(requestID, requestID, logBuffer.(*LogBuffer), GetLogger())
 }
 
-// ForkSessionLogger creates a new session logger for a derived context,
-// with a new log buffer to avoid sharing log stacks between goroutines.
+// ForkSessionLogger creates a correlated session logger for a derived context.
 // It returns a new context with the forked logger, and the logger itself.
 func ForkSessionLogger(ctx context.Context) (context.Context, *SessionLogger) {
 	parentLogger := NewSessionLogger(ctx)
 
-	// Create a new logger, inheriting properties from the parent
-	// but with a fresh LogBuffer.
+	// Keep a fresh fallback buffer so derived goroutines do not share mutable
+	// state when the default SLS producer is unavailable.
 	forkedLogger := &SessionLogger{
-		RequestID: parentLogger.RequestID,
-		Logs:      NewLogBuffer(),
-		Logger:    parentLogger.Logger,
+		RequestID:     parentLogger.RequestID,
+		CorrelationID: parentLogger.CorrelationID,
+		Logs:          NewLimitedLogBuffer(DefaultSessionLogBufferBytes),
+		Logger:        parentLogger.Logger,
 	}
 
 	// Create a new context with the forked logger.
@@ -85,86 +98,123 @@ func (s *SessionLogger) WithOptions(opts ...zap.Option) *SessionLogger {
 
 // "Debug" logs a message at DebugLevel.
 func (s *SessionLogger) Debug(args ...any) {
-	s.Logger.Debugln(args...)
-	s.Logs.AppendLog(zapcore.DebugLevel, getMessageln(args...))
+	s.logSession(zapcore.DebugLevel, getMessageln(args...))
 }
 
 // Info logs a message at InfoLevel.
 func (s *SessionLogger) Info(args ...any) {
-	s.Logger.Infoln(args...)
-	s.Logs.AppendLog(zapcore.InfoLevel, getMessageln(args...))
+	s.logSession(zapcore.InfoLevel, getMessageln(args...))
 }
 
 // Warn logs a message at WarnLevel.
 func (s *SessionLogger) Warn(args ...any) {
-	s.Logger.Warnln(args...)
-	s.Logs.AppendLog(zapcore.WarnLevel, getMessageln(args...))
+	s.logSession(zapcore.WarnLevel, getMessageln(args...))
 }
 
 // Error logs a message at ErrorLevel.
 func (s *SessionLogger) Error(args ...any) {
-	s.Logger.Errorln(args...)
-	s.Logs.AppendLog(zapcore.ErrorLevel, getMessageln(args...))
+	s.logSession(zapcore.ErrorLevel, getMessageln(args...))
 }
 
 // DPanic logs a message at DPanicLevel.
 func (s *SessionLogger) DPanic(args ...any) {
-	s.Logger.DPanic(args...)
-	s.Logs.AppendLog(zapcore.DPanicLevel, getMessageln(args...))
+	s.logSession(zapcore.DPanicLevel, getMessageln(args...))
 }
 
 // Panic logs a message at PanicLevel.
 func (s *SessionLogger) Panic(args ...any) {
-	s.Logger.Panicln(args...)
-	s.Logs.AppendLog(zapcore.PanicLevel, getMessageln(args...))
+	s.logSession(zapcore.PanicLevel, getMessageln(args...))
 }
 
 // Fatal logs a message at FatalLevel.
 func (s *SessionLogger) Fatal(args ...any) {
-	s.Logger.Fatalln(args...)
-	s.Logs.AppendLog(zapcore.FatalLevel, getMessageln(args...))
+	s.logSession(zapcore.FatalLevel, getMessageln(args...))
 }
 
 // Debugf logs a message at DebugLevel.
 func (s *SessionLogger) Debugf(format string, args ...any) {
-	s.Logger.Debugf(format, args...)
-	s.Logs.AppendLog(zapcore.DebugLevel, getMessagef(format, args...))
+	s.logSession(zapcore.DebugLevel, getMessagef(format, args...))
 }
 
 // Infof logs a message at InfoLevel.
 func (s *SessionLogger) Infof(format string, args ...any) {
-	s.Logger.Infof(format, args...)
-	s.Logs.AppendLog(zapcore.InfoLevel, getMessagef(format, args...))
+	s.logSession(zapcore.InfoLevel, getMessagef(format, args...))
 }
 
 // Warnf logs a message at WarnLevel.
 func (s *SessionLogger) Warnf(format string, args ...any) {
-	s.Logger.Warnf(format, args...)
-	s.Logs.AppendLog(zapcore.WarnLevel, getMessagef(format, args...))
+	s.logSession(zapcore.WarnLevel, getMessagef(format, args...))
 }
 
 // Errorf logs a message at ErrorLevel.
 func (s *SessionLogger) Errorf(format string, args ...any) {
-	s.Logger.Errorf(format, args...)
-	s.Logs.AppendLog(zapcore.ErrorLevel, getMessagef(format, args...))
+	s.logSession(zapcore.ErrorLevel, getMessagef(format, args...))
 }
 
 // DPanicf logs a message at DPanicLevel.
 func (s *SessionLogger) DPanicf(format string, args ...any) {
-	s.Logger.DPanicf(format, args...)
-	s.Logs.AppendLog(zapcore.DPanicLevel, getMessagef(format, args...))
+	s.logSession(zapcore.DPanicLevel, getMessagef(format, args...))
 }
 
 // Panicf logs a message at PanicLevel.
 func (s *SessionLogger) Panicf(format string, args ...any) {
-	s.Logger.Panicf(format, args...)
-	s.Logs.AppendLog(zapcore.PanicLevel, getMessagef(format, args...))
+	s.logSession(zapcore.PanicLevel, getMessagef(format, args...))
 }
 
 // Fatalf logs a message at FatalLevel.
 func (s *SessionLogger) Fatalf(format string, args ...any) {
-	s.Logger.Fatalf(format, args...)
-	s.Logs.AppendLog(zapcore.FatalLevel, getMessagef(format, args...))
+	s.logSession(zapcore.FatalLevel, getMessagef(format, args...))
+}
+
+func (s *SessionLogger) logSession(level zapcore.Level, message string) {
+	s.write(level, message, 2, FieldLogType, LogTypeSession)
+	if HasSLSSupport() || s.Logs == nil {
+		return
+	}
+	_, file, line, ok := runtime.Caller(3)
+	caller := "unknown"
+	if ok {
+		caller = fmt.Sprintf("%s:%d", file, line)
+	}
+	s.Logs.Append(LogItem{
+		Time:    time.Now().Unix(),
+		Level:   level,
+		Caller:  caller,
+		Message: message,
+	})
+}
+
+func (s *SessionLogger) write(level zapcore.Level, message string, callerSkip int, fields ...any) {
+	logger := s.Logger.WithOptions(zap.AddCallerSkip(callerSkip))
+	switch level {
+	case zapcore.DebugLevel:
+		logger.Debugw(message, fields...)
+	case zapcore.WarnLevel:
+		logger.Warnw(message, fields...)
+	case zapcore.ErrorLevel:
+		logger.Errorw(message, fields...)
+	case zapcore.DPanicLevel:
+		logger.DPanicw(message, fields...)
+	case zapcore.PanicLevel:
+		logger.Panicw(message, fields...)
+	case zapcore.FatalLevel:
+		logger.Fatalw(message, fields...)
+	default:
+		logger.Infow(message, fields...)
+	}
+}
+
+func (s *SessionLogger) logSQL(level zapcore.Level, message, caller string) {
+	fields := []any{FieldLogType, LogTypeSQL, FieldDBCaller, caller}
+	s.write(level, message, 1, fields...)
+	if !HasSLSSupport() && s.Logs != nil {
+		s.Logs.Append(LogItem{
+			Time:    time.Now().Unix(),
+			Level:   level,
+			Caller:  caller,
+			Message: message,
+		})
+	}
 }
 
 // PanicInfo represents panic information structure

@@ -12,16 +12,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	gormlogger "gorm.io/gorm/logger"
 )
 
 func TestAuditMiddlewareInjectsLogBufferIntoRequestContext(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	done := make(chan struct{}, 1)
+	done := make(chan map[string]string, 1)
 	router := gin.New()
-	router.Use(AuditMiddleware(func(*gin.Context, map[string]string) {
-		done <- struct{}{}
+	router.Use(AuditMiddleware(func(_ *gin.Context, logMap map[string]string) {
+		done <- logMap
 	}))
 	router.GET("/trace-context", func(c *gin.Context) {
 		if c.Request.Context().Value(CosyLogBufferCtxKey) == nil {
@@ -42,15 +45,24 @@ func TestAuditMiddlewareInjectsLogBufferIntoRequestContext(t *testing.T) {
 	}
 
 	select {
-	case <-done:
+	case logMap := <-done:
+		if logMap["correlation_id"] == "" || logMap["correlation_id"] != logMap["request_id"] {
+			t.Fatalf("expected matching request and correlation ids, got %#v", logMap)
+		}
+		if logMap["session_logs"] != "[]" {
+			t.Fatalf("expected session logs to be streamed instead of buffered, got %q", logMap["session_logs"])
+		}
 	case <-time.After(time.Second):
 		t.Fatal("expected audit log handler to be called")
 	}
 }
 
-func TestGormLoggerTraceAppendsErrorSQLFromRequestContext(t *testing.T) {
+func TestGormLoggerTraceWritesCorrelatedSQLToDefaultLogger(t *testing.T) {
+	setSLSSupportForTest(t, true)
 	buffer := NewLogBuffer()
-	ctx := context.WithValue(context.Background(), CosyLogBufferCtxKey, buffer)
+	core, observed := observer.New(zapcore.DebugLevel)
+	sessionLogger := newSessionLogger("request-1", "request-1", buffer, zap.New(core).Sugar())
+	ctx := context.WithValue(context.Background(), CosySessionLoggerCtxKey, sessionLogger)
 	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{
 		LogLevel: gormlogger.Warn,
 	})
@@ -59,20 +71,71 @@ func TestGormLoggerTraceAppendsErrorSQLFromRequestContext(t *testing.T) {
 		return `INSERT INTO "cd_config_group_items" ("group_id","cd_config_id") VALUES ('group','config')`, 0
 	}, errors.New("duplicate key value violates unique constraint"))
 
-	if len(buffer.Items) != 1 {
-		t.Fatalf("expected one SQL log item, got %d", len(buffer.Items))
+	entries := observed.TakeAll()
+	if len(entries) != 1 {
+		t.Fatalf("expected one default log entry, got %d", len(entries))
 	}
-	if !strings.Contains(buffer.Items[0].Message, "INSERT INTO") {
-		t.Fatalf("expected SQL to be appended, got %q", buffer.Items[0].Message)
+	entry := entries[0]
+	if !strings.Contains(entry.Message, "INSERT INTO") || !strings.Contains(entry.Message, "duplicate key") {
+		t.Fatalf("expected SQL error in default log, got %q", entry.Message)
 	}
-	if !strings.Contains(buffer.Items[0].Message, "duplicate key") {
-		t.Fatalf("expected database error to be appended, got %q", buffer.Items[0].Message)
+	fields := entry.ContextMap()
+	if fields[FieldCorrelationID] != "request-1" || fields[FieldRequestID] != "request-1" {
+		t.Fatalf("expected correlation fields, got %#v", fields)
+	}
+	if fields[FieldLogType] != LogTypeSQL || fields[FieldDBCaller] == "" {
+		t.Fatalf("expected SQL metadata fields, got %#v", fields)
+	}
+	if len(buffer.Items) != 0 {
+		t.Fatalf("expected SQL not to accumulate in memory, got %#v", buffer.Items)
+	}
+}
+
+func TestGormLoggerTraceUsesFallbackWithoutSLS(t *testing.T) {
+	setSLSSupportForTest(t, false)
+	buffer := NewLimitedLogBuffer(DefaultSessionLogBufferBytes)
+	sessionLogger := newSessionLogger("request-1", "request-1", buffer, zap.NewNop().Sugar())
+	ctx := context.WithValue(context.Background(), CosySessionLoggerCtxKey, sessionLogger)
+	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{LogLevel: gormlogger.Warn})
+
+	gormLog.Trace(ctx, time.Now(), func() (string, int64) {
+		return `UPDATE "users" SET "name" = 'test'`, 1
+	}, errors.New("write failed"))
+
+	items := buffer.Snapshot()
+	if len(items) != 1 || !strings.Contains(items[0].Message, "UPDATE") {
+		t.Fatalf("expected SQL in fallback buffer, got %#v", items)
+	}
+}
+
+func TestAuditMiddlewareLimitsResponseCapture(t *testing.T) {
+	done := make(chan map[string]string, 1)
+	router := gin.New()
+	router.Use(AuditMiddleware(func(_ *gin.Context, logMap map[string]string) { done <- logMap }))
+	router.GET("/large", func(c *gin.Context) {
+		c.String(http.StatusOK, strings.Repeat("x", maxAuditBodyBufferSize*2))
+	})
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/large", nil))
+	select {
+	case logMap := <-done:
+		if len(logMap["resp_body"]) > maxAuditBodyBufferSize+len(" [truncated]") {
+			t.Fatalf("response audit buffer exceeded cap: %d", len(logMap["resp_body"]))
+		}
+		if !strings.HasSuffix(logMap["resp_body"], " [truncated]") {
+			t.Fatalf("expected truncation marker, got suffix %q", logMap["resp_body"][len(logMap["resp_body"])-20:])
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected audit callback")
 	}
 }
 
 func TestGormLoggerTraceSkipsUnloggedSQLFromRequestContext(t *testing.T) {
 	buffer := NewLogBuffer()
-	ctx := context.WithValue(context.Background(), CosyLogBufferCtxKey, buffer)
+	core, observed := observer.New(zapcore.DebugLevel)
+	sessionLogger := newSessionLogger("request-1", "request-1", buffer, zap.New(core).Sugar())
+	ctx := context.WithValue(context.Background(), CosySessionLoggerCtxKey, sessionLogger)
 	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{
 		LogLevel:      gormlogger.Warn,
 		SlowThreshold: time.Second,
@@ -84,6 +147,9 @@ func TestGormLoggerTraceSkipsUnloggedSQLFromRequestContext(t *testing.T) {
 
 	if len(buffer.Items) != 0 {
 		t.Fatalf("expected unlogged SQL to be skipped, got %#v", buffer.Items)
+	}
+	if observed.Len() != 0 {
+		t.Fatalf("expected no default log entry, got %d", observed.Len())
 	}
 }
 

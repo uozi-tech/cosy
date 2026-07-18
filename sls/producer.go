@@ -58,6 +58,8 @@ type Producer struct {
 	ch     chan logEntry
 	quit   chan struct{}
 	wg     sync.WaitGroup
+	state  sync.RWMutex
+	closed bool
 }
 
 // NewProducer creates a new Producer. Call Start() to begin processing.
@@ -77,19 +79,29 @@ func (p *Producer) Start() {
 	go p.loop()
 }
 
-// SendLog enqueues a log for async batched delivery.
+// SendLog enqueues a log for async batched delivery. A full queue applies
+// backpressure instead of dropping logs.
 func (p *Producer) SendLog(project, logstore, topic, source string, l *Log) error {
-	select {
-	case p.ch <- logEntry{project, logstore, topic, source, l}:
-		return nil
-	default:
-		return fmt.Errorf("sls producer: queue full")
+	p.state.RLock()
+	defer p.state.RUnlock()
+	if p.closed {
+		return fmt.Errorf("sls producer: closed")
 	}
+	p.ch <- logEntry{project, logstore, topic, source, l}
+	return nil
 }
 
 // SafeClose signals shutdown, flushes remaining logs and blocks until done.
 func (p *Producer) SafeClose() {
+	p.state.Lock()
+	if p.closed {
+		p.state.Unlock()
+		p.wg.Wait()
+		return
+	}
+	p.closed = true
 	close(p.quit)
+	p.state.Unlock()
 	p.wg.Wait()
 }
 

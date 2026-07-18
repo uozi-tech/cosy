@@ -2,6 +2,7 @@ package sls
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -56,6 +57,10 @@ func splitSchemeHost(u string) (scheme, host string) {
 // do executes a signed HTTP request and returns the response body.
 // On non-200 status, an *Error is returned.
 func (c *Client) do(method, project, uri string, headers map[string]string, body []byte) ([]byte, error) {
+	return c.doContext(context.Background(), method, project, uri, headers, body)
+}
+
+func (c *Client) doContext(ctx context.Context, method, project, uri string, headers map[string]string, body []byte) ([]byte, error) {
 	base := c.baseURL(project)
 
 	if headers == nil {
@@ -66,7 +71,7 @@ func (c *Client) do(method, project, uri string, headers map[string]string, body
 	}
 	sign(method, uri, headers, body, c.creds)
 
-	req, err := http.NewRequest(method, base+uri, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, method, base+uri, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("sls: create request: %w", err)
 	}
@@ -161,6 +166,38 @@ func (c *Client) UpdateIndex(project, logstore string, index Index) error {
 }
 
 // ---------- Data API ----------
+
+// GetLogsRequest describes an indexed SLS log query.
+type GetLogsRequest struct {
+	From    int64  `json:"from"`
+	To      int64  `json:"to"`
+	Lines   int64  `json:"line"`
+	Offset  int64  `json:"offset"`
+	Reverse bool   `json:"reverse"`
+	Query   string `json:"query"`
+}
+
+// GetLogs queries indexed logs using the SLS v3 API.
+func (c *Client) GetLogs(ctx context.Context, project, logstore string, query GetLogsRequest) ([]map[string]string, error) {
+	body, err := json.Marshal(query)
+	if err != nil {
+		return nil, fmt.Errorf("sls: encode logs query: %w", err)
+	}
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+	data, err := c.doContext(ctx, http.MethodPost, project, "/logstores/"+logstore+"/logs", headers, body)
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Data []map[string]string `json:"data"`
+	}
+	if err := json.Unmarshal(data, &response); err != nil {
+		return nil, fmt.Errorf("sls: decode logs: %w", err)
+	}
+	return response.Data, nil
+}
 
 // PutLogs sends a LogGroup to SLS via load-balanced shards.
 func (c *Client) PutLogs(project, logstore string, lg *LogGroup) error {

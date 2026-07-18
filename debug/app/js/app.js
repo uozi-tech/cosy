@@ -335,6 +335,7 @@
       h += '<div class="modal-body">';
       h += '<table class="table table-sm table-bordered mb-3"><tbody>';
       h += '<tr><th style="width:100px">请求ID</th><td>' + esc(r.request_id) + '</td><th style="width:100px">状态</th><td><span class="badge ' + Fmt.statusBadge(statusCode) + '">' + esc(statusCode) + '</span></td></tr>';
+      if (r.correlation_id) h += '<tr><th>关联日志ID</th><td colspan="3" class="font-mono small">' + esc(r.correlation_id) + '</td></tr>';
       h += '<tr><th>方法</th><td><span class="badge bg-' + Fmt.methodBadge(r.req_method) + ' font-mono">' + Fmt.method(r.req_method) + '</span></td><th>URL</th><td class="font-mono small">' + esc(r.req_url) + '</td></tr>';
       h += '<tr><th>客户端IP</th><td class="font-mono">' + esc(r.ip) + '</td><th>User Agent</th><td class="small">' + esc(r.user_agent || 'N/A') + '</td></tr>';
       h += '<tr><th>延迟</th><td>' + Fmt.latency(r.latency) + '</td><th>开始时间</th><td>' + Fmt.dateTime(r.start_time) + '</td></tr>';

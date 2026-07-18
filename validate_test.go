@@ -12,7 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uozi-tech/cosy/logger"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 type Deep struct {
@@ -72,7 +74,7 @@ func TestValidateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest(http.MethodPost, "/users/1", strings.NewReader(`{"name": "张三"`))
 	c.Request.Header.Set("Content-Type", "application/json")
-	attachSessionLogger(c)
+	observed := attachSessionLogger(c)
 
 	core := Core[User](c).SetValidRules(gin.H{
 		"name": "omitempty",
@@ -82,7 +84,7 @@ func TestValidateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 
 	require.Contains(t, errs, "body")
 	assert.Contains(t, errs["body"], "unexpected EOF")
-	assertSessionLogContainsJSONBindError(t, c)
+	assertJSONBindErrorStreamed(t, c, observed)
 }
 
 func TestValidateBatchUpdateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
@@ -91,7 +93,7 @@ func TestValidateBatchUpdateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest(http.MethodPut, "/users", strings.NewReader(`{"ids": ["1"], "data": {`))
 	c.Request.Header.Set("Content-Type", "application/json")
-	attachSessionLogger(c)
+	observed := attachSessionLogger(c)
 
 	core := Core[User](c).SetValidRules(gin.H{
 		"name": "omitempty",
@@ -101,26 +103,39 @@ func TestValidateBatchUpdateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 
 	require.Contains(t, errs, "body")
 	assert.Contains(t, errs["body"], "unexpected EOF")
-	assertSessionLogContainsJSONBindError(t, c)
+	assertJSONBindErrorStreamed(t, c, observed)
 }
 
-func attachSessionLogger(c *gin.Context) {
-	c.Set(logger.CosySessionLoggerKey, logger.NewSessionLogger(c))
+func attachSessionLogger(c *gin.Context) *observer.ObservedLogs {
+	sessionLogger := logger.NewSessionLogger(c)
+	core, observed := observer.New(zapcore.DebugLevel)
+	sessionLogger.Logger = zap.New(core).Sugar().With(
+		logger.FieldCorrelationID, sessionLogger.CorrelationID,
+		logger.FieldRequestID, sessionLogger.RequestID,
+	)
+	c.Set(logger.CosySessionLoggerKey, sessionLogger)
+	return observed
 }
 
-func assertSessionLogContainsJSONBindError(t *testing.T, c *gin.Context) {
+func assertJSONBindErrorStreamed(t *testing.T, c *gin.Context, observed *observer.ObservedLogs) {
 	t.Helper()
 
 	sessionLogger := logger.NewSessionLogger(c)
 	require.NotNil(t, sessionLogger.Logs)
+	buffered := sessionLogger.Logs.Snapshot()
+	require.Len(t, buffered, 1)
+	assert.Contains(t, buffered[0].Message, "failed to bind JSON request body")
 
-	for _, item := range sessionLogger.Logs.Items {
-		if item.Level == zapcore.ErrorLevel &&
-			strings.Contains(item.Message, "failed to bind JSON request body") &&
-			strings.Contains(item.Message, "unexpected EOF") {
-			return
-		}
+	entries := observed.All()
+	require.Len(t, entries, 1)
+	entry := entries[0]
+	assert.Equal(t, zapcore.ErrorLevel, entry.Level)
+	assert.Contains(t, entry.Message, "failed to bind JSON request body")
+	assert.Contains(t, entry.Message, "unexpected EOF")
+	fields := entry.ContextMap()
+	assert.Equal(t, sessionLogger.CorrelationID, fields[logger.FieldCorrelationID])
+	assert.Equal(t, sessionLogger.RequestID, fields[logger.FieldRequestID])
+	if fields[logger.FieldLogType] != logger.LogTypeSession {
+		t.Fatalf("expected streamed session log metadata, got %#v", fields)
 	}
-
-	t.Fatalf("expected JSON bind error in session logs, got %#v", sessionLogger.Logs.Items)
 }

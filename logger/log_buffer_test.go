@@ -25,7 +25,7 @@ func TestLogBuffer(t *testing.T) {
 		Message: "test message",
 	}
 	buffer.Append(item)
-	
+
 	if len(buffer.Items) != 1 {
 		t.Errorf("Expected 1 item after append, got %d", len(buffer.Items))
 	}
@@ -46,11 +46,11 @@ func TestLogBuffer(t *testing.T) {
 func TestLogBufferConcurrency(t *testing.T) {
 	buffer := NewLogBuffer()
 	var wg sync.WaitGroup
-	
+
 	// Launch 100 goroutines that each append 10 items
 	numGoroutines := 100
 	itemsPerGoroutine := 10
-	
+
 	wg.Add(numGoroutines)
 	for i := 0; i < numGoroutines; i++ {
 		go func(id int) {
@@ -60,9 +60,9 @@ func TestLogBufferConcurrency(t *testing.T) {
 			}
 		}(i)
 	}
-	
+
 	wg.Wait()
-	
+
 	expectedTotal := numGoroutines * itemsPerGoroutine
 	if len(buffer.Items) != expectedTotal {
 		t.Errorf("Expected %d items after concurrent appends, got %d", expectedTotal, len(buffer.Items))

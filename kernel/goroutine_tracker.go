@@ -73,11 +73,12 @@ func internString(s string) string {
 
 var (
 	// Goroutine tracking
-	goroutineTraces      sync.Map // goroutineID -> *GoroutineTrace (active goroutines)
-	goroutineHistory     sync.Map // goroutineID -> *GoroutineTrace (completed goroutines)
-	goroutineStats       = &GoroutineStats{}
-	statsMutex           sync.RWMutex
-	historyCleanupTicker *time.Ticker
+	goroutineTraces  sync.Map // goroutineID -> *GoroutineTrace (active goroutines)
+	goroutineHistory sync.Map // goroutineID -> *GoroutineTrace (completed goroutines)
+	goroutineStats   = &GoroutineStats{}
+	statsMutex       sync.RWMutex
+	historyCleanupMu sync.Mutex
+	historyCleanup   *historyCleanupWorker
 
 	stringSlicePool = sync.Pool{
 		New: func() any {
@@ -95,10 +96,16 @@ var (
 	commonStrings = sync.Map{} // string -> *string for interning
 )
 
+type historyCleanupWorker struct {
+	stop chan struct{}
+	done chan struct{}
+}
+
 // GoroutineTrace contains tracking information for a goroutine
 type GoroutineTrace struct {
 	mu            sync.RWMutex
 	ID            string                `json:"id"`
+	CorrelationID string                `json:"correlation_id"`
 	Name          string                `json:"name"`
 	Status        string                `json:"status"`
 	StartTime     int64                 `json:"start_time"`
@@ -141,7 +148,7 @@ func SyncGoroutineSessionLogs(id string) {
 		t := trace.(*GoroutineTrace)
 		if t.sessionLogger != nil && t.sessionLogger.Logs != nil {
 			// Only get new logs (after the last sync time)
-			allLogs := t.sessionLogger.Logs.Items
+			allLogs := t.sessionLogger.Logs.Snapshot()
 			t.mu.RLock()
 			currentLogsLen := len(t.SessionLogs)
 			t.mu.RUnlock()
@@ -161,7 +168,7 @@ func SyncAllActiveGoroutineSessionLogs() {
 		t := value.(*GoroutineTrace)
 		if t.Status == "running" && t.sessionLogger != nil && t.sessionLogger.Logs != nil {
 			// Sync logs for active goroutines
-			allLogs := t.sessionLogger.Logs.Items
+			allLogs := t.sessionLogger.Logs.Snapshot()
 			if len(allLogs) > len(t.SessionLogs) {
 				t.SessionLogs = allLogs
 				t.LastLogSync = time.Now().Unix()
@@ -176,7 +183,7 @@ func moveToHistory(id string, trace *GoroutineTrace) {
 	// Final log synchronization
 	if trace.sessionLogger != nil && trace.sessionLogger.Logs != nil {
 		trace.mu.Lock()
-		trace.SessionLogs = trace.sessionLogger.Logs.Items
+		trace.SessionLogs = trace.sessionLogger.Logs.Snapshot()
 		trace.LastLogSync = time.Now().Unix()
 		trace.mu.Unlock()
 	}
@@ -197,15 +204,16 @@ func GetGoroutineTrace(id string) *GoroutineTrace {
 		defer t.mu.RUnlock()
 		// Create a copy without internal fields for JSON response
 		return &GoroutineTrace{
-			ID:          t.ID,
-			Name:        t.Name,
-			Status:      t.Status,
-			StartTime:   t.StartTime,
-			EndTime:     t.EndTime,
-			Stack:       t.Stack,
-			Error:       t.Error,
-			SessionLogs: t.SessionLogs,
-			LastLogSync: t.LastLogSync,
+			ID:            t.ID,
+			CorrelationID: t.CorrelationID,
+			Name:          t.Name,
+			Status:        t.Status,
+			StartTime:     t.StartTime,
+			EndTime:       t.EndTime,
+			Stack:         t.Stack,
+			Error:         t.Error,
+			SessionLogs:   t.SessionLogs,
+			LastLogSync:   t.LastLogSync,
 		}
 	}
 
@@ -216,15 +224,16 @@ func GetGoroutineTrace(id string) *GoroutineTrace {
 		defer t.mu.RUnlock()
 		// Create a copy without internal fields for JSON response
 		return &GoroutineTrace{
-			ID:          t.ID,
-			Name:        t.Name,
-			Status:      t.Status,
-			StartTime:   t.StartTime,
-			EndTime:     t.EndTime,
-			Stack:       t.Stack,
-			Error:       t.Error,
-			SessionLogs: t.SessionLogs,
-			LastLogSync: t.LastLogSync,
+			ID:            t.ID,
+			CorrelationID: t.CorrelationID,
+			Name:          t.Name,
+			Status:        t.Status,
+			StartTime:     t.StartTime,
+			EndTime:       t.EndTime,
+			Stack:         t.Stack,
+			Error:         t.Error,
+			SessionLogs:   t.SessionLogs,
+			LastLogSync:   t.LastLogSync,
 		}
 	}
 	return nil
@@ -249,7 +258,7 @@ func GetActiveGoroutineTraces() []*GoroutineTrace {
 		logsSynced := false
 
 		if t.sessionLogger != nil && t.sessionLogger.Logs != nil {
-			allLogs := t.sessionLogger.Logs.Items
+			allLogs := t.sessionLogger.Logs.Snapshot()
 			t.mu.RLock()
 			currentLogsLen := len(t.SessionLogs)
 			t.mu.RUnlock()
@@ -270,15 +279,16 @@ func GetActiveGoroutineTraces() []*GoroutineTrace {
 		defer t.mu.RUnlock()
 
 		traceCopy := &GoroutineTrace{
-			ID:          t.ID,
-			Name:        t.Name,
-			Status:      t.Status,
-			StartTime:   t.StartTime,
-			EndTime:     t.EndTime,
-			Stack:       t.Stack,
-			Error:       t.Error,
-			SessionLogs: t.SessionLogs,
-			LastLogSync: t.LastLogSync,
+			ID:            t.ID,
+			CorrelationID: t.CorrelationID,
+			Name:          t.Name,
+			Status:        t.Status,
+			StartTime:     t.StartTime,
+			EndTime:       t.EndTime,
+			Stack:         t.Stack,
+			Error:         t.Error,
+			SessionLogs:   t.SessionLogs,
+			LastLogSync:   t.LastLogSync,
 		}
 
 		// If logs were just synchronized, ensure the copy has the latest data
@@ -308,15 +318,16 @@ func GetHistoryGoroutineTraces() []*GoroutineTrace {
 		defer t.mu.RUnlock()
 		// Create a copy without internal fields for JSON response
 		traces = append(traces, &GoroutineTrace{
-			ID:          t.ID,
-			Name:        t.Name,
-			Status:      t.Status,
-			StartTime:   t.StartTime,
-			EndTime:     t.EndTime,
-			Stack:       t.Stack,
-			Error:       t.Error,
-			SessionLogs: t.SessionLogs,
-			LastLogSync: t.LastLogSync,
+			ID:            t.ID,
+			CorrelationID: t.CorrelationID,
+			Name:          t.Name,
+			Status:        t.Status,
+			StartTime:     t.StartTime,
+			EndTime:       t.EndTime,
+			Stack:         t.Stack,
+			Error:         t.Error,
+			SessionLogs:   t.SessionLogs,
+			LastLogSync:   t.LastLogSync,
 		})
 		return true
 	})
@@ -361,25 +372,48 @@ func ResetGoroutineStats() {
 
 // StartHistoryCleanup starts the history cleanup timer
 func StartHistoryCleanup() {
-	if historyCleanupTicker != nil {
-		historyCleanupTicker.Stop()
+	worker := &historyCleanupWorker{
+		stop: make(chan struct{}),
+		done: make(chan struct{}),
 	}
 
-	// Clean up history records older than 30 minutes every 5 minutes
-	historyCleanupTicker = time.NewTicker(5 * time.Minute)
-
-	go func() {
-		for range historyCleanupTicker.C {
-			CleanOldHistoryTraces(30 * time.Minute) // Keep 30 minutes of history records
-		}
-	}()
+	historyCleanupMu.Lock()
+	if historyCleanup != nil {
+		historyCleanupMu.Unlock()
+		return
+	}
+	historyCleanup = worker
+	go worker.run()
+	historyCleanupMu.Unlock()
 }
 
 // StopHistoryCleanup stops the history cleanup timer
 func StopHistoryCleanup() {
-	if historyCleanupTicker != nil {
-		historyCleanupTicker.Stop()
-		historyCleanupTicker = nil
+	historyCleanupMu.Lock()
+	worker := historyCleanup
+	if worker != nil {
+		historyCleanup = nil
+		close(worker.stop)
+	}
+	historyCleanupMu.Unlock()
+
+	if worker != nil {
+		<-worker.done
+	}
+}
+
+func (w *historyCleanupWorker) run() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	defer close(w.done)
+
+	for {
+		select {
+		case <-ticker.C:
+			CleanOldHistoryTraces(30 * time.Minute)
+		case <-w.stop:
+			return
+		}
 	}
 }
 
@@ -419,8 +453,8 @@ func ClearAllGoroutineData() {
 //   - Synchronous: kernel.Run(ctx, "my-task", func(ctx) { ... })
 //   - Asynchronous: go kernel.Run(ctx, "my-task", func(ctx) { ... })
 //
-// The function always starts a background goroutine to collect and report session logs,
-// regardless of whether Run itself is called synchronously or asynchronously.
+// Session logs are streamed to the default logger when SLS is available. The
+// trace keeps their CorrelationID and, without SLS, a bounded fallback copy.
 func Run(ctx context.Context, name string, fn func(context.Context)) {
 	goroutineID := uuid.New().String()
 
@@ -428,7 +462,7 @@ func Run(ctx context.Context, name string, fn func(context.Context)) {
 	labels := pprof.Labels("goroutine_id", goroutineID, "name", name, "type", "runtime")
 	ctxWithLabels := pprof.WithLabels(ctx, labels)
 
-	// Fork session logger for this goroutine to ensure a separate log buffer
+	// Fork the correlated session logger for this goroutine.
 	ctxWithSessionLogger, sessionLogger := logger.ForkSessionLogger(ctxWithLabels)
 
 	// Create trace record with cleaned stack (skip kernel.Run frames)
@@ -437,6 +471,7 @@ func Run(ctx context.Context, name string, fn func(context.Context)) {
 
 	trace := &GoroutineTrace{
 		ID:            goroutineID,
+		CorrelationID: sessionLogger.CorrelationID,
 		Name:          name,
 		Status:        "running",
 		StartTime:     time.Now().Unix(),
@@ -462,7 +497,7 @@ func Run(ctx context.Context, name string, fn func(context.Context)) {
 				// Sync final session logs
 				if trace.sessionLogger != nil && trace.sessionLogger.Logs != nil {
 					trace.mu.Lock()
-					trace.SessionLogs = trace.sessionLogger.Logs.Items
+					trace.SessionLogs = trace.sessionLogger.Logs.Snapshot()
 					trace.LastLogSync = time.Now().Unix()
 					trace.mu.Unlock()
 				}

@@ -20,6 +20,22 @@ func Test_init(t *testing.T) {
 	Debug("not print")
 }
 
+func TestConcurrentInitAndWrite(t *testing.T) {
+	var waitGroup sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		waitGroup.Add(2)
+		go func() {
+			defer waitGroup.Done()
+			Init("test")
+		}()
+		go func() {
+			defer waitGroup.Done()
+			Info("concurrent logger write")
+		}()
+	}
+	waitGroup.Wait()
+}
+
 func TestLogger(t *testing.T) {
 	Init("debug")
 

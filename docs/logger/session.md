@@ -1,14 +1,27 @@
 # 会话日志 (Session Logger)
 
-会话日志为每个 HTTP 请求提供独立的日志上下文，自动关联请求 ID，并将日志数据集成到审计系统中。
+会话日志为每个 HTTP 请求或后台任务提供独立的日志上下文。日志会实时写入默认日志，并通过 `correlation_id` 与 API 审计记录或协程追踪关联。Default Log 的 SLS producer 可用时不保留请求级日志切片；SLS 不可用时使用 1 MiB 的有界缓冲回退。
 
 ## 功能特性
 
-- 🔗 **请求关联**：自动关联请求 ID，实现完整的请求链路追踪
-- 📝 **双重记录**：同时记录到控制台/文件和 SLS 日志堆栈
+- 🔗 **链路关联**：HTTP 请求使用相同的 `request_id` 和 `correlation_id`，后台任务自动生成 `correlation_id`
+- 📝 **实时输出**：直接写入控制台、文件；SLS 可用时同时写入 Default Log SLS
 - 🎯 **上下文感知**：基于 Gin 上下文创建，自动获取请求相关信息
 - 📊 **级别分离**：支持不同日志级别的记录和处理
-- 🔄 **线程安全**：使用 mutex 保证并发安全
+- 🧠 **有界内存**：无 SLS 时每个 SessionLogger 最多保留 1 MiB 回退日志；有 SLS 时 producer 队列满会施加背压，不以扩张内存或丢弃条目换取吞吐
+
+## 日志关联字段
+
+Default Log 中的会话日志包含以下字段：
+
+| 字段 | 说明 |
+|------|------|
+| `correlation_id` | 跨 LogStore 关联键；HTTP 请求与 API Log 中的值一致 |
+| `request_id` | HTTP 请求 ID；后台任务可能为空 |
+| `log_type` | 会话日志为 `session`，GORM SQL 日志为 `sql` |
+| `db_caller` | 仅 SQL 日志存在，表示触发数据库操作的代码位置 |
+
+在 SLS 中先从 API Log 找到 `correlation_id`，再到 Default Log 查询同一值，即可还原完整链路。Cosy 调试页会优先执行该关联查询，并以每页 100 条自动翻页直到取完，不设 1000 条上限；查询无结果、失败或 SLS 不可用时，回退展示 API Log 中的 `session_logs`。SLS 可用时该兼容字段通常为空，无 SLS 时保存至多 1 MiB 的 Session/SQL 日志。
 
 ## 快速开始
 
@@ -118,15 +131,16 @@ func (s *SessionLogger) Fatalf(format string, args ...any)
 
 ```go
 type SessionLogger struct {
-    RequestID string              // 请求 ID
-    Logs      *LogBuffer         // 日志缓冲区
-    Logger    *zap.SugaredLogger // 底层日志记录器
+    RequestID     string              // HTTP 请求 ID，后台任务可能为空
+    CorrelationID string              // 跨日志关联 ID
+    Logs          *LogBuffer          // SLS 不可用时的 1 MiB 有界回退
+    Logger        *zap.SugaredLogger  // 底层日志记录器
 }
 ```
 
 ### LogBuffer 和 LogItem
 
-日志相关的数据结构已移至独立模块。详见 [LogBuffer 文档](./log-buffer.md)。
+有 SLS 时，新的会话与 SQL 日志检索应使用 `correlation_id`；无 SLS 时可从 `Logs.Snapshot()` 读取有界回退。通用 LogBuffer API 详见 [LogBuffer 文档](./log-buffer.md)。
 
 ## 日志级别
 

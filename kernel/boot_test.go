@@ -12,18 +12,18 @@ import (
 func TestBootWithRun(t *testing.T) {
 	// Initialize logger
 	logger.Init("debug")
-	
+
 	// Clear all goroutine data from previous tests
 	kernel.ClearAllGoroutineData()
 	kernel.ClearRegisteredGoroutines()
-	
+
 	// Start history cleanup
 	kernel.StartHistoryCleanup()
 	defer kernel.StopHistoryCleanup()
-	
+
 	// Register some test goroutines
 	taskExecuted := make(chan bool, 3)
-	
+
 	kernel.RegisterGoroutine(
 		func(ctx context.Context) {
 			sessionLogger := logger.NewSessionLogger(ctx)
@@ -46,11 +46,11 @@ func TestBootWithRun(t *testing.T) {
 			sessionLogger.Info("Test goroutine 3 completed")
 		},
 	)
-	
+
 	// Boot the kernel
 	ctx := context.Background()
 	kernel.Boot(ctx)
-	
+
 	// Wait for all tasks to execute
 	for i := 0; i < 3; i++ {
 		select {
@@ -60,16 +60,16 @@ func TestBootWithRun(t *testing.T) {
 			t.Fatalf("Task %d did not execute within timeout", i+1)
 		}
 	}
-	
+
 	// Give some time for background goroutines to update
 	time.Sleep(500 * time.Millisecond)
-	
+
 	// Check that goroutines were tracked
 	traces := kernel.GetAllGoroutineTraces()
 	if len(traces) < 3 {
 		t.Errorf("Expected at least 3 goroutine traces, got %d", len(traces))
 	}
-	
+
 	// Count kernel goroutines
 	kernelGoroutines := 0
 	for _, trace := range traces {
@@ -78,16 +78,19 @@ func TestBootWithRun(t *testing.T) {
 			if trace.Status != "completed" {
 				t.Errorf("Expected kernel goroutine %s to be completed, got status: %s", trace.Name, trace.Status)
 			}
+			if trace.CorrelationID == "" {
+				t.Errorf("Expected correlation ID for %s", trace.Name)
+			}
 			if len(trace.SessionLogs) < 2 {
-				t.Errorf("Expected at least 2 session logs for %s, got %d", trace.Name, len(trace.SessionLogs))
+				t.Errorf("Expected fallback session logs for %s, got %d", trace.Name, len(trace.SessionLogs))
 			}
 		}
 	}
-	
+
 	if kernelGoroutines != 3 {
 		t.Errorf("Expected 3 kernel goroutines, found %d", kernelGoroutines)
 	}
-	
+
 	// Check statistics
 	stats := kernel.GetGoroutineStats()
 	if stats.TotalStarted < 3 {
@@ -96,7 +99,7 @@ func TestBootWithRun(t *testing.T) {
 	if stats.TotalCompleted < 3 {
 		t.Errorf("Expected at least 3 completed goroutines, got %d", stats.TotalCompleted)
 	}
-	
+
 	t.Logf("Boot test completed successfully. Stats - Started: %d, Completed: %d, Failed: %d",
 		stats.TotalStarted, stats.TotalCompleted, stats.TotalFailed)
 }
@@ -104,9 +107,9 @@ func TestBootWithRun(t *testing.T) {
 func TestRunDirectly(t *testing.T) {
 	// Initialize logger
 	logger.Init("debug")
-	
+
 	ctx := context.Background()
-	
+
 	// Test synchronous Run
 	executed := false
 	kernel.Run(ctx, "direct-sync-task", func(ctx context.Context) {
@@ -114,11 +117,11 @@ func TestRunDirectly(t *testing.T) {
 		sessionLogger.Info("Direct sync task executed")
 		executed = true
 	})
-	
+
 	if !executed {
 		t.Error("Synchronous Run did not execute")
 	}
-	
+
 	// Test asynchronous Run
 	done := make(chan bool)
 	go kernel.Run(ctx, "direct-async-task", func(ctx context.Context) {
@@ -126,22 +129,22 @@ func TestRunDirectly(t *testing.T) {
 		sessionLogger.Info("Direct async task executed")
 		done <- true
 	})
-	
+
 	select {
 	case <-done:
 		// Success
 	case <-time.After(2 * time.Second):
 		t.Error("Asynchronous Run did not complete within timeout")
 	}
-	
+
 	// Give time for background goroutines to update
 	time.Sleep(500 * time.Millisecond)
-	
+
 	// Check traces
 	traces := kernel.GetAllGoroutineTraces()
 	syncFound := false
 	asyncFound := false
-	
+
 	for _, trace := range traces {
 		if trace.Name == "direct-sync-task" {
 			syncFound = true
@@ -156,7 +159,7 @@ func TestRunDirectly(t *testing.T) {
 			}
 		}
 	}
-	
+
 	if !syncFound {
 		t.Error("Sync task trace not found")
 	}

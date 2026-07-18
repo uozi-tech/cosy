@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/quic-go/quic-go/http3"
@@ -72,6 +73,7 @@ func (pm *ProtocolManager) ShutdownAll(ctx context.Context) error {
 
 // HTTPServer implements HTTP/1.1 server
 type HTTPServer struct {
+	mu     sync.RWMutex
 	server *http.Server
 }
 
@@ -82,9 +84,12 @@ func NewHTTPServer() *HTTPServer {
 
 // Start starts the HTTP/1.1 server
 func (h *HTTPServer) Start(ctx context.Context, listener net.Listener, handler http.Handler) error {
-	h.server = &http.Server{
+	server := &http.Server{
 		Handler: handler,
 	}
+	h.mu.Lock()
+	h.server = server
+	h.mu.Unlock()
 
 	// Check if context is already cancelled before starting
 	select {
@@ -93,7 +98,7 @@ func (h *HTTPServer) Start(ctx context.Context, listener net.Listener, handler h
 	default:
 	}
 
-	if err := h.server.Serve(listener); err != nil && err != http.ErrServerClosed {
+	if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
 		// Check if the error is due to context cancellation
 		select {
 		case <-ctx.Done():
@@ -110,8 +115,11 @@ func (h *HTTPServer) Start(ctx context.Context, listener net.Listener, handler h
 
 // Shutdown gracefully shuts down the HTTP/1.1 server
 func (h *HTTPServer) Shutdown(ctx context.Context) error {
-	if h.server != nil {
-		if err := h.server.Shutdown(ctx); err != nil {
+	h.mu.RLock()
+	server := h.server
+	h.mu.RUnlock()
+	if server != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			return fmt.Errorf("failed to shutdown HTTP/1.1 server: %w", err)
 		}
 	}
@@ -125,6 +133,7 @@ func (h *HTTPServer) Protocol() string {
 
 // HTTPSServer implements HTTP/1.1 and HTTP/2 server with TLS
 type HTTPSServer struct {
+	mu        sync.RWMutex
 	server    *http.Server
 	tlsConfig *tls.Config
 	enableH2  bool // Track if HTTP/2 is enabled
@@ -154,10 +163,13 @@ func NewHTTPSServer(tlsConfig *tls.Config) *HTTPSServer {
 
 // Start starts the HTTPS server with HTTP/2 support
 func (h *HTTPSServer) Start(ctx context.Context, listener net.Listener, handler http.Handler) error {
-	h.server = &http.Server{
+	server := &http.Server{
 		Handler:   handler,
 		TLSConfig: h.tlsConfig,
 	}
+	h.mu.Lock()
+	h.server = server
+	h.mu.Unlock()
 
 	// Check if context is already cancelled before starting
 	select {
@@ -166,7 +178,7 @@ func (h *HTTPSServer) Start(ctx context.Context, listener net.Listener, handler 
 	default:
 	}
 
-	if err := h.server.ServeTLS(listener, "", ""); err != nil && err != http.ErrServerClosed {
+	if err := server.ServeTLS(listener, "", ""); err != nil && err != http.ErrServerClosed {
 		// Check if the error is due to context cancellation
 		select {
 		case <-ctx.Done():
@@ -183,8 +195,11 @@ func (h *HTTPSServer) Start(ctx context.Context, listener net.Listener, handler 
 
 // Shutdown gracefully shuts down the HTTPS server
 func (h *HTTPSServer) Shutdown(ctx context.Context) error {
-	if h.server != nil {
-		if err := h.server.Shutdown(ctx); err != nil {
+	h.mu.RLock()
+	server := h.server
+	h.mu.RUnlock()
+	if server != nil {
+		if err := server.Shutdown(ctx); err != nil {
 			return fmt.Errorf("failed to shutdown HTTPS server: %w", err)
 		}
 	}
@@ -201,6 +216,7 @@ func (h *HTTPSServer) Protocol() string {
 
 // HTTP3Server implements HTTP/3 server
 type HTTP3Server struct {
+	mu        sync.RWMutex
 	server    *http3.Server
 	tlsConfig *tls.Config
 }
@@ -223,17 +239,20 @@ func (h *HTTP3Server) Start(ctx context.Context, listener net.Listener, handler 
 	// HTTP/3 uses UDP with port reuse on the same port as TCP
 	tcpAddr := listener.Addr().(*net.TCPAddr)
 
-	h.server = &http3.Server{
+	server := &http3.Server{
 		Addr:      tcpAddr.String(), // Use TCP address for port reuse
 		Handler:   handler,
 		TLSConfig: h.tlsConfig,
 	}
+	h.mu.Lock()
+	h.server = server
+	h.mu.Unlock()
 
 	// Start the server and handle errors properly
 	errChan := make(chan error, 1)
 	go func() {
 		defer close(errChan)
-		if err := h.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		} else {
 			errChan <- nil
@@ -257,8 +276,11 @@ func (h *HTTP3Server) Start(ctx context.Context, listener net.Listener, handler 
 
 // Shutdown gracefully shuts down the HTTP/3 server
 func (h *HTTP3Server) Shutdown(ctx context.Context) error {
-	if h.server != nil {
-		if err := h.server.Close(); err != nil {
+	h.mu.RLock()
+	server := h.server
+	h.mu.RUnlock()
+	if server != nil {
+		if err := server.Close(); err != nil {
 			return fmt.Errorf("failed to shutdown HTTP/3 server: %w", err)
 		}
 	}

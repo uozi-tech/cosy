@@ -142,7 +142,12 @@ func (m *SLSManager) createLogStoreIndex(projectName, logStoreName string) error
 func (m *SLSManager) createAPILogStoreIndex() *sls.Index {
 	return &sls.Index{
 		Keys: map[string]sls.IndexKey{
-			"request_id": {
+			FieldRequestID: {
+				Token:         []string{"-"},
+				CaseSensitive: false,
+				Type:          "text",
+			},
+			FieldCorrelationID: {
 				Token:         []string{"-"},
 				CaseSensitive: false,
 				Type:          "text",
@@ -226,6 +231,26 @@ func (m *SLSManager) createAPILogStoreIndex() *sls.Index {
 func (m *SLSManager) createDefaultLogStoreIndex() *sls.Index {
 	return &sls.Index{
 		Keys: map[string]sls.IndexKey{
+			FieldCorrelationID: {
+				Token:         []string{"-"},
+				CaseSensitive: false,
+				Type:          "text",
+			},
+			FieldRequestID: {
+				Token:         []string{"-"},
+				CaseSensitive: false,
+				Type:          "text",
+			},
+			FieldLogType: {
+				Token:         []string{"_", "-"},
+				CaseSensitive: false,
+				Type:          "text",
+			},
+			FieldDBCaller: {
+				Token:         []string{" ", "\t", "\r", "\n", "/", ":"},
+				CaseSensitive: false,
+				Type:          "text",
+			},
 			"level": {
 				Token:         []string{" ", "\t", "\r", "\n"},
 				CaseSensitive: false,

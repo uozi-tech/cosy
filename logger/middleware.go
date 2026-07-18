@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	CosyLogBufferKey = "cosy_log_buffer"
-	CosyRequestIDKey = "cosy_request_id"
-	CosySkipAuditKey = "cosy_skip_audit"
+	CosyLogBufferKey       = "cosy_log_buffer"
+	CosyRequestIDKey       = "cosy_request_id"
+	CosySkipAuditKey       = "cosy_skip_audit"
+	maxAuditBodyBufferSize = 64 * 1024
 	// CosySessionLoggerKey is the key for storing the session logger in a gin.Context
 	CosySessionLoggerKey = "cosy_session_logger"
 )
@@ -52,7 +53,7 @@ func GetMonitorReporter() MonitorReporter {
 
 type responseWriter struct {
 	gin.ResponseWriter
-	body *bytes.Buffer
+	body *limitedBuffer
 }
 
 func (w responseWriter) Write(b []byte) (int, error) {
@@ -175,8 +176,7 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 		if !isWebSocket && c.Request.Body != nil {
 			contentType := c.GetHeader("Content-Type")
 			if shouldCaptureRequestBody(contentType) {
-				const maxCapture = 64 * 1024 // 64KB preview
-				bodyBuf = newLimitedBuffer(maxCapture)
+				bodyBuf = newLimitedBuffer(maxAuditBodyBufferSize)
 				c.Request.Body = newTeeReadCloser(c.Request.Body, bodyBuf)
 				captureBody = true
 			} else {
@@ -190,19 +190,15 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 		// with the WebSocket handshake
 		if !isWebSocket {
 			responseBodyWriter = &responseWriter{
-				body:           bytes.NewBufferString(""),
+				body:           newLimitedBuffer(maxAuditBodyBufferSize),
 				ResponseWriter: c.Writer,
 			}
 			c.Writer = responseBodyWriter
 		}
 
-		logBuffer := NewLogBuffer()
+		logBuffer := NewLimitedLogBuffer(DefaultSessionLogBufferBytes)
 		c.Set(CosyLogBufferKey, logBuffer)
-		sessionLogger := &SessionLogger{
-			RequestID: requestId,
-			Logs:      logBuffer,
-			Logger:    GetLogger(),
-		}
+		sessionLogger := newSessionLogger(requestId, requestId, logBuffer, GetLogger())
 		c.Set(CosySessionLoggerKey, sessionLogger)
 
 		pprofLabels := pprof.Labels("request_id", requestId, "method", reqMethod, "path", reqURL)
@@ -232,6 +228,9 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 		var respBody string
 		if !isWebSocket && responseBodyWriter != nil {
 			respBody = responseBodyWriter.body.String()
+			if responseBodyWriter.body.truncated {
+				respBody += " [truncated]"
+			}
 		} else if isWebSocket {
 			// For WebSocket upgrades, just note that it's a WebSocket connection
 			respBody = "[WebSocket Connection Established]"
@@ -241,7 +240,7 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					logger.Error(r)
+					Error(r)
 				}
 			}()
 
@@ -254,13 +253,14 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 			var sqlLogsBytes []byte
 			if ok {
 				logs := ctxLogs.(*LogBuffer)
-				sqlLogsBytes, _ = json.Marshal(logs.Items)
+				sqlLogsBytes, _ = json.Marshal(logs.Snapshot())
 			}
 			reqHeaderBytes, _ := json.Marshal(reqHeader)
 			respHeaderBytes, _ := json.Marshal(respHeader)
 
 			logMap := map[string]string{
-				"request_id":       requestId,
+				FieldRequestID:     requestId,
+				FieldCorrelationID: requestId,
 				"ip":               ip,
 				"req_url":          reqURL,
 				"req_method":       reqMethod,
@@ -295,10 +295,10 @@ func AuditMiddleware(logMapHandler func(*gin.Context, map[string]string)) gin.Ha
 				err := auditProducer.SendLog(settings.SLSSettings.ProjectName,
 					settings.SLSSettings.APILogStoreName, Topic, settings.SLSSettings.GetSource(), slsLog)
 				if err != nil {
-					logger.Error(err)
+					Error(err)
 				}
 			} else {
-				logger.Warn("Audit SLS producer not initialized for API audit logging")
+				Warn("Audit SLS producer not initialized for API audit logging")
 			}
 		}()
 	}

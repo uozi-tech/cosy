@@ -4,12 +4,9 @@
 
 ## 概述
 
-LogBuffer 提供了一个通用的日志收集机制，可用于：
-- HTTP 请求日志收集
-- 会话日志管理
-- SQL 查询日志追踪
-- Goroutine 调试日志
-- 实时监控数据收集
+LogBuffer 提供通用的进程内日志收集机制，适合调用方显式管理的小型、短生命周期数据集。`NewLimitedLogBuffer` 可按序列化后的字节数限制容量，并在达到上限时写入截断标记。
+
+Cosy 的 SessionLogger 与 GORM Logger 始终写入默认日志，并用 `correlation_id` 关联 API Log 或协程追踪。Default Log 的 SLS producer 初始化成功时，不再把 Session/SQL 日志保留在请求内存中；未接 SLS 或 producer 初始化失败时，使用 1 MiB 的有界 LogBuffer 作为兼容回退。
 
 ## API 参考
 
@@ -35,6 +32,14 @@ func NewLogBuffer() *LogBuffer
 **示例：**
 ```go
 buffer := logger.NewLogBuffer()
+```
+
+#### NewLimitedLogBuffer
+
+创建按序列化字节数限制容量的日志缓冲区。达到上限后停止接收新日志，并尽可能保留一条截断标记。
+
+```go
+buffer := logger.NewLimitedLogBuffer(1024 * 1024)
 ```
 
 #### Append
@@ -95,36 +100,36 @@ type LogItem struct {
 ```go
 func AuditMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
-        // 创建日志缓冲区
-        logBuffer := logger.NewLogBuffer()
+        // 创建有界的回退日志缓冲区
+        logBuffer := logger.NewLimitedLogBuffer(logger.DefaultSessionLogBufferBytes)
         c.Set(logger.CosyLogBufferKey, logBuffer)
         
         // 处理请求
         c.Next()
         
         // 获取收集的日志
-        logs := logBuffer.Items
+        logs := logBuffer.Snapshot()
         // 处理日志...
     }
 }
 ```
 
-### 在会话日志中使用
+### 与会话日志配合
 
 ```go
 sessionLogger := logger.NewSessionLogger(ctx)
-// sessionLogger.Logs 就是一个 LogBuffer 实例
 sessionLogger.Info("Processing user request")
+// 有 SLS 时从 Default Log 检索；无 SLS 时 Logs 保存有界回退
 ```
 
 ### 在 GORM 日志中使用
 
-GORM 日志会自动将 SQL 查询日志添加到请求上下文中的 LogBuffer：
+GORM 日志会继承请求上下文中的关联字段并实时写入 Default Log：
 
 ```go
 // 在请求处理中
 db := cosy.GetDB().WithContext(c)
-// SQL 查询会自动记录到 LogBuffer
+// SQL 日志包含 correlation_id、request_id、log_type=sql 和 db_caller
 var users []User
 db.Find(&users)
 ```
@@ -160,12 +165,9 @@ go func() {
 }()
 ```
 
-## 性能优化
+## 内存注意事项
 
-LogBuffer 采用了以下优化策略：
-- 使用预分配的切片减少内存分配
-- 简单的互斥锁保证最小的锁竞争
-- 轻量级的数据结构减少内存占用
+`NewLogBuffer` 保留原有的无限制行为，调用方必须自行控制生命周期。请求日志、SQL 日志或长时间运行任务应使用 SessionLogger：有 SLS 时通过 `correlation_id` 在日志后端聚合查询；无 SLS 时由 1 MiB 的回退缓冲限制进程内占用。
 
 ## 与 SLS 集成
 

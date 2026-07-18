@@ -166,13 +166,9 @@ func TestServerFactoryLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	defer listener.Close()
 
-	// This should not error since we have a valid listener
-	go func() {
-		err := factory.Start(ctx, listener)
-		if err != nil {
-			t.Logf("Expected start error: %v", err)
-		}
-	}()
+	// This should not error since we have a valid listener.
+	err = factory.Start(ctx, listener)
+	assert.NoError(t, err)
 
 	// Test shutdown when not running
 	err = factory.Shutdown(ctx)
@@ -215,16 +211,9 @@ func TestServerFactoryIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Start the server
-	go func() {
-		err := factory.Start(ctx, listener)
-		if err != nil {
-			t.Logf("Server start error: %v", err)
-		}
-	}()
-
-	// Give the server time to start
-	time.Sleep(100 * time.Millisecond)
+	// Start returns after the protocol servers have been launched.
+	err = factory.Start(ctx, listener)
+	require.NoError(t, err)
 
 	// Test that the server is running
 	assert.True(t, factory.IsRunning())

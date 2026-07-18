@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +19,19 @@ const Topic = "audit"
 
 // Audit producer instance for API audit logging
 var auditProducer *sls.Producer
+
+var (
+	defaultSLSWriterMu sync.Mutex
+	defaultSLSWriter   *SLSWriter
+	slsSupportActive   atomic.Bool
+)
+
+// HasSLSSupport reports whether the default logger has an initialized SLS
+// producer. Configuration alone is not enough: failed initialization keeps the
+// bounded in-memory fallback enabled.
+func HasSLSSupport() bool {
+	return slsSupportActive.Load()
+}
 
 // SLSWriter is a writer that sends logs to SLS
 type SLSWriter struct {
@@ -33,10 +48,6 @@ func NewSLSWriter(logStore string) *SLSWriter {
 
 // Write implements io.Writer interface
 func (w *SLSWriter) Write(p []byte) (n int, err error) {
-	if !settings.SLSSettings.Enable() {
-		return len(p), nil
-	}
-
 	if w.producer == nil {
 		return len(p), fmt.Errorf("SLS producer not initialized")
 	}
@@ -123,6 +134,21 @@ func (w *SLSWriter) InitProducer() error {
 	}
 	w.producer = p
 	return nil
+}
+
+func replaceDefaultSLSWriter(writer *SLSWriter) {
+	defaultSLSWriterMu.Lock()
+	previous := defaultSLSWriter
+	defaultSLSWriter = writer
+	slsSupportActive.Store(writer != nil && writer.producer != nil)
+	defaultSLSWriterMu.Unlock()
+	if previous != nil && previous.producer != nil {
+		previous.producer.SafeClose()
+	}
+}
+
+func closeDefaultSLSWriter() {
+	replaceDefaultSLSWriter(nil)
 }
 
 // InitAuditSLSProducer initializes the audit SLS producer for API audit logging

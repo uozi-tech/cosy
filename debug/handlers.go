@@ -2,6 +2,8 @@ package debug
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"mime"
@@ -22,9 +24,15 @@ import (
 	"github.com/uozi-tech/cosy"
 	"github.com/uozi-tech/cosy/debug/app"
 	"github.com/uozi-tech/cosy/kernel"
+	cosylogger "github.com/uozi-tech/cosy/logger"
 )
 
 var startupTime = time.Now()
+
+var (
+	queryCorrelationLogs = cosylogger.QueryCorrelationLogs
+	hasSLSSupport        = cosylogger.HasSLSSupport
+)
 
 // sync.Pool optimizations for debug handlers
 var (
@@ -536,6 +544,7 @@ type RequestListResponse struct {
 // RequestSummary lightweight version of RequestTrace for list views
 type RequestSummary struct {
 	RequestID      string `json:"request_id"`
+	CorrelationID  string `json:"correlation_id"`
 	IP             string `json:"ip"`
 	ReqURL         string `json:"req_url"`
 	ReqMethod      string `json:"req_method"`
@@ -981,6 +990,7 @@ func handleRequests(c *gin.Context) {
 	for i, req := range allRequests {
 		summaries[i] = &RequestSummary{
 			RequestID:      req.RequestID,
+			CorrelationID:  req.CorrelationID,
 			IP:             req.IP,
 			ReqURL:         req.ReqURL,
 			ReqMethod:      req.ReqMethod,
@@ -1026,7 +1036,7 @@ func handleRequestDetail(c *gin.Context) {
 
 	// Search active requests
 	if value, ok := hub.activeRequests.Load(id); ok {
-		c.JSON(http.StatusOK, value.(*RequestTrace))
+		c.JSON(http.StatusOK, requestTraceWithPreferredLogs(c.Request.Context(), value.(*RequestTrace)))
 		return
 	}
 
@@ -1034,7 +1044,7 @@ func handleRequestDetail(c *gin.Context) {
 	historyTraces := hub.historyRequests.GetRecent(500)
 	for _, trace := range historyTraces {
 		if trace.RequestID == id {
-			c.JSON(http.StatusOK, trace)
+			c.JSON(http.StatusOK, requestTraceWithPreferredLogs(c.Request.Context(), trace))
 			return
 		}
 	}
@@ -1042,6 +1052,35 @@ func handleRequestDetail(c *gin.Context) {
 	c.JSON(http.StatusNotFound, ErrorResponse{
 		Error: "Request not found",
 	})
+}
+
+func requestTraceWithPreferredLogs(ctx context.Context, trace *RequestTrace) *RequestTrace {
+	result := *trace
+	if trace.CorrelationID == "" || !hasSLSSupport() {
+		return &result
+	}
+
+	to := trace.EndTime
+	if to <= 0 {
+		to = time.Now().Unix()
+	}
+	from := trace.StartTime
+	if latency, err := time.ParseDuration(trace.Latency); err == nil {
+		from -= int64(latency.Seconds())
+	}
+	if from <= 0 {
+		from = to - int64((15 * time.Minute).Seconds())
+	}
+
+	logs, err := queryCorrelationLogs(ctx, trace.CorrelationID, from-60, to+60)
+	if err != nil || len(logs) == 0 {
+		return &result
+	}
+	data, err := json.Marshal(logs)
+	if err == nil {
+		result.SessionLogs = string(data)
+	}
+	return &result
 }
 
 // handleRequestHistory handles request history queries
@@ -1086,6 +1125,7 @@ func handleRequestHistory(c *gin.Context) {
 		// Convert to summary
 		summary := &RequestSummary{
 			RequestID:      trace.RequestID,
+			CorrelationID:  trace.CorrelationID,
 			IP:             trace.IP,
 			ReqURL:         trace.ReqURL,
 			ReqMethod:      trace.ReqMethod,
@@ -1128,6 +1168,7 @@ func handleActiveRequests(c *gin.Context) {
 	for i, trace := range traces {
 		summaries[i] = &RequestSummary{
 			RequestID:      trace.RequestID,
+			CorrelationID:  trace.CorrelationID,
 			IP:             trace.IP,
 			ReqURL:         trace.ReqURL,
 			ReqMethod:      trace.ReqMethod,

@@ -49,6 +49,7 @@ type EnhancedGoroutineTrace struct {
 type RequestTrace struct {
 	// Basic information - matches middleware logMap
 	RequestID      string `json:"request_id"`
+	CorrelationID  string `json:"correlation_id"`
 	IP             string `json:"ip"`
 	ReqURL         string `json:"req_url"`
 	ReqMethod      string `json:"req_method"`
@@ -169,7 +170,7 @@ func (cb *CircularBuffer[T]) GetAll() []T {
 	}
 
 	result := make([]T, cb.size)
-	
+
 	// Optimize for cache-friendly copying
 	if cb.head < cb.tail {
 		// Data is contiguous, single copy operation
@@ -191,14 +192,14 @@ func (cb *CircularBuffer[T]) GetRecent(n int) []T {
 	if n > cb.size {
 		n = cb.size
 	}
-	
+
 	if n == 0 {
 		return nil
 	}
 
 	result := make([]T, n)
 	startIdx := cb.size - n
-	
+
 	// Optimize for cache-friendly copying
 	for i := 0; i < n; i++ {
 		idx := (cb.head + startIdx + i) % cb.capacity

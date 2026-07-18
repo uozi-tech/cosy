@@ -437,6 +437,7 @@ func HandleMiddlewareReport(requestID string, logMap map[string]string) {
 func createTraceFromLogMap(requestID string, logMap map[string]string) *RequestTrace {
 	return &RequestTrace{
 		RequestID:      requestID,
+		CorrelationID:  logMap["correlation_id"],
 		IP:             logMap["ip"],
 		ReqURL:         logMap["req_url"],
 		ReqMethod:      logMap["req_method"],
@@ -457,6 +458,9 @@ func createTraceFromLogMap(requestID string, logMap map[string]string) *RequestT
 
 // updateTraceFromLogMap updates RequestTrace with logMap
 func updateTraceFromLogMap(trace *RequestTrace, logMap map[string]string) {
+	if logMap["correlation_id"] != "" {
+		trace.CorrelationID = logMap["correlation_id"]
+	}
 	if logMap["resp_header"] != "" {
 		trace.RespHeader = limitStringSize(logMap["resp_header"], MaxFieldSize)
 	}

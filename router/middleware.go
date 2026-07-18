@@ -10,9 +10,9 @@ import (
 
 func recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		s := logger.NewSessionLogger(c)
 		defer func() {
 			if err := recover(); err != nil {
+				s := logger.NewSessionLogger(c)
 				buf := make([]byte, 1024)
 				runtime.Stack(buf, false)
 				s.Errorf("%s\n%s", err, buf)

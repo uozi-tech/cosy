@@ -3,6 +3,8 @@ package logger
 import (
 	"log"
 	"os"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +13,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger *zap.SugaredLogger
+var (
+	logger          atomic.Pointer[zap.SugaredLogger]
+	loggerLifecycle sync.Mutex
+)
 
 // init initializes a basic debug-level logger to prevent nil pointer issues
 func init() {
@@ -54,11 +59,16 @@ func init() {
 	}
 
 	core := zapcore.NewTee(cores...)
-	logger = zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
+	logger.Store(zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar())
 }
 
 // Init initializes the logger with the given mode and overrides the basic logger configuration.
 func Init(mode string) {
+	loggerLifecycle.Lock()
+	defer loggerLifecycle.Unlock()
+
+	closeDefaultSLSWriter()
+
 	// First, define our level-handling logic.
 	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.ErrorLevel
@@ -116,16 +126,22 @@ func Init(mode string) {
 
 	// Initialize enhanced logger (console + file only)
 	core := zapcore.NewTee(cores...)
-	logger = zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
+	logger.Store(zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar())
 
 	// Now add SLS support if enabled
 	if settings.SLSSettings.Enable() {
-		AddSLSSupport(mode, highPriority, lowPriority)
+		addSLSSupport(mode, highPriority, lowPriority)
 	}
 }
 
 // AddSLSSupport adds SLS logging support to the existing logger
 func AddSLSSupport(mode string, highPriority, lowPriority zap.LevelEnablerFunc) {
+	loggerLifecycle.Lock()
+	defer loggerLifecycle.Unlock()
+	addSLSSupport(mode, highPriority, lowPriority)
+}
+
+func addSLSSupport(mode string, highPriority, lowPriority zap.LevelEnablerFunc) {
 	// Initialize SLS writer for default logging
 	slsWriter := NewSLSWriter(settings.SLSSettings.DefaultLogStoreName)
 	if err := slsWriter.InitProducer(); err != nil {
@@ -136,7 +152,7 @@ func AddSLSSupport(mode string, highPriority, lowPriority zap.LevelEnablerFunc) 
 	slsEncoder := GetSLSEncoder(mode)
 
 	// Get current cores from existing logger
-	currentCore := logger.Desugar().Core()
+	currentCore := GetLogger().Desugar().Core()
 
 	// Create new SLS cores
 	slsCores := []zapcore.Core{
@@ -148,85 +164,89 @@ func AddSLSSupport(mode string, highPriority, lowPriority zap.LevelEnablerFunc) 
 	newCore := zapcore.NewTee(append([]zapcore.Core{currentCore}, slsCores...)...)
 
 	// Replace the logger with one that includes SLS support
-	logger = zap.New(newCore, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
+	logger.Store(zap.New(newCore, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar())
+	replaceDefaultSLSWriter(slsWriter)
 }
 
 // Sync flushes any buffered log entries.
 func Sync() {
-	_ = logger.Sync()
+	loggerLifecycle.Lock()
+	defer loggerLifecycle.Unlock()
+	_ = GetLogger().Sync()
+	closeDefaultSLSWriter()
 }
 
 // GetLogger returns the logger.
 func GetLogger() *zap.SugaredLogger {
-	return logger
+	return logger.Load()
 }
 
 // "Debug" logs a message at DebugLevel.
 func Debug(args ...any) {
-	logger.Debugln(args...)
+	GetLogger().Debugln(args...)
 }
 
 // Info logs a message at InfoLevel.
 func Info(args ...any) {
-	logger.Infoln(args...)
+	GetLogger().Infoln(args...)
 }
 
 // Warn logs a message at WarnLevel.
 func Warn(args ...any) {
-	logger.Warnln(args...)
+	GetLogger().Warnln(args...)
 }
 
 // Error logs a message at ErrorLevel.
 func Error(args ...any) {
-	logger.Errorln(args...)
+	GetLogger().Errorln(args...)
 }
 
 // DPanic logs a message at DPanicLevel.
 func DPanic(args ...any) {
-	logger.DPanic(args...)
+	GetLogger().DPanic(args...)
 }
 
 // Panic logs a message at PanicLevel.
 func Panic(args ...any) {
-	logger.Panicln(args...)
+	GetLogger().Panicln(args...)
 }
 
 // Fatal logs a message at FatalLevel.
 func Fatal(args ...any) {
-	logger.Fatalln(args...)
+	GetLogger().Fatalln(args...)
 }
 
 // Debugf logs a message at DebugLevel.
 func Debugf(format string, args ...any) {
-	logger.Debugf(format, args...)
+	GetLogger().Debugf(format, args...)
 }
 
 // Infof logs a message at InfoLevel.
 func Infof(format string, args ...any) {
-	logger.Infof(format, args...)
+	GetLogger().Infof(format, args...)
 }
 
 // Warnf logs a message at WarnLevel.
 func Warnf(format string, args ...any) {
-	logger.Warnf(format, args...)
+	GetLogger().Warnf(format, args...)
 }
 
 // Errorf logs a message at ErrorLevel.
 func Errorf(format string, args ...any) {
-	logger.Errorf(format, args...)
+	GetLogger().Errorf(format, args...)
 }
 
 // DPanicf logs a message at DPanicLevel.
 func DPanicf(format string, args ...any) {
-	logger.DPanicf(format, args...)
+	GetLogger().DPanicf(format, args...)
 }
 
 // Panicf logs a message at PanicLevel.
 func Panicf(format string, args ...any) {
-	logger.Panicf(format, args...)
+	GetLogger().Panicf(format, args...)
 }
 
 // Fatalf logs a message at FatalLevel.
 func Fatalf(format string, args ...any) {
-	logger.Fatalf(format, args...)
+	GetLogger().Fatalf(format, args...)
 }
