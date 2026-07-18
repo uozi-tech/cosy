@@ -1,11 +1,24 @@
 # Cosy 请求解码/校验管线"编译式"重构方案
 
-> 状态：方案探索阶段，未实施
+> 状态：P0/P1/P2 已实施并提交；P3 暂缓
 > 分支：`refactor/compiled-codec`
 > 日期：2026-07-03
 >
 > **决策记录（2026-07-03）**：JSON 解析（bytes → map）固定采用 sonic 做可靠交付，
 > **不自研解析器**；自研范围限定为 map→struct 解码（structcodec）与校验（rulecheck）。
+>
+> **实施进度**：
+> - ✅ **P0 + P1**（commit `c6e2844`）：`internal/structcodec` 编译式 map→struct 引擎替换
+>   `mapstructure`（已从 go.mod 移除）；`WeakDecode` 签名/语义不变；F1 类型混淆 panic→error
+>   已修；语义矩阵测试 + fuzz 语料 + 基准入库。实测 ~13×（29,582→2,270 ns/op，allocs 102→60）。
+> - ✅ **P2**（commit `4f6cfe7`）：`internal/rulecheck` 编译式规则引擎替换 `ValidateMap`；
+>   validator/v10 保留作未知 tag 的 fallback；I1 mass-assignment 键过滤与错误契约不变；
+>   F3 safety_text 正则包级预编译；与原生 validator 16 例差分判定一致。实测 ~1.8×（358→196 ns/op，5→0 allocs）。
+> - ⏸ **P3 暂缓**：sonic binding 接入 + body 大小限制（F2）+ `RegisterModels` 预热。
+>   暂停原因：P3 触及 `validate.go` 的 `ShouldBindJSON` 路径，与一条**进行中的独立 logger 重构工作线**
+>   （`logger/session.go`、`logger/correlation.go`、`logger/middleware.go`、`kernel/boot_test.go` 等）重叠，
+>   待该工作线落地后再启动，避免两条线在 `validate.go` 冲突。
+>   备注：sonic 接入倾向通过 gin 的 `sonic` build tag 启用（最可靠、不侵入 `binding.JSON`）。
 
 ## 0. 目标
 
