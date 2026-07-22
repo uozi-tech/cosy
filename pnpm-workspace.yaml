@@ -6,7 +6,7 @@ overrides:
   esbuild: ^0.28.1
   dompurify: ^3.4.12
   js-yaml: 5.2.1
-  linkify-it: ^5.0.2
+  linkify-it: ^6.1.0
   markdown-it: ^14.3.0
   mermaid: ^11.16.0
   undici: ^8.7.0
