@@ -295,6 +295,8 @@ github.com/ugorji/go/codec v1.3.1 h1:waO7eEiFDwidsBN6agj1vJQ4AG7lh2yqXyOXqhgQuyY
 github.com/ugorji/go/codec v1.3.1/go.mod h1:pRBVtBSKl77K30Bv8R2P+cLSGaTtex6fsA2Wjqmfxj4=
 github.com/ulikunitz/xz v0.5.15 h1:9DNdB5s+SgV3bQ2ApL10xRc35ck0DuIX/isZvIk+ubY=
 github.com/ulikunitz/xz v0.5.15/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+github.com/ulikunitz/xz v0.5.16 h1:ld6NyySjx5lowVKwJvMRLnW5nxKX/xnpSiFYZ/Lxur0=
+github.com/ulikunitz/xz v0.5.16/go.mod h1:H9Rt/W6/Qj27PGauhQc6nfCDy7vHpzsOThBSaYDoEhw=
 github.com/uozi-tech/cosy-driver-mysql v0.2.3 h1:bqnctR9/OpW7TJZEX8cGOAy0HPlQWL3yMEmllHk6GwM=
 github.com/uozi-tech/cosy-driver-mysql v0.2.3/go.mod h1:YzPL3iH/OXeFGGgBIWj7Awht9tjfqijvZhyYLKUOlR8=
 github.com/uozi-tech/cosy-driver-postgres v0.2.2 h1:gOsXbtenAc/YOgvcbxiQORjmoq0mrcK9ijQPnUgV2Ns=
