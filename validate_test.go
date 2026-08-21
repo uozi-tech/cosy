@@ -83,7 +83,7 @@ func TestValidateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 	errs := core.validate()
 
 	require.Contains(t, errs, "body")
-	assert.Contains(t, errs["body"], "Syntax error")
+	assert.NotEmpty(t, errs["body"])
 	assertJSONBindErrorStreamed(t, c, observed)
 }
 
@@ -102,7 +102,7 @@ func TestValidateBatchUpdateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 	errs := validateBatchUpdate(core)
 
 	require.Contains(t, errs, "body")
-	assert.Contains(t, errs["body"], "Syntax error")
+	assert.NotEmpty(t, errs["body"])
 	assertJSONBindErrorStreamed(t, c, observed)
 }
 
@@ -131,7 +131,6 @@ func assertJSONBindErrorStreamed(t *testing.T, c *gin.Context, observed *observe
 	entry := entries[0]
 	assert.Equal(t, zapcore.ErrorLevel, entry.Level)
 	assert.Contains(t, entry.Message, "failed to bind JSON request body")
-	assert.Contains(t, entry.Message, "Syntax error")
 	fields := entry.ContextMap()
 	assert.Equal(t, sessionLogger.CorrelationID, fields[logger.FieldCorrelationID])
 	assert.Equal(t, sessionLogger.RequestID, fields[logger.FieldRequestID])

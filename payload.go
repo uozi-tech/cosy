@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/uozi-tech/cosy/settings"
 )
@@ -14,17 +13,16 @@ import (
 // and BindAndValid when settings.ServerSettings.PayloadMaxBytes is 0 (F2).
 const defaultPayloadMaxBytes int64 = 10 << 20 // 10 MiB
 
-// jsonDecoder is the frozen sonic configuration for decoding request bodies.
+// jsonDecoder is selected per toolchain by build tags:
 //
-// Config discipline (PERF_REFACTOR_PLAN.md §3.3, invariant I3): CopyString
-// must stay true so decoded strings never alias the request buffer, and
-// ValidateString must stay true so raw control characters in string values
-// are rejected as encoding/json does. Do not switch to ConfigDefault or
-// ConfigFastest for speed — ConfigDefault has CopyString=false.
-var jsonDecoder = sonic.Config{
-	CopyString:     true,
-	ValidateString: true,
-}.Froze()
+//   - payload_jsonv2.go (go1.27+): encoding/json/v2 — standard library and the
+//     fastest option on Go 1.27, where sonic only offers its compat path
+//     (slower than encoding/json itself).
+//   - payload_sonic.go (<go1.27): sonic native JIT.
+//
+// Both paths keep the same semantics: decoded strings are copies (I3), raw
+// control characters are rejected, duplicate keys are last-wins and invalid
+// UTF-8 is coerced to U+FFFD.
 
 func payloadMaxBytes() int64 {
 	if n := settings.ServerSettings.PayloadMaxBytes; n != 0 {

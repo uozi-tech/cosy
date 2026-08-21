@@ -30,7 +30,7 @@ func BenchmarkStdJSONToMap(b *testing.B) {
 	}
 }
 
-func BenchmarkSonicJSONToMap(b *testing.B) {
+func BenchmarkPipelineJSONToMap(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
 		m := make(map[string]any)
