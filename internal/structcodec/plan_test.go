@@ -2,6 +2,7 @@ package structcodec
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,16 +64,17 @@ type repeatedRight struct {
 	Value string `json:"value"`
 }
 
-type repeatedName struct {
-	repeatedLeft
-	repeatedRight
-}
-
 func TestDecodeRepeatedJSONNameReachesEveryField(t *testing.T) {
-	var out repeatedName
-	require.NoError(t, Decode(map[string]any{"value": "both"}, &out))
-	assert.Equal(t, "both", out.repeatedLeft.Value)
-	assert.Equal(t, "both", out.repeatedRight.Value)
+	// Two squashed structs repeating a json name; built with reflect.StructOf
+	// because vet's structtag check rejects the literal form.
+	typ := reflect.StructOf([]reflect.StructField{
+		{Name: "RepeatedLeft", Type: reflect.TypeFor[repeatedLeft](), Anonymous: true},
+		{Name: "RepeatedRight", Type: reflect.TypeFor[repeatedRight](), Anonymous: true},
+	})
+	out := reflect.New(typ)
+	require.NoError(t, Decode(map[string]any{"value": "both"}, out.Interface()))
+	assert.Equal(t, "both", out.Elem().Field(0).Interface().(repeatedLeft).Value)
+	assert.Equal(t, "both", out.Elem().Field(1).Interface().(repeatedRight).Value)
 }
 
 type wideModel struct {

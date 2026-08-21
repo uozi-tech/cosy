@@ -202,6 +202,7 @@ cosy/
 | 批量更新 `data` 不是对象 → 406 `{"data":"required"}`（此前 panic → 500） | 修正 |
 | 覆盖内置 tag 需通过 `cosy.RegisterValidation` | 新 API，文档已注明 |
 | `map2struct.RegisterTypeDecoder` 可注册自定义类型解码器 | 新 API |
+| 移除 `map2struct` 的 legacy hook（`DecodeHookFunc`、`ToTimeHookFunc` 等 7 个导出符号，仓库内外均无调用方） | **BREAKING**，对应能力由 `RegisterTypeDecoder` 与内置特殊类型表覆盖 |
 
 ## 7. 安全对抗检查
 

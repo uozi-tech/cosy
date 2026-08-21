@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	safetyASCIIRegex   = regexp.MustCompile(`^[a-zA-Z0-9-_./: ]*$`)
+	// safetyUnicodeRegex is the second alternative of the safety_text rule;
+	// the first, `^[a-zA-Z0-9-_./: ]*$`, is evaluated by isSafetyASCII.
 	safetyUnicodeRegex = regexp.MustCompile(`^[\p{L}\p{N}-_.—— ]*$`)
 	// hostnameRegex is validator's hostnameRegexStringRFC1123: labels must end
 	// with an alphanumeric character.
@@ -399,7 +400,21 @@ func IsDate(value string) bool {
 // IsSafetyText reports whether value only contains characters allowed by the
 // "safety_text" rule. It backs both the compiled rule and valid.SafetyText.
 func IsSafetyText(value string) bool {
-	return safetyASCIIRegex.MatchString(value) || safetyUnicodeRegex.MatchString(value)
+	return isSafetyASCII(value) || safetyUnicodeRegex.MatchString(value)
+}
+
+// isSafetyASCII is `^[a-zA-Z0-9-_./: ]*$` as a byte loop: the common case
+// (ASCII identifiers, paths, timestamps) never reaches the regexp engine.
+func isSafetyASCII(value string) bool {
+	for i := 0; i < len(value); i++ {
+		switch c := value[i]; {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '-', c == '_', c == '.', c == '/', c == ':', c == ' ':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func validHostnamePort(value string) bool {

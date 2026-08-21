@@ -65,11 +65,6 @@ type fieldInput struct {
 const scratchFields = 32
 
 func (plan *decodePlan) decode(input any, dst unsafe.Pointer, path string) error {
-	source, ok := asStringMap(input)
-	if !ok {
-		return plan.decodeView(input, dst, path)
-	}
-
 	var scratch [scratchFields]fieldInput
 	var inputs []fieldInput
 	if len(plan.fields) <= scratchFields {
@@ -78,24 +73,15 @@ func (plan *decodePlan) decode(input any, dst unsafe.Pointer, path string) error
 		inputs = make([]fieldInput, len(plan.fields))
 	}
 
-	// Walk the input once: exact name first, lower-cased name second. This
-	// replaces the two map copies newMapView used to build per decode.
-	for key, value := range source {
-		if index, found := plan.index[key]; found {
-			for ; index >= 0; index = plan.fields[index].next {
-				inputs[index] = fieldInput{value: value, quality: matchExact}
-			}
-			continue
+	if source, ok := asStringMap(input); ok {
+		plan.collectFromMap(source, inputs)
+	} else {
+		// structs (and pointers to them) and maps with other value types
+		view, err := newMapView(input)
+		if err != nil {
+			return namedExpectedMap(path, input)
 		}
-		index, found := plan.lowerIndex[strings.ToLower(key)]
-		if !found {
-			continue
-		}
-		for ; index >= 0; index = plan.fields[index].next {
-			if inputs[index].quality != matchExact {
-				inputs[index] = fieldInput{value: value, quality: matchFolded}
-			}
-		}
+		plan.collectFromView(view, inputs)
 	}
 
 	var decodeErrors []string
@@ -113,28 +99,34 @@ func (plan *decodePlan) decode(input any, dst unsafe.Pointer, path string) error
 	return combineErrors(decodeErrors)
 }
 
-// decodeView handles inputs that are not a map[string]any: structs (and
-// pointers to them) and maps with other value types.
-func (plan *decodePlan) decodeView(input any, dst unsafe.Pointer, path string) error {
-	view, err := newMapView(input)
-	if err != nil {
-		return namedExpectedMap(path, input)
-	}
-
-	var decodeErrors []string
-	var cloned []unsafe.Pointer
-	for i := range plan.fields {
-		field := &plan.fields[i]
-		inputValue, ok := view.lookup(field.name)
-		if !ok {
+// collectFromMap walks the input once: exact name first, lower-cased name
+// second. This replaces the two map copies newMapView used to build per decode.
+func (plan *decodePlan) collectFromMap(source map[string]any, inputs []fieldInput) {
+	for key, value := range source {
+		if index, found := plan.index[key]; found {
+			for ; index >= 0; index = plan.fields[index].next {
+				inputs[index] = fieldInput{value: value, quality: matchExact}
+			}
 			continue
 		}
-		address := field.address(dst, &cloned)
-		if err := field.decode(address, inputValue, joinPath(path, field.name)); err != nil {
-			decodeErrors = appendDecodeErrors(decodeErrors, err)
+		index, found := plan.lowerIndex[strings.ToLower(key)]
+		if !found {
+			continue
+		}
+		for ; index >= 0; index = plan.fields[index].next {
+			if inputs[index].quality != matchExact {
+				inputs[index] = fieldInput{value: value, quality: matchFolded}
+			}
 		}
 	}
-	return combineErrors(decodeErrors)
+}
+
+func (plan *decodePlan) collectFromView(view *mapView, inputs []fieldInput) {
+	for i := range plan.fields {
+		if value, ok := view.lookup(plan.fields[i].name); ok {
+			inputs[i] = fieldInput{value: value, quality: matchExact}
+		}
+	}
 }
 
 var (
