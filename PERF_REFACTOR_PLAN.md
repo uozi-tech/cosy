@@ -36,8 +36,10 @@
 >   （go1.27+，json/v2 + `AllowDuplicateNames` + `AllowInvalidUTF8`）、`payload_sonic.go`（<go1.27）。
 >   语义矩阵（11 个 D/E 语料 × 4 解码器，`TestJSONDecoderSemanticsMatrix`）逐行一致。实测（-cpu=1）：
 >   1.27 上 pipeline 2,178 ns/op / 37 allocs，json/v2 严格 1,651 / 24；1.26 上 sonic 原生 1,188 / 40。
->   go.mod 最低版本保持 1.26。**待决策**：① 最低版本升 1.27 并删除 sonic 路径；② 去掉两个兼容选项
->   启用 v2 严格语义（拒绝重复键 / 非法 UTF-8，快约 25%，对客户端属行为变化）。
+>   **决策（2026-08-21，用户拍板）**：① 最低 Go 版本升至 1.27.0，删除 sonic 路径，sonic 退回
+>   gin 的间接依赖，解码器只剩 `encoding/json/v2`（`payload.go`）；CI 同步到 1.27.0。
+>   ② 是否去掉两个兼容选项（`AllowDuplicateNames` / `AllowInvalidUTF8`）启用 v2 严格语义
+>   （拒绝重复键 / 非法 UTF-8，快约 25%，对客户端属行为变化）**待定**。
 > - ⏸ **P4 保持暂缓**：Tier 2 机器码后端，按需评估。
 
 ## 0. 目标
@@ -160,10 +162,10 @@ JIT 的本质是编译缓存，机器码只是它的一种后端。
   下游任意 tag、`RegisterValidation` 注册的自定义校验器全部照常工作。
 - `db_unique` 本就在校验管线外单独处理，不受影响。
 
-### 3.3 组件三：bytes → map 按 Go 版本分流（已定稿，不自研）
+### 3.3 组件三：bytes → map 采用 `encoding/json/v2`（已定稿，不自研）
 
-> 2026-08-21 更新：Go 1.27 起改用 `encoding/json/v2`（见 P3 补充），sonic 仅服务 <go1.27 的工具链。
-> 下文关于 sonic 的描述只适用于 `payload_sonic.go` 路径。
+> 2026-08-21 更新：最低 Go 版本升至 1.27 后，bytes→map 只用标准库 `encoding/json/v2`
+> （`payload.go`），sonic 路径已删除。下文关于 sonic 的描述仅作历史记录（P3 首版实现）。
 
 - sonic 已在依赖树中；`sonic.Unmarshal` 在不支持的平台自动退化为 encoding/json；
   数字默认解析为 float64，与现状一致。

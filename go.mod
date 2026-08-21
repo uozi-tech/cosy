@@ -1,11 +1,10 @@
 module github.com/uozi-tech/cosy
 
-go 1.26.5
+go 1.27.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/bsm/redislock v0.10.0
-	github.com/bytedance/sonic v1.15.1
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fatih/color v1.19.0
@@ -46,6 +45,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/bytedance/gopkg v0.1.4 // indirect
+	github.com/bytedance/sonic v1.15.1 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect

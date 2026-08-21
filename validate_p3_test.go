@@ -64,7 +64,7 @@ func TestValidateBatchUpdateRejectsOversizedBody(t *testing.T) {
 }
 
 // Corpus C (DoS): deeply nested JSON must fail with an error, never panic or
-// recurse unbounded. sonic caps nesting at depth 4096.
+// recurse unbounded. jsontext caps nesting at depth 10000.
 func TestValidateDeepNestingReturnsError(t *testing.T) {
 	depth := 100_000
 	body := `{"a":` + strings.Repeat("[", depth) + strings.Repeat("]", depth) + `}`
@@ -107,7 +107,7 @@ func TestJSONDecoderCopiesStrings(t *testing.T) {
 }
 
 // Parity with encoding/json: raw control characters inside string values are
-// rejected (ValidateString=true).
+// rejected, as encoding/json v1 did.
 func TestJSONDecoderRejectsRawControlChars(t *testing.T) {
 	var m map[string]any
 	err := jsonDecoder.Unmarshal([]byte("{\"a\":\"x\x01y\"}"), &m)
@@ -118,7 +118,7 @@ type p3BindModel struct {
 	Name string `json:"name" binding:"required"`
 }
 
-// BindAndValid keeps running struct validation after the sonic switch.
+// BindAndValid keeps running struct validation after the decoder switch.
 func TestBindAndValidStillValidatesStruct(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

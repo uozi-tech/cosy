@@ -1,6 +1,8 @@
 package cosy
 
 import (
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 	"errors"
 	"io"
 	"net/http"
@@ -13,16 +15,25 @@ import (
 // and BindAndValid when settings.ServerSettings.PayloadMaxBytes is 0 (F2).
 const defaultPayloadMaxBytes int64 = 10 << 20 // 10 MiB
 
-// jsonDecoder is selected per toolchain by build tags:
-//
-//   - payload_jsonv2.go (go1.27+): encoding/json/v2 — standard library and the
-//     fastest option on Go 1.27, where sonic only offers its compat path
-//     (slower than encoding/json itself).
-//   - payload_sonic.go (<go1.27): sonic native JIT.
-//
-// Both paths keep the same semantics: decoded strings are copies (I3), raw
-// control characters are rejected, duplicate keys are last-wins and invalid
-// UTF-8 is coerced to U+FFFD.
+// jsonv2Options keeps encoding/json/v2 on the semantics the pipeline had under
+// encoding/json v1: duplicate keys are last-wins and invalid UTF-8 is coerced
+// to U+FFFD. Dropping these two options switches the pipeline to v2's strict
+// defaults (both cases rejected with an error).
+var jsonv2Options = jsonv2.JoinOptions(
+	jsontext.AllowDuplicateNames(true),
+	jsontext.AllowInvalidUTF8(true),
+)
+
+type jsonv2Decoder struct{}
+
+func (jsonv2Decoder) Unmarshal(buf []byte, val any) error {
+	return jsonv2.Unmarshal(buf, val, jsonv2Options)
+}
+
+// jsonDecoder decodes request bodies with encoding/json/v2 (Go 1.27+).
+// Strings are always copied (invariant I3), raw control characters are
+// rejected and nesting is capped at jsontext's max depth of 10000.
+var jsonDecoder jsonv2Decoder
 
 func payloadMaxBytes() int64 {
 	if n := settings.ServerSettings.PayloadMaxBytes; n != 0 {
