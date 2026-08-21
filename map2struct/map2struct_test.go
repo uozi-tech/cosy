@@ -12,6 +12,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uozi-tech/cosy/internal/structcodec"
 )
 
 type matrixNested struct {
@@ -503,6 +504,7 @@ func TestRegisterTypeDecoderInvalidatesCompiledPlans(t *testing.T) {
 	require.NoError(t, WeakDecode(map[string]any{"id": "raw"}, &before))
 	assert.Equal(t, customID("raw"), before.ID)
 
+	t.Cleanup(func() { structcodec.UnregisterConverter(customID("")) })
 	require.NoError(t, RegisterTypeDecoder(customID(""), func(input any) (any, error) {
 		value, ok := input.(string)
 		if !ok {

@@ -38,23 +38,21 @@ func compileBuiltin(name, param string, hasParam bool, token string) (checkFn, e
 	case "url":
 		return stringCheck(validURL, hasParam, name)
 	case "date":
-		return stringCheck(validDate, hasParam, name)
+		return stringCheck(IsDate, hasParam, name)
 	case "safety_text":
-		return stringCheck(validSafetyText, hasParam, name)
+		return stringCheck(IsSafetyText, hasParam, name)
 	case "hostname_port":
 		return stringCheck(validHostnamePort, hasParam, name)
 	case "max", "min":
 		if !hasParam || param == "" {
 			return nil, fmt.Errorf("%s requires a parameter", name)
 		}
-		limit, err := strconv.ParseFloat(param, 64)
-		if err != nil || math.IsNaN(limit) || math.IsInf(limit, 0) {
+		limit, err := parseLimit(param)
+		if err != nil {
 			return nil, fmt.Errorf("invalid %s parameter %q", name, param)
 		}
-		if name == "max" {
-			return func(_ *validator.Validate, value any) checkResult { return compareLimit(value, param, false) }, nil
-		}
-		return func(_ *validator.Validate, value any) checkResult { return compareLimit(value, param, true) }, nil
+		minimum := name == "min"
+		return func(_ *validator.Validate, value any) checkResult { return compareLimit(value, limit, minimum) }, nil
 	case "oneof":
 		if !hasParam || strings.TrimSpace(param) == "" {
 			return nil, fmt.Errorf("oneof requires at least one value")
@@ -190,7 +188,31 @@ func omitEmptyCheck(validate *validator.Validate, value any) checkResult {
 	}
 }
 
-func compareLimit(value any, param string, minimum bool) checkResult {
+// limitParam holds the min/max parameter parsed once per rule. Each numeric
+// path keeps its own parse result so the per-kind semantics (base-0 integer
+// literals, sign and overflow handling) stay exactly as validator's.
+type limitParam struct {
+	signed     int64
+	signedOK   bool
+	unsigned   uint64
+	unsignedOK bool
+	float      float64
+}
+
+func parseLimit(param string) (limitParam, error) {
+	float, err := strconv.ParseFloat(param, 64)
+	if err != nil || math.IsNaN(float) || math.IsInf(float, 0) {
+		return limitParam{}, fmt.Errorf("not a finite number")
+	}
+	limit := limitParam{float: float}
+	limit.signed, err = strconv.ParseInt(param, 0, 64)
+	limit.signedOK = err == nil
+	limit.unsigned, err = strconv.ParseUint(param, 0, 64)
+	limit.unsignedOK = err == nil
+	return limit, nil
+}
+
+func compareLimit(value any, param limitParam, minimum bool) checkResult {
 	switch value := value.(type) {
 	case string:
 		return compareSigned(int64(utf8.RuneCountInString(value)), param, minimum)
@@ -231,33 +253,25 @@ func compareLimit(value any, param string, minimum bool) checkResult {
 	}
 }
 
-func compareSigned(actual int64, param string, minimum bool) checkResult {
-	limit, err := strconv.ParseInt(param, 0, 64)
-	if err != nil {
+func compareSigned(actual int64, param limitParam, minimum bool) checkResult {
+	if !param.signedOK {
 		return checkFail
 	}
-	if (minimum && actual >= limit) || (!minimum && actual <= limit) {
-		return checkPass
-	}
-	return checkFail
+	return compareOrdered(actual, param.signed, minimum)
 }
 
-func compareUnsigned(actual uint64, param string, minimum bool) checkResult {
-	limit, err := strconv.ParseUint(param, 0, 64)
-	if err != nil {
+func compareUnsigned(actual uint64, param limitParam, minimum bool) checkResult {
+	if !param.unsignedOK {
 		return checkFail
 	}
-	if (minimum && actual >= limit) || (!minimum && actual <= limit) {
-		return checkPass
-	}
-	return checkFail
+	return compareOrdered(actual, param.unsigned, minimum)
 }
 
-func compareFloat(actual float64, param string, minimum bool) checkResult {
-	limit, err := strconv.ParseFloat(param, 64)
-	if err != nil {
-		return checkFail
-	}
+func compareFloat(actual float64, param limitParam, minimum bool) checkResult {
+	return compareOrdered(actual, param.float, minimum)
+}
+
+func compareOrdered[T int64 | uint64 | float64](actual, limit T, minimum bool) checkResult {
 	if (minimum && actual >= limit) || (!minimum && actual <= limit) {
 		return checkPass
 	}
@@ -291,7 +305,9 @@ func validURL(value string) bool {
 	return parsed.Host != "" || parsed.Fragment != "" || parsed.Opaque != ""
 }
 
-func validDate(value string) bool {
+// IsDate reports whether value is a valid YYYY-MM-DD date. It backs both the
+// compiled "date" rule and valid.IsDate.
+func IsDate(value string) bool {
 	if len(value) != len("2006-01-02") {
 		return false
 	}
@@ -299,7 +315,9 @@ func validDate(value string) bool {
 	return err == nil
 }
 
-func validSafetyText(value string) bool {
+// IsSafetyText reports whether value only contains characters allowed by the
+// "safety_text" rule. It backs both the compiled rule and valid.SafetyText.
+func IsSafetyText(value string) bool {
 	return safetyASCIIRegex.MatchString(value) || safetyUnicodeRegex.MatchString(value)
 }
 

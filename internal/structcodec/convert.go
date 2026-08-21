@@ -1,7 +1,6 @@
 package structcodec
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -28,19 +27,8 @@ func compileValueDecoder(typ reflect.Type) valueDecoder {
 		return converterDecoder(typ, converter)
 	}
 
-	switch typ {
-	case timeType:
-		return decodeTime
-	case timePtrType:
-		return decodeTimePointer
-	case decimalType:
-		return decodeDecimal
-	case nullStringType:
-		return decodeNullString
-	case pgDateType:
-		return decodePGDate
-	case pgDatePtrType:
-		return decodePGDatePointer
+	if decoder := builtinSpecialDecoder(typ); decoder != nil {
+		return decoder
 	}
 
 	return func(dst unsafe.Pointer, input any, path string) error {
@@ -97,11 +85,11 @@ func decodeReflect(input any, target reflect.Value, path string) error {
 	case reflect.Bool:
 		return decodeBoolValue(inputValue, target, path)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return decodeIntValue(input, inputValue, target, path)
+		return decodeIntValue(inputValue, target, path)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return decodeUintValue(input, inputValue, target, path)
+		return decodeUintValue(inputValue, target, path)
 	case reflect.Float32, reflect.Float64:
-		return decodeFloatValue(input, inputValue, target, path)
+		return decodeFloatValue(inputValue, target, path)
 	case reflect.Pointer:
 		return decodePointerValue(input, target, path)
 	case reflect.Struct:
@@ -195,7 +183,7 @@ func decodeBoolValue(input, target reflect.Value, path string) error {
 	return nil
 }
 
-func decodeIntValue(raw any, input, target reflect.Value, path string) error {
+func decodeIntValue(input, target reflect.Value, path string) error {
 	switch input.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		target.SetInt(input.Int())
@@ -220,20 +208,12 @@ func decodeIntValue(raw any, input, target reflect.Value, path string) error {
 		}
 		target.SetInt(value)
 	default:
-		if number, ok := raw.(json.Number); ok {
-			value, err := number.Int64()
-			if err != nil {
-				return fmt.Errorf("error decoding json.Number into %s: %s", path, err)
-			}
-			target.SetInt(value)
-			return nil
-		}
 		return unconvertible(path, target.Type(), input)
 	}
 	return nil
 }
 
-func decodeUintValue(raw any, input, target reflect.Value, path string) error {
+func decodeUintValue(input, target reflect.Value, path string) error {
 	switch input.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		target.SetUint(uint64(input.Int()))
@@ -258,20 +238,12 @@ func decodeUintValue(raw any, input, target reflect.Value, path string) error {
 		}
 		target.SetUint(value)
 	default:
-		if number, ok := raw.(json.Number); ok {
-			value, err := strconv.ParseUint(string(number), 0, 64)
-			if err != nil {
-				return fmt.Errorf("error decoding json.Number into %s: %s", path, err)
-			}
-			target.SetUint(value)
-			return nil
-		}
 		return unconvertible(path, target.Type(), input)
 	}
 	return nil
 }
 
-func decodeFloatValue(raw any, input, target reflect.Value, path string) error {
+func decodeFloatValue(input, target reflect.Value, path string) error {
 	switch input.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		target.SetFloat(float64(input.Int()))
@@ -296,14 +268,6 @@ func decodeFloatValue(raw any, input, target reflect.Value, path string) error {
 		}
 		target.SetFloat(value)
 	default:
-		if number, ok := raw.(json.Number); ok {
-			value, err := number.Float64()
-			if err != nil {
-				return fmt.Errorf("error decoding json.Number into %s: %s", path, err)
-			}
-			target.SetFloat(value)
-			return nil
-		}
 		return unconvertible(path, target.Type(), input)
 	}
 	return nil
@@ -337,7 +301,7 @@ func decodeSliceValue(raw any, input, target reflect.Value, path string) error {
 		return nil
 	}
 
-	result := reflect.New(target.Type()).Elem()
+	var result reflect.Value
 	if target.IsNil() {
 		result = reflect.MakeSlice(target.Type(), input.Len(), input.Len())
 	} else {

@@ -16,7 +16,7 @@ type probeDecoder struct {
 var probeDecoders = []probeDecoder{
 	{"std-v1", func(b []byte, m *map[string]any) error { return json.Unmarshal(b, m) }},
 	{"jsonv2", func(b []byte, m *map[string]any) error { return jsonv2.Unmarshal(b, m) }},
-	{"cosy-jsonDecoder", func(b []byte, m *map[string]any) error { return jsonDecoder.Unmarshal(b, m) }},
+	{"cosy-pipeline", func(b []byte, m *map[string]any) error { return decodeJSON(b, m) }},
 }
 
 // TestJSONDecoderSemanticsMatrix records how encoding/json v1, json/v2 and the

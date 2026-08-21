@@ -6,7 +6,7 @@ GORM 日志集成为数据库操作提供完整的日志记录和监控功能，
 GORM 日志通过上下文关联到当前请求，请确保数据库操作带上请求上下文；但**不要把 `*gin.Context` 直接传给 GORM**。
 
 - 用 `cosy.UseDB(c)` 获取 `*gorm.DB`，内部会自动转换为安全的请求上下文；
-- 自行持有 `*gorm.DB` 时，用 `db.WithContext(cosy.RequestContext(c))`（或 `c.Request.Context()`）。
+- 自行持有 `*gorm.DB` 时，用 `db.WithContext(cosy.RequestContext(c))`。不要直接用 `c.Request.Context()`：它会在客户端断开或 handler 返回时取消，而 `cosy.RequestContext(c)` 保留了 `*gin.Context` 原本「不随请求取消」的语义。
 
 原因：gin 会池化并复用 `gin.Context`，而 `database/sql` 在事务内的每次查询都会启动 `Rows.awaitDone` goroutine，它在结果集关闭后才调用 `ctx.Err()`，此时 handler 可能已经返回、同一个 `gin.Context` 已被下一个请求复用，于是和 `Engine.ServeHTTP` 写 `c.Request` 产生 data race。`cosy.RequestContext(c)` 返回由 `c.Request.Context()` 派生的上下文，请求级的值（会话日志、pprof 标签等）仍可被 GORM 日志读取。
 :::

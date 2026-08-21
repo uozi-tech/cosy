@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/uozi-tech/cosy/internal/structcodec"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/settings"
 	"gorm.io/gorm"
@@ -144,6 +145,19 @@ func Init(dialect gorm.Dialector) *gorm.DB {
 	migrate(db, migrationsAfterAutoMigrate)
 
 	ResolvedModels()
+	pretouchModels()
 
 	return db
+}
+
+// pretouchModels pre-compiles the structcodec decode plan of every registered
+// model so the first request does not pay the compilation latency. It runs
+// after all registration (and after any converter registration, which
+// discards compiled plans).
+func pretouchModels() {
+	for _, m := range collection {
+		if err := structcodec.Pretouch(m); err != nil {
+			logger.Error(err)
+		}
+	}
 }

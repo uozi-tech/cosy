@@ -89,7 +89,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 	}
 
 	if len(c.unique) > 0 {
-		conflicts, err := valid.DbUnique[T](c.RequestContext(), c.Payload, c.unique, c.columnMapping)
+		conflicts, err := valid.DbUnique[T](c.Context, c.Payload, c.unique, c.columnMapping)
 		if err != nil {
 			c.AbortWithError(err)
 			return

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/uozi-tech/cosy/valid"
 )
 
 var (
@@ -19,7 +18,8 @@ var (
 
 func newBenchmarkValidator() *validator.Validate {
 	validate := validator.New()
-	if err := validate.RegisterValidation("safety_text", valid.SafetyText); err != nil {
+	safetyText := func(fl validator.FieldLevel) bool { return IsSafetyText(fl.Field().String()) }
+	if err := validate.RegisterValidation("safety_text", safetyText); err != nil {
 		panic(err)
 	}
 	return validate

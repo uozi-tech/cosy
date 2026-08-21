@@ -64,7 +64,7 @@ type Ctx[T any] struct {
 func Core[T any](c *gin.Context) *Ctx[T] {
 	ctx := &Ctx[T]{
 		Context:                  c,
-		Tx:                       model.UseDB(model.RequestContext(c)),
+		Tx:                       model.UseDB(c),
 		rules:                    make(gin.H),
 		gormScopes:               make([]func(tx *gorm.DB) *gorm.DB, 0),
 		prepareHookFunc:          make([]func(ctx *Ctx[T]), 0),

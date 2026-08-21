@@ -34,7 +34,7 @@ func BenchmarkPipelineJSONToMap(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
 		m := make(map[string]any)
-		if err := jsonDecoder.Unmarshal(benchPayloadBody, &m); err != nil {
+		if err := decodeJSON(benchPayloadBody, &m); err != nil {
 			b.Fatal(err)
 		}
 	}

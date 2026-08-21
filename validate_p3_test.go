@@ -98,7 +98,7 @@ func TestValidateEmptyBodyReturnsError(t *testing.T) {
 func TestJSONDecoderCopiesStrings(t *testing.T) {
 	raw := []byte(`{"name":"copystring-check"}`)
 	var m map[string]any
-	require.NoError(t, jsonDecoder.Unmarshal(raw, &m))
+	require.NoError(t, decodeJSON(raw, &m))
 
 	for i := range raw {
 		raw[i] = 'z'
@@ -110,7 +110,7 @@ func TestJSONDecoderCopiesStrings(t *testing.T) {
 // rejected, as encoding/json v1 did.
 func TestJSONDecoderRejectsRawControlChars(t *testing.T) {
 	var m map[string]any
-	err := jsonDecoder.Unmarshal([]byte("{\"a\":\"x\x01y\"}"), &m)
+	err := decodeJSON([]byte("{\"a\":\"x\x01y\"}"), &m)
 	assert.Error(t, err)
 }
 

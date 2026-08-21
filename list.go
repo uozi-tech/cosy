@@ -65,12 +65,12 @@ func (c *Ctx[T]) combineStdSelectorRequest() {
 // result get result
 func (c *Ctx[T]) result() *gorm.DB {
 	var dbModel T
-	result := model.UseDB(c.RequestContext())
+	result := model.UseDB(c.Context)
 
 	if cast.ToBool(c.Query("trash")) {
 		tableName := c.table
 		if c.table == "" {
-			stmt := &gorm.Statement{DB: model.UseDB(c.RequestContext())}
+			stmt := &gorm.Statement{DB: model.UseDB(c.Context)}
 			err := stmt.Parse(&dbModel)
 			if err != nil {
 				c.AbortWithError(err)

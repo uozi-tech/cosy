@@ -3,8 +3,6 @@ package cosy
 import (
 	"context"
 
-	"github.com/uozi-tech/cosy/internal/structcodec"
-	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/model"
 	"gorm.io/gorm"
 )
@@ -31,15 +29,9 @@ func RequestContext(ctx context.Context) context.Context {
 	return model.RequestContext(ctx)
 }
 
-// RegisterModels register models and pre-compiles their decode plans, so the
-// first request does not pay the compilation latency.
+// RegisterModels register models.
 func RegisterModels(models ...any) {
 	model.RegisterModels(models...)
-	for _, m := range models {
-		if err := structcodec.Pretouch(m); err != nil {
-			logger.Error(err)
-		}
-	}
 }
 
 // InitDB init db.

@@ -2,20 +2,12 @@ package valid
 
 import (
 	"github.com/go-playground/validator/v10"
-	"regexp"
-	"time"
+	"github.com/uozi-tech/cosy/internal/rulecheck"
 )
 
-// IsDate check if date format match YYYY-MM-DD
+// IsDate is the validator.v10 adapter for the "date" rule (YYYY-MM-DD); the
+// check itself lives in rulecheck so the compiled fast path and the validator
+// fallback cannot drift apart.
 func IsDate(fl validator.FieldLevel) bool {
-	date := fl.Field().String()
-	// regexp match YYYY-MM-DD
-	match, _ := regexp.MatchString(`^\d{4}-\d{2}-\d{2}$`, date)
-	if !match {
-		return false
-	}
-
-	// use time.Parse to check if the date is valid
-	_, err := time.Parse("2006-01-02", date)
-	return err == nil
+	return rulecheck.IsDate(fl.Field().String())
 }
