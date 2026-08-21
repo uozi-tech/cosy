@@ -1,6 +1,6 @@
 # Cosy 请求解码/校验管线"编译式"重构方案
 
-> 状态：P0/P1/P2 已实施并提交；P3 暂缓
+> 状态：P0/P1/P2/P3 已实施并提交；P4 保持暂缓
 > 分支：`refactor/compiled-codec`
 > 日期：2026-07-03
 >
@@ -14,11 +14,23 @@
 > - ✅ **P2**（commit `4f6cfe7`）：`internal/rulecheck` 编译式规则引擎替换 `ValidateMap`；
 >   validator/v10 保留作未知 tag 的 fallback；I1 mass-assignment 键过滤与错误契约不变；
 >   F3 safety_text 正则包级预编译；与原生 validator 16 例差分判定一致。实测 ~1.8×（358→196 ns/op，5→0 allocs）。
-> - ⏸ **P3 暂缓**：sonic binding 接入 + body 大小限制（F2）+ `RegisterModels` 预热。
->   暂停原因：P3 触及 `validate.go` 的 `ShouldBindJSON` 路径，与一条**进行中的独立 logger 重构工作线**
->   （`logger/session.go`、`logger/correlation.go`、`logger/middleware.go`、`kernel/boot_test.go` 等）重叠，
->   待该工作线落地后再启动，避免两条线在 `validate.go` 冲突。
->   备注：sonic 接入倾向通过 gin 的 `sonic` build tag 启用（最可靠、不侵入 `binding.JSON`）。
+> - ✅ **P3**（commit `a591042`，2026-08-21）：bytes→map 在 cosy 内直调 sonic
+>   （自定义冻结配置 `CopyString=true, ValidateString=true`）；bind 前加 `http.MaxBytesReader`
+>   卡口（F2，默认 10 MiB，`server.PayloadMaxBytes` 可覆盖，负数关闭）；`RegisterModels`
+>   预编译 structcodec decodePlan（`Pretouch`）。对抗语料 C 验收入库（深度封顶 4096 报错不
+>   panic、超限拒绝、CopyString 无别名、控制字符拒收）。实测解析 ~2.25×（2,552→1,134 ns/op，
+>   allocs 54→40）。
+>   - 决策修正 ①：**不走 gin 的 `sonic` build tag**（此前备注的倾向作废），按 §3.3 定稿在 cosy
+>     内直调——build tag 受用户构建控制、平台约束多，且无法强制 CopyString 纪律。
+>   - 决策修正 ②：§3.3 中「已确认 ConfigDefault 的 CopyString=true」经复核**有误**，
+>     sonic v1.15.1 的 `ConfigDefault = Config{}.Froze()` 即 `CopyString=false`，
+>     故使用自定义冻结配置，I3 由 no-alias 测试钉住。
+>   - 顺手修复 P2 遗留 bug：db_unique 冲突路径往 `rulecheck.ValidateMap` 返回的 nil map
+>     赋值导致 panic（TestApi testConflict 在有 DB sandbox 时才会触发）。
+>   - 发现一个**与本重构无关的既有 data race**（gin.Context 直接传 GORM，请求结束后
+>     `database/sql` awaitDone goroutine 与 gin Context 池复用竞争，`-race` 跑批量接口测试可复现），
+>     已登记为独立修复任务，不在本分支处理。
+> - ⏸ **P4 保持暂缓**：Tier 2 机器码后端，按需评估。
 
 ## 0. 目标
 
@@ -145,8 +157,10 @@ JIT 的本质是编译缓存，机器码只是它的一种后端。
 - sonic 已在依赖树中；`sonic.Unmarshal` 在不支持的平台自动退化为 encoding/json；
   数字默认解析为 float64，与现状一致。
 - 在 cosy 内直接调用（不要求用户给 gin 加 build tag），行为可控。
-- **配置纪律**：必须使用 `ConfigDefault`（已确认其 `CopyString=true`，解码出的字符串
-  为拷贝而非引用请求缓冲区）。禁止为性能切换 `ConfigFastest` 或关闭 `CopyString`——
+- **配置纪律**（P3 实施时修正：`ConfigDefault` 的 `CopyString` 实为 `false`，不可用）：
+  使用自定义冻结配置 `sonic.Config{CopyString: true, ValidateString: true}.Froze()`
+  （见 `payload.go` 的 `jsonDecoder`），解码出的字符串为拷贝而非引用请求缓冲区。
+  禁止为性能切换 `ConfigDefault`/`ConfigFastest` 或关闭 `CopyString`——
   否则一旦未来引入 buffer pool，将造成跨请求内存别名（数据泄露），见 §7。
 
 ### 3.4 预热
