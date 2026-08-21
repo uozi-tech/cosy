@@ -38,8 +38,10 @@
 >   1.27 上 pipeline 2,178 ns/op / 37 allocs，json/v2 严格 1,651 / 24；1.26 上 sonic 原生 1,188 / 40。
 >   **决策（2026-08-21，用户拍板）**：① 最低 Go 版本升至 1.27.0，删除 sonic 路径，sonic 退回
 >   gin 的间接依赖，解码器只剩 `encoding/json/v2`（`payload.go`）；CI 同步到 1.27.0。
->   ② 是否去掉两个兼容选项（`AllowDuplicateNames` / `AllowInvalidUTF8`）启用 v2 严格语义
->   （拒绝重复键 / 非法 UTF-8，快约 25%，对客户端属行为变化）**待定**。
+>   ② **启用 v2 严格语义**：去掉 `AllowDuplicateNames` / `AllowInvalidUTF8`，重复键与非法 UTF-8
+>   一律 406 拒绝（有意的行为变化，封住 §7.2 D/E 语料的解析差异与静默篡改；快约 25%，
+>   1,651 vs 2,178 ns/op）。`TestValidateRejectsDuplicateKeys` / `TestValidateRejectsInvalidUTF8` 钉住。
+>   changelog 须注明：发送重复键或非法 UTF-8 的客户端会从「静默接受」变为 406。
 > - ⏸ **P4 保持暂缓**：Tier 2 机器码后端，按需评估。
 
 ## 0. 目标

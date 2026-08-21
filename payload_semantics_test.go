@@ -8,26 +8,6 @@ import (
 	"testing"
 )
 
-func BenchmarkJSONv2ToMap(b *testing.B) {
-	b.ReportAllocs()
-	for b.Loop() {
-		m := make(map[string]any)
-		if err := jsonv2.Unmarshal(benchPayloadBody, &m); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
-func BenchmarkJSONv2PipelineToMap(b *testing.B) {
-	b.ReportAllocs()
-	for b.Loop() {
-		m := make(map[string]any)
-		if err := jsonv2.Unmarshal(benchPayloadBody, &m, jsonv2Options); err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
 type probeDecoder struct {
 	name   string
 	decode func([]byte, *map[string]any) error
@@ -36,13 +16,12 @@ type probeDecoder struct {
 var probeDecoders = []probeDecoder{
 	{"std-v1", func(b []byte, m *map[string]any) error { return json.Unmarshal(b, m) }},
 	{"jsonv2", func(b []byte, m *map[string]any) error { return jsonv2.Unmarshal(b, m) }},
-	{"jsonv2-pipeline", func(b []byte, m *map[string]any) error { return jsonv2.Unmarshal(b, m, jsonv2Options) }},
 	{"cosy-jsonDecoder", func(b []byte, m *map[string]any) error { return jsonDecoder.Unmarshal(b, m) }},
 }
 
-// TestJSONDecoderSemanticsMatrix records how each candidate decoder treats the
-// corpus D/E edge cases. It asserts only the I5 invariant (never panic); the
-// per-decoder behaviour is logged so the choice of engine is made on evidence.
+// TestJSONDecoderSemanticsMatrix records how encoding/json v1, json/v2 and the
+// pipeline decoder treat the corpus D/E edge cases. It asserts only the I5
+// invariant (never panic); per-decoder behaviour is logged as evidence.
 func TestJSONDecoderSemanticsMatrix(t *testing.T) {
 	cases := []struct {
 		name string

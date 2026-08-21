@@ -114,6 +114,23 @@ func TestJSONDecoderRejectsRawControlChars(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// Corpus E: duplicate keys are rejected (strict json/v2) instead of last-wins,
+// so no parser-differential ambiguity can reach the model.
+func TestValidateRejectsDuplicateKeys(t *testing.T) {
+	errs := newP3ValidateCtx(t, `{"name":"user","name":"admin"}`).validate()
+
+	require.Contains(t, errs, "body")
+	assert.Contains(t, errs["body"], "duplicate")
+}
+
+// Corpus D: invalid UTF-8 is rejected instead of being coerced to U+FFFD.
+func TestValidateRejectsInvalidUTF8(t *testing.T) {
+	errs := newP3ValidateCtx(t, "{\"name\":\"\xff\"}").validate()
+
+	require.Contains(t, errs, "body")
+	assert.Contains(t, errs["body"], "invalid UTF-8")
+}
+
 type p3BindModel struct {
 	Name string `json:"name" binding:"required"`
 }

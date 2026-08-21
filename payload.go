@@ -1,7 +1,6 @@
 package cosy
 
 import (
-	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"errors"
 	"io"
@@ -15,24 +14,23 @@ import (
 // and BindAndValid when settings.ServerSettings.PayloadMaxBytes is 0 (F2).
 const defaultPayloadMaxBytes int64 = 10 << 20 // 10 MiB
 
-// jsonv2Options keeps encoding/json/v2 on the semantics the pipeline had under
-// encoding/json v1: duplicate keys are last-wins and invalid UTF-8 is coerced
-// to U+FFFD. Dropping these two options switches the pipeline to v2's strict
-// defaults (both cases rejected with an error).
-var jsonv2Options = jsonv2.JoinOptions(
-	jsontext.AllowDuplicateNames(true),
-	jsontext.AllowInvalidUTF8(true),
-)
-
 type jsonv2Decoder struct{}
 
 func (jsonv2Decoder) Unmarshal(buf []byte, val any) error {
-	return jsonv2.Unmarshal(buf, val, jsonv2Options)
+	return jsonv2.Unmarshal(buf, val)
 }
 
-// jsonDecoder decodes request bodies with encoding/json/v2 (Go 1.27+).
-// Strings are always copied (invariant I3), raw control characters are
-// rejected and nesting is capped at jsontext's max depth of 10000.
+// jsonDecoder decodes request bodies with encoding/json/v2 (Go 1.27+) using
+// its strict defaults — a deliberate decision (PERF_REFACTOR_PLAN.md P3):
+//
+//   - duplicate object keys are rejected instead of last-wins, closing the
+//     parser-differential ambiguity of corpus E;
+//   - invalid UTF-8 is rejected instead of being coerced to U+FFFD (corpus D);
+//   - raw control characters are rejected, strings are always copied (I3)
+//     and nesting is capped at jsontext's max depth of 10000.
+//
+// Do not re-add jsontext.AllowDuplicateNames / AllowInvalidUTF8 for
+// convenience; both loosen a security property.
 var jsonDecoder jsonv2Decoder
 
 func payloadMaxBytes() int64 {
