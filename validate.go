@@ -122,15 +122,13 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 		}
 	}
 
-	// Make sure that the key in c.Payload is also the key of rules
-	validated := make(map[string]any)
-
-	for k, v := range c.Payload {
-		if _, ok := c.rules[k]; ok {
-			validated[k] = v
+	// Make sure that the key in c.Payload is also the key of rules (I1):
+	// drop everything else in place rather than rebuilding the map.
+	for k := range c.Payload {
+		if _, ok := c.rules[k]; !ok {
+			delete(c.Payload, k)
 		}
 	}
-	c.Payload = validated
 
 	return
 }
@@ -169,14 +167,13 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 		return
 	}
 
-	// Make sure that the key in c.Payload is also the key of rules
-	validated := make(map[string]any)
-	for k, value := range data {
-		if _, ok := c.rules[k]; ok {
-			validated[k] = value
+	// Make sure that the key in data is also the key of rules (I1)
+	for k := range data {
+		if _, ok := c.rules[k]; !ok {
+			delete(data, k)
 		}
 	}
-	c.Payload["data"] = validated
+	c.Payload["data"] = data
 
 	return
 }
