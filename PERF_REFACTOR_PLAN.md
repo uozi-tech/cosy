@@ -30,6 +30,14 @@
 >   - 发现一个**与本重构无关的既有 data race**（gin.Context 直接传 GORM，请求结束后
 >     `database/sql` awaitDone goroutine 与 gin Context 池复用竞争，`-race` 跑批量接口测试可复现），
 >     已登记为独立修复任务，不在本分支处理。
+> - ✅ **P3 补充：Go 1.27 / encoding/json/v2**（commit `732d641`，2026-08-21）：sonic v1.15.2 仍为
+>   `!go1.27`，在 Go 1.27 上退化为 compat 路径，实测 5,457 ns/op，**比 std v1（3,431）还慢**；Go 1.27 的
+>   `encoding/json/v2` 已 GA 且 v1 改由 v2 实现。处置：按 Go 版本 build tag 分流——`payload_jsonv2.go`
+>   （go1.27+，json/v2 + `AllowDuplicateNames` + `AllowInvalidUTF8`）、`payload_sonic.go`（<go1.27）。
+>   语义矩阵（11 个 D/E 语料 × 4 解码器，`TestJSONDecoderSemanticsMatrix`）逐行一致。实测（-cpu=1）：
+>   1.27 上 pipeline 2,178 ns/op / 37 allocs，json/v2 严格 1,651 / 24；1.26 上 sonic 原生 1,188 / 40。
+>   go.mod 最低版本保持 1.26。**待决策**：① 最低版本升 1.27 并删除 sonic 路径；② 去掉两个兼容选项
+>   启用 v2 严格语义（拒绝重复键 / 非法 UTF-8，快约 25%，对客户端属行为变化）。
 > - ⏸ **P4 保持暂缓**：Tier 2 机器码后端，按需评估。
 
 ## 0. 目标
@@ -152,14 +160,17 @@ JIT 的本质是编译缓存，机器码只是它的一种后端。
   下游任意 tag、`RegisterValidation` 注册的自定义校验器全部照常工作。
 - `db_unique` 本就在校验管线外单独处理，不受影响。
 
-### 3.3 组件三：bytes → map 采用 sonic（已定稿，不自研）
+### 3.3 组件三：bytes → map 按 Go 版本分流（已定稿，不自研）
+
+> 2026-08-21 更新：Go 1.27 起改用 `encoding/json/v2`（见 P3 补充），sonic 仅服务 <go1.27 的工具链。
+> 下文关于 sonic 的描述只适用于 `payload_sonic.go` 路径。
 
 - sonic 已在依赖树中；`sonic.Unmarshal` 在不支持的平台自动退化为 encoding/json；
   数字默认解析为 float64，与现状一致。
 - 在 cosy 内直接调用（不要求用户给 gin 加 build tag），行为可控。
 - **配置纪律**（P3 实施时修正：`ConfigDefault` 的 `CopyString` 实为 `false`，不可用）：
   使用自定义冻结配置 `sonic.Config{CopyString: true, ValidateString: true}.Froze()`
-  （见 `payload.go` 的 `jsonDecoder`），解码出的字符串为拷贝而非引用请求缓冲区。
+  （见 `payload_sonic.go` 的 `jsonDecoder`），解码出的字符串为拷贝而非引用请求缓冲区。
   禁止为性能切换 `ConfigDefault`/`ConfigFastest` 或关闭 `CopyString`——
   否则一旦未来引入 buffer pool，将造成跨请求内存别名（数据泄露），见 §7。
 
