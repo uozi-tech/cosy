@@ -67,19 +67,30 @@ func decodeReflect(input any, target reflect.Value, path string) error {
 	}
 
 	inputValue := reflect.ValueOf(input)
-	if inputValue.Type().AssignableTo(target.Type()) {
+	if inputValue.Type().AssignableTo(target.Type()) && !isContainerKind(target.Kind()) {
 		target.Set(inputValue)
 		return nil
 	}
-	if inputValue.Kind() == reflect.Pointer && inputValue.Type().Elem() == target.Type() {
+	if inputValue.Kind() == reflect.Pointer && inputValue.Type().Elem() == target.Type() && !isContainerKind(target.Kind()) {
 		target.Set(inputValue.Elem())
 		return nil
+	}
+	// F14: weak conversions see through one non-nil pointer level, as
+	// mapstructure's reflect.Indirect did; a typed nil pointer leaves the
+	// target untouched.
+	if inputValue.Kind() == reflect.Pointer {
+		if inputValue.IsNil() {
+			return nil
+		}
+		inputValue = inputValue.Elem()
+		input = inputValue.Interface()
 	}
 
 	switch target.Kind() {
 	case reflect.Interface:
-		target.Set(inputValue)
-		return nil
+		// an assignable input was handled above; anything else cannot satisfy
+		// a non-empty interface target.
+		return unconvertible(path, target.Type(), inputValue)
 	case reflect.String:
 		return decodeStringValue(inputValue, target, path)
 	case reflect.Bool:
@@ -107,6 +118,13 @@ func decodeReflect(input any, target reflect.Value, path string) error {
 	default:
 		return fmt.Errorf("%s: unsupported type: %s", path, target.Kind())
 	}
+}
+
+// isContainerKind reports whether values of this kind must be copied element
+// by element: storing them by reference would alias the caller's payload and
+// replace, rather than merge into, an existing map.
+func isContainerKind(kind reflect.Kind) bool {
+	return kind == reflect.Slice || kind == reflect.Map
 }
 
 func builtinSpecialDecoder(typ reflect.Type) valueDecoder {
@@ -341,7 +359,7 @@ func decodeArrayValue(raw any, input, target reflect.Value, path string) error {
 	return combineErrors(decodeErrors)
 }
 
-func decodeMapValue(_ any, input, target reflect.Value, path string) error {
+func decodeMapValue(raw any, input, target reflect.Value, path string) error {
 	if input.Kind() == reflect.Slice || input.Kind() == reflect.Array {
 		if input.Len() == 0 {
 			if target.IsNil() {
@@ -350,11 +368,24 @@ func decodeMapValue(_ any, input, target reflect.Value, path string) error {
 			return nil
 		}
 		for i := 0; i < input.Len(); i++ {
-			if err := decodeMapValue(input.Index(i).Interface(), input.Index(i), target, fmt.Sprintf("%s[%d]", path, i)); err != nil {
+			element := input.Index(i).Interface()
+			if err := decodeMapValue(element, reflect.ValueOf(element), target, fmt.Sprintf("%s[%d]", path, i)); err != nil {
 				return err
 			}
 		}
 		return nil
+	}
+	if input.Kind() == reflect.Pointer && !input.IsNil() && input.Elem().Kind() == reflect.Struct {
+		input = input.Elem()
+	}
+	if input.Kind() == reflect.Struct {
+		// struct -> map, as mapstructure's decodeMapFromStruct: the struct's
+		// exported fields (json names, squash honoured) become the source map.
+		view, err := newMapView(raw)
+		if err != nil {
+			return namedExpectedMap(path, raw)
+		}
+		return decodeMapValue(view.exact, reflect.ValueOf(view.exact), target, path)
 	}
 	if input.Kind() != reflect.Map {
 		return fmt.Errorf("'%s' expected a map, got '%s'", path, input.Kind())
@@ -363,7 +394,10 @@ func decodeMapValue(_ any, input, target reflect.Value, path string) error {
 		return nil
 	}
 	if input.Len() == 0 {
-		target.Set(reflect.MakeMap(target.Type()))
+		// nothing to merge; a pre-populated target keeps its entries
+		if target.IsNil() {
+			target.Set(reflect.MakeMap(target.Type()))
+		}
 		return nil
 	}
 	if target.IsNil() {
@@ -404,6 +438,12 @@ func decodeTime(dst unsafe.Pointer, input any, path string) error {
 		*(*time.Time)(dst) = result
 		return nil
 	}
+	if pointer, ok := input.(*time.Time); ok {
+		if pointer != nil {
+			*(*time.Time)(dst) = *pointer
+		}
+		return nil
+	}
 	value := reflect.ValueOf(input)
 	var result time.Time
 	var err error
@@ -430,6 +470,10 @@ func decodeTimePointer(dst unsafe.Pointer, input any, path string) error {
 	}
 	if result, ok := input.(*time.Time); ok {
 		*(**time.Time)(dst) = result
+		return nil
+	}
+	if result, ok := input.(time.Time); ok {
+		*(**time.Time)(dst) = &result
 		return nil
 	}
 	value := reflect.ValueOf(input)

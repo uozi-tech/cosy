@@ -77,12 +77,18 @@ func ValidateMap(validate *validator.Validate, data map[string]any, rules map[st
 	return failures
 }
 
-func diveCheck(checks []checkFn, fullRule string) checkFn {
+// diveCheck runs the element rule over every element. Elements of a []any are
+// interface-wrapped from validator's point of view, so they use the nullable
+// check set (required fails only on nil, omitempty skips only nil); []string
+// elements keep zero-value semantics.
+func diveCheck(checks, nullableChecks []checkFn, fullRule string) checkFn {
 	return func(validate *validator.Validate, value any) checkResult {
 		var values []any
+		elementChecks := checks
 		switch value := value.(type) {
 		case []any:
 			values = value
+			elementChecks = nullableChecks
 		case []string:
 			values = make([]any, len(value))
 			for i := range value {
@@ -92,7 +98,7 @@ func diveCheck(checks []checkFn, fullRule string) checkFn {
 			return checkUnsupported
 		}
 		for _, element := range values {
-			for _, check := range checks {
+			for _, check := range elementChecks {
 				result := check(validate, element)
 				if result == checkSkip {
 					break

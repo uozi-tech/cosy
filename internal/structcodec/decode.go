@@ -24,25 +24,15 @@ func Decode(input, output any) error {
 		return nil
 	}
 	inputValue := reflect.ValueOf(input)
-	if inputValue.Type().AssignableTo(target.Type()) {
+	if inputValue.Type().AssignableTo(target.Type()) && !isContainerKind(target.Kind()) {
 		target.Set(inputValue)
 		return nil
 	}
-	if target.Kind() != reflect.Struct {
-		copy := cloneValue(target)
-		if err := decodeReflect(input, copy, ""); err != nil {
-			return err
-		}
-		target.Set(copy)
-		return nil
-	}
-
-	plan, err := getPlan(target.Type())
-	if err != nil {
-		return err
-	}
+	// Decode into a copy so a failed decode never leaves a half-written
+	// target (invariant I4). decodeReflect resolves registered converters and
+	// built-in special types before falling back to the compiled struct plan.
 	copy := cloneValue(target)
-	if err := plan.decode(input, unsafe.Pointer(copy.Addr().Pointer()), ""); err != nil {
+	if err := decodeReflect(input, copy, ""); err != nil {
 		return err
 	}
 	target.Set(copy)

@@ -1,6 +1,8 @@
 package cosy
 
 import (
+	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"errors"
 	"io"
@@ -10,30 +12,47 @@ import (
 	"github.com/uozi-tech/cosy/settings"
 )
 
-// defaultPayloadMaxBytes caps JSON request bodies parsed by the CRUD pipeline
-// and BindAndValid when settings.ServerSettings.PayloadMaxBytes is 0 (F2).
-const defaultPayloadMaxBytes int64 = 10 << 20 // 10 MiB
+// decodeOptions drives every request-body decode (PERF_REFACTOR_PLAN.md P3):
+//
+//   - DefaultOptionsV1 keeps encoding/json v1 semantics for struct targets
+//     (case-insensitive member matching, null leaves pre-populated fields,
+//     `,string` and other legacy tag shapes keep working), so BindAndValid
+//     behaves as it did under gin's ShouldBindJSON;
+//   - on top of that, duplicate object keys are rejected instead of
+//     last-wins (closes the parser-differential ambiguity of corpus E) and
+//     invalid UTF-8 is rejected instead of being coerced to U+FFFD (corpus D).
+//
+// Raw control characters are rejected, strings are always copied (I3) and
+// nesting is capped at the decoder's max depth. Do not re-add
+// jsontext.AllowDuplicateNames / AllowInvalidUTF8 for convenience; both
+// loosen a security property.
+var decodeOptions = jsonv2.JoinOptions(
+	jsonv1.DefaultOptionsV1(),
+	jsontext.AllowDuplicateNames(false),
+	jsontext.AllowInvalidUTF8(false),
+)
 
-// decodeJSON decodes a request body with encoding/json/v2 (Go 1.27+) using
-// its strict defaults — a deliberate decision (PERF_REFACTOR_PLAN.md P3):
-//
-//   - duplicate object keys are rejected instead of last-wins, closing the
-//     parser-differential ambiguity of corpus E;
-//   - invalid UTF-8 is rejected instead of being coerced to U+FFFD (corpus D);
-//   - raw control characters are rejected, strings are always copied (I3)
-//     and nesting is capped at jsontext's max depth of 10000.
-//
-// Do not re-add jsontext.AllowDuplicateNames / AllowInvalidUTF8 for
-// convenience; both loosen a security property.
+// decodeJSON decodes a request body with encoding/json/v2 and decodeOptions.
 func decodeJSON(raw []byte, dst any) error {
-	return jsonv2.Unmarshal(raw, dst)
+	return jsonv2.Unmarshal(raw, dst, decodeOptions)
+}
+
+// isPayloadError reports whether err describes a malformed or ill-typed
+// request body (as opposed to an I/O or server-side failure).
+func isPayloadError(err error) bool {
+	var (
+		syntactic *jsontext.SyntacticError
+		semantic  *jsonv2.SemanticError
+		v1Syntax  *jsonv1.SyntaxError
+		v1Type    *jsonv1.UnmarshalTypeError
+	)
+	return errors.As(err, &syntactic) || errors.As(err, &semantic) ||
+		errors.As(err, &v1Syntax) || errors.As(err, &v1Type) ||
+		errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF)
 }
 
 func payloadMaxBytes() int64 {
-	if n := settings.ServerSettings.PayloadMaxBytes; n != 0 {
-		return n
-	}
-	return defaultPayloadMaxBytes
+	return settings.ServerSettings.PayloadLimit()
 }
 
 // bindJSONPayload reads the size-limited request body and decodes it into dst.

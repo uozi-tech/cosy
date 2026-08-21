@@ -13,6 +13,8 @@ func Init() {
 
 	r.Use(recovery())
 
+	r.Use(limitRequestBody())
+
 	r.Use(gin.Logger())
 
 	r.NoRoute(func(c *gin.Context) {

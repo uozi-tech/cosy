@@ -170,4 +170,40 @@ func TestBindAndValidRejectsOversizedBody(t *testing.T) {
 
 	var target p3BindModel
 	assert.False(t, BindAndValid(context, &target))
+	assert.Equal(t, http.StatusRequestEntityTooLarge, recorder.Code)
+}
+
+func newBindContext(t *testing.T, body string) (*gin.Context, *httptest.ResponseRecorder) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest(http.MethodPost, "/models", strings.NewReader(body))
+	context.Request.Header.Set("Content-Type", "application/json")
+	return context, recorder
+}
+
+// encoding/json v1 matched member names case-insensitively; BindAndValid keeps
+// that contract on json/v2.
+func TestBindAndValidMatchesNamesCaseInsensitively(t *testing.T) {
+	context, _ := newBindContext(t, `{"Name":"jack"}`)
+	var target p3BindModel
+	require.True(t, BindAndValid(context, &target))
+	assert.Equal(t, "jack", target.Name)
+}
+
+// Strict decoding failures are client faults: 406, never 500.
+func TestBindAndValidAnswers406ForDuplicateKeys(t *testing.T) {
+	context, recorder := newBindContext(t, `{"name":"a","name":"b"}`)
+	var target p3BindModel
+	require.False(t, BindAndValid(context, &target))
+	assert.Equal(t, http.StatusNotAcceptable, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), "duplicate")
+}
+
+func TestValidateBatchUpdateRejectsNonObjectData(t *testing.T) {
+	for _, body := range []string{`{"ids":[1],"data":[]}`, `{"ids":[1],"data":null}`, `{"ids":[1],"data":1}`} {
+		errs := validateBatchUpdate(newP3ValidateCtx(t, body))
+		assert.Equal(t, gin.H{"data": "required"}, errs, body)
+	}
 }

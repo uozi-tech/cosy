@@ -53,9 +53,25 @@ func init() {
 	}
 }
 
-// GetValidator returns the validator instance
+// GetValidator returns the validator instance.
+//
+// To override one of the rule names the compiled fast path implements
+// (email, url, date, safety_text, hostname_port, min, max, oneof) use
+// RegisterValidation: registering directly on the returned instance only
+// affects rules that reach the validator fallback.
 func GetValidator() *validator.Validate {
 	return v
+}
+
+// RegisterValidation registers a custom validation on the shared validator and
+// marks the tag as overridden so the compiled rule engine routes it to the
+// validator instead of its built-in implementation.
+func RegisterValidation(tag string, fn validator.Func, callValidationEvenIfNull ...bool) error {
+	if err := v.RegisterValidation(tag, fn, callValidationEvenIfNull...); err != nil {
+		return err
+	}
+	rulecheck.Override(tag)
+	return nil
 }
 
 type ValidError struct {
@@ -137,12 +153,13 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 		return
 	}
 
-	if _, ok := c.Payload["data"]; !ok {
+	data, ok := c.Payload["data"].(map[string]any)
+	if !ok {
 		errs = gin.H{"data": "required"}
 		return
 	}
 
-	errs = rulecheck.ValidateMap(v, c.Payload["data"].(map[string]any), c.rules)
+	errs = rulecheck.ValidateMap(v, data, c.rules)
 
 	if len(errs) > 0 {
 		// logger.Debug(errs)
@@ -154,7 +171,7 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 
 	// Make sure that the key in c.Payload is also the key of rules
 	validated := make(map[string]any)
-	for k, value := range c.Payload["data"].(map[string]any) {
+	for k, value := range data {
 		if _, ok := c.rules[k]; ok {
 			validated[k] = value
 		}
@@ -169,11 +186,13 @@ func logJSONBindError(c *gin.Context, err error) {
 }
 
 func BindAndValid(c *gin.Context, target any) bool {
-	err := bindJSONPayload(c, target)
-	if err == nil {
-		err = binding.Validator.ValidateStruct(target)
+	if err := bindJSONPayload(c, target); err != nil {
+		return abortBindError(c, err)
 	}
-	if err != nil {
+	if binding.Validator == nil {
+		return true
+	}
+	if err := binding.Validator.ValidateStruct(target); err != nil {
 		var verrs validator.ValidationErrors
 		ok := errors.As(err, &verrs)
 		if !ok {
@@ -201,6 +220,29 @@ func BindAndValid(c *gin.Context, target any) bool {
 	}
 
 	return true
+}
+
+// abortBindError answers a failed body read/decode: oversized bodies get 413,
+// malformed or ill-typed JSON gets 406 (same shape as the CRUD pipeline), and
+// anything else is a server-side failure handled by errHandler.
+func abortBindError(c *gin.Context, err error) bool {
+	var tooLarge *http.MaxBytesError
+	switch {
+	case errors.As(err, &tooLarge):
+		c.JSON(http.StatusRequestEntityTooLarge, &ValidateError{
+			Error: Error{
+				Scope:   "validate",
+				Code:    http.StatusRequestEntityTooLarge,
+				Message: "Request body too large",
+			},
+			Errors: gin.H{"body": err.Error()},
+		})
+	case isPayloadError(err):
+		c.JSON(http.StatusNotAcceptable, NewValidateError(gin.H{"body": err.Error()}))
+	default:
+		errHandler(c, err)
+	}
+	return false
 }
 
 // findField recursively finds the field in a nested struct

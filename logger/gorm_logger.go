@@ -209,6 +209,11 @@ func sessionLoggerFromContext(ctx context.Context) *SessionLogger {
 	if sessionLogger, ok := ctx.Value(CosySessionLoggerCtxKey).(*SessionLogger); ok {
 		return sessionLogger
 	}
+	// a session logger attached with c.Set is reachable through the gin-keys
+	// snapshot of a detached request context
+	if sessionLogger, ok := ctx.Value(CosySessionLoggerKey).(*SessionLogger); ok {
+		return sessionLogger
+	}
 
 	return nil
 }

@@ -18,21 +18,44 @@ import (
 var (
 	safetyASCIIRegex   = regexp.MustCompile(`^[a-zA-Z0-9-_./: ]*$`)
 	safetyUnicodeRegex = regexp.MustCompile(`^[\p{L}\p{N}-_.—— ]*$`)
-	hostnameRegex      = regexp.MustCompile(`^([a-zA-Z0-9][a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9][a-zA-Z0-9-]{0,62})*$`)
+	// hostnameRegex is validator's hostnameRegexStringRFC1123: labels must end
+	// with an alphanumeric character.
+	hostnameRegex = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`)
+	// emailRegex is validator's emailRegexString, so the compiled "email" rule
+	// accepts exactly what the validator fallback accepts.
+	emailRegex = regexp.MustCompile("^(?:(?:(?:(?:[a-zA-Z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])+(?:\\.([a-zA-Z]|\\d|[!#\\$%&'\\*\\+\\-\\/=\\?\\^_`{\\|}~]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])+)*)|(?:(?:\\x22)(?:(?:(?:(?:\\x20|\\x09)*(?:\\x0d\\x0a))?(?:\\x20|\\x09)+)?(?:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(?:(?:[\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}]))))*(?:(?:(?:\\x20|\\x09)*(?:\\x0d\\x0a))?(\\x20|\\x09)+)?(?:\\x22))))@(?:(?:(?:[a-zA-Z]|\\d|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(?:(?:[a-zA-Z]|\\d|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])(?:[a-zA-Z]|\\d|-|\\.|~|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])*(?:[a-zA-Z]|\\d|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])))\\.)+(?:(?:[a-zA-Z]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])|(?:(?:[a-zA-Z]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])(?:[a-zA-Z]|\\d|-|\\.|~|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])*(?:[a-zA-Z]|[\\x{00A0}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFEF}])))\\.?$")
 )
 
-func compileBuiltin(name, param string, hasParam bool, token string) (checkFn, error) {
+func compileBuiltin(name, param string, hasParam bool, token string, nullable bool) (checkFn, error) {
 	switch name {
 	case "required":
 		if hasParam {
 			return nil, fmt.Errorf("required does not accept parameters")
+		}
+		if nullable {
+			return requiredNullableCheck, nil
 		}
 		return requiredCheck, nil
 	case "omitempty":
 		if hasParam {
 			return nil, fmt.Errorf("omitempty does not accept parameters")
 		}
+		if nullable {
+			return omitEmptyNullableCheck, nil
+		}
 		return omitEmptyCheck, nil
+	case "omitzero":
+		// validator's omitzero tests the zero value even for interface-wrapped
+		// elements, so it never takes the nullable variant.
+		if hasParam {
+			return nil, fmt.Errorf("omitzero does not accept parameters")
+		}
+		return omitEmptyCheck, nil
+	case "omitnil":
+		if hasParam {
+			return nil, fmt.Errorf("omitnil does not accept parameters")
+		}
+		return omitNilCheck, nil
 	case "email":
 		return stringCheck(validEmail, hasParam, name)
 	case "url":
@@ -177,6 +200,57 @@ func requiredCheck(_ *validator.Validate, value any) checkResult {
 	return checkPass
 }
 
+// isNilValue reports whether value is nil or a typed nil collection, the only
+// states validator treats as "empty" for interface-wrapped values.
+func isNilValue(value any) bool {
+	switch value := value.(type) {
+	case nil:
+		return true
+	case []any:
+		return value == nil
+	case []string:
+		return value == nil
+	case map[string]any:
+		return value == nil
+	}
+	return false
+}
+
+func requiredNullableCheck(_ *validator.Validate, value any) checkResult {
+	if isNilValue(value) {
+		return checkFail
+	}
+	return checkPass
+}
+
+func omitEmptyNullableCheck(_ *validator.Validate, value any) checkResult {
+	if isNilValue(value) {
+		return checkSkip
+	}
+	return checkPass
+}
+
+// omitNilCheck skips typed nil collections only: validator does not treat an
+// untyped nil map value as nil here (the following checks still run and fail
+// through the fallback), and typed nil pointers reach the fallback unchanged.
+func omitNilCheck(_ *validator.Validate, value any) checkResult {
+	switch value := value.(type) {
+	case []any:
+		if value == nil {
+			return checkSkip
+		}
+	case []string:
+		if value == nil {
+			return checkSkip
+		}
+	case map[string]any:
+		if value == nil {
+			return checkSkip
+		}
+	}
+	return checkPass
+}
+
 func omitEmptyCheck(validate *validator.Validate, value any) checkResult {
 	switch requiredCheck(validate, value) {
 	case checkFail:
@@ -199,16 +273,27 @@ type limitParam struct {
 	float      float64
 }
 
+// parseLimit parses a min/max parameter once. Integer literals use base 0 as
+// validator does (so 0x10 and 010 are accepted); the float form is derived
+// from the integer parse when the literal is not a valid float.
 func parseLimit(param string) (limitParam, error) {
-	float, err := strconv.ParseFloat(param, 64)
-	if err != nil || math.IsNaN(float) || math.IsInf(float, 0) {
-		return limitParam{}, fmt.Errorf("not a finite number")
-	}
-	limit := limitParam{float: float}
+	var limit limitParam
+	var err error
 	limit.signed, err = strconv.ParseInt(param, 0, 64)
 	limit.signedOK = err == nil
 	limit.unsigned, err = strconv.ParseUint(param, 0, 64)
 	limit.unsignedOK = err == nil
+	float, err := strconv.ParseFloat(param, 64)
+	switch {
+	case err == nil && !math.IsNaN(float) && !math.IsInf(float, 0):
+		limit.float = float
+	case limit.signedOK:
+		limit.float = float64(limit.signed)
+	case limit.unsignedOK:
+		limit.float = float64(limit.unsigned)
+	default:
+		return limitParam{}, fmt.Errorf("not a finite number")
+	}
 	return limit, nil
 }
 
@@ -278,17 +363,13 @@ func compareOrdered[T int64 | uint64 | float64](actual, limit T, minimum bool) c
 	return checkFail
 }
 
+// validEmail mirrors validator's isEmail: net/mail must parse the address and
+// validator's email regex must match it.
 func validEmail(value string) bool {
-	address, err := mail.ParseAddress(value)
-	if err != nil || address.Address != value {
+	if _, err := mail.ParseAddress(value); err != nil {
 		return false
 	}
-	at := strings.LastIndexByte(address.Address, '@')
-	if at <= 0 || at == len(address.Address)-1 {
-		return false
-	}
-	domain := address.Address[at+1:]
-	return strings.Contains(domain, ".") && !strings.HasPrefix(domain, ".") && !strings.HasSuffix(domain, ".")
+	return emailRegex.MatchString(value)
 }
 
 func validURL(value string) bool {

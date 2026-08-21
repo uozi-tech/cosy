@@ -12,11 +12,15 @@ func compilePlan(typ reflect.Type) (*decodePlan, error) {
 	}
 
 	plan := &decodePlan{typ: typ}
-	walkFields(typ, nil, &plan.fields)
+	walkFields(typ, nil, &plan.fields, map[reflect.Type]bool{typ: true})
 	return plan, nil
 }
 
-func walkFields(typ reflect.Type, prefix []addressStep, fields *[]fieldPlan) {
+// walkFields flattens typ into the plan. ancestors holds the struct types
+// currently being expanded: an embedded pointer to one of them (a recursive
+// type such as `type Node struct{ *Node }`) is compiled as a plain named
+// field instead of being expanded again, so compilation always terminates.
+func walkFields(typ reflect.Type, prefix []addressStep, fields *[]fieldPlan, ancestors map[reflect.Type]bool) {
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
 		tag := field.Tag.Get("json")
@@ -35,13 +39,17 @@ func walkFields(typ reflect.Type, prefix []addressStep, fields *[]fieldPlan) {
 
 		steps := appendSteps(prefix, addressStep{offset: field.Offset})
 		fieldType := field.Type
-		if squash && fieldType.Kind() == reflect.Struct {
-			walkFields(fieldType, steps, fields)
+		if squash && fieldType.Kind() == reflect.Struct && !ancestors[fieldType] {
+			ancestors[fieldType] = true
+			walkFields(fieldType, steps, fields, ancestors)
+			delete(ancestors, fieldType)
 			continue
 		}
-		if squash && fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.Struct {
+		if squash && fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.Struct && !ancestors[fieldType.Elem()] {
 			steps[len(steps)-1].ptrType = fieldType
-			walkFields(fieldType.Elem(), steps, fields)
+			ancestors[fieldType.Elem()] = true
+			walkFields(fieldType.Elem(), steps, fields, ancestors)
+			delete(ancestors, fieldType.Elem())
 			continue
 		}
 

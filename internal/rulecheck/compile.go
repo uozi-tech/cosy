@@ -40,6 +40,14 @@ func getRule(rule string) compiledRule {
 }
 
 func compile(rule string) compiledRule {
+	return compileRule(rule, false)
+}
+
+// compileRule compiles a rule string. nullable selects validator's semantics
+// for interface-wrapped values (the elements of a []any under dive): required
+// fails only on nil and omitempty/omitzero skip only nil, instead of the
+// zero-value semantics used for top-level map values.
+func compileRule(rule string, nullable bool) compiledRule {
 	if len(rule) > maxRuleLength {
 		return compiledRule{err: fmt.Errorf("rule exceeds %d bytes", maxRuleLength)}
 	}
@@ -64,19 +72,37 @@ func compile(rule string) compiledRule {
 				return compiledRule{err: errors.New("dive requires an element rule")}
 			}
 			elementRule := strings.Join(parts[i+1:], ",")
-			element := compile(elementRule)
+			element := compileRule(elementRule, false)
 			if element.err != nil {
 				return element
 			}
-			checks = append(checks, diveCheck(element.checks, elementRule))
+			nullableElement := compileRule(elementRule, true)
+			if nullableElement.err != nil {
+				return nullableElement
+			}
+			checks = append(checks, diveCheck(element.checks, nullableElement.checks, elementRule))
 			break
 		}
 
-		check, err := compileBuiltin(name, param, hasParam, token)
+		if needsValidator(name, token) {
+			checks = append(checks, fallbackCheck(token))
+			continue
+		}
+		check, err := compileBuiltin(name, param, hasParam, token, nullable)
 		if err != nil {
 			return compiledRule{err: err}
 		}
 		checks = append(checks, check)
 	}
 	return compiledRule{checks: checks}
+}
+
+// needsValidator reports whether a token must be evaluated by validator itself:
+// the tag was overridden through Override, or the token uses validator syntax
+// the built-in compiler does not model ('|' alternatives, 0x2C / 0x7C escapes).
+func needsValidator(name, token string) bool {
+	return isOverridden(name) ||
+		strings.ContainsRune(token, '|') ||
+		strings.Contains(token, "0x2C") ||
+		strings.Contains(token, "0x7C")
 }
