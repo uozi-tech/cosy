@@ -66,7 +66,7 @@ type ValidError struct {
 func (c *Ctx[T]) validate() (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	if err := c.ShouldBindJSON(&c.Payload); err != nil {
+	if err := bindJSONPayload(c.Context, &c.Payload); err != nil {
 		logJSONBindError(c.Context, err)
 		return gin.H{"body": err.Error()}
 	}
@@ -95,6 +95,10 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 			return
 		}
 		if len(conflicts) > 0 {
+			// rulecheck.ValidateMap returns a nil map when everything passed
+			if errs == nil {
+				errs = make(gin.H, len(conflicts))
+			}
 			for _, v := range conflicts {
 				errs[v] = "db_unique"
 			}
@@ -118,7 +122,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	if err := c.ShouldBindJSON(&c.Payload); err != nil {
+	if err := bindJSONPayload(c.Context, &c.Payload); err != nil {
 		logJSONBindError(c.Context, err)
 		return gin.H{"body": err.Error()}
 	}
@@ -165,7 +169,10 @@ func logJSONBindError(c *gin.Context, err error) {
 }
 
 func BindAndValid(c *gin.Context, target any) bool {
-	err := c.ShouldBindJSON(target)
+	err := bindJSONPayload(c, target)
+	if err == nil {
+		err = binding.Validator.ValidateStruct(target)
+	}
 	if err != nil {
 		var verrs validator.ValidationErrors
 		ok := errors.As(err, &verrs)

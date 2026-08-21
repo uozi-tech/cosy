@@ -321,6 +321,10 @@ Cosy 支持多种 HTTP 协议，包括 HTTP/1.1、HTTP/2 和 HTTP/3：
 
 当 `EnableHTTPS` 设置为 `true` 时，服务器将使用 HTTPS 协议启动，否则使用 HTTP。
 
+## 请求体大小限制
+
+- `PayloadMaxBytes`：CRUD 管线与 `BindAndValid` 接受的 JSON 请求体大小上限（单位：字节）。默认 `0` 表示使用内置上限 10 MiB；设置为负数关闭限制。超限请求会在解析前被拒绝。
+
 详细的配置说明，请参考：
 - [环境变量配置](environment-variables.md) - 环境变量的详细配置和使用方法
 - [协议支持配置](protocol.md) - 多协议支持和 HTTPS 的详细配置
