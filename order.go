@@ -20,7 +20,7 @@ func (c *Ctx[T]) UpdateOrder() {
 
 	affectedLen := len(json.AffectedIDs)
 
-	db := model.UseDB(c.Context)
+	db := model.UseDB(c.RequestContext())
 
 	if c.table != "" {
 		db = db.Table(c.table, c.tableArgs...)

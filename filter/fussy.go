@@ -53,7 +53,7 @@ func applyFuzzyCondition(c *gin.Context, tx *gorm.DB, column string, values []st
 	stmt.QuoteTo(&colBuilder, clause.Column{Table: stmt.Table, Name: column})
 	colBuilder.WriteString(fuzzyLike())
 
-	db := model.UseDB(c)
+	db := model.UseDB(model.RequestContext(c))
 	var valueBuilder strings.Builder
 
 	for _, value := range values {
@@ -83,7 +83,7 @@ func QueryToFussyKeysSearch(c *gin.Context, tx *gorm.DB, cols ...Column) *gorm.D
 	likeValue := valueBuilder.String()
 
 	likeClause := fuzzyLike()
-	db := model.UseDB(c)
+	db := model.UseDB(model.RequestContext(c))
 	var colBuilder strings.Builder
 	stmt := tx.Statement
 

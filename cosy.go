@@ -1,6 +1,7 @@
 package cosy
 
 import (
+	"context"
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
@@ -63,7 +64,7 @@ type Ctx[T any] struct {
 func Core[T any](c *gin.Context) *Ctx[T] {
 	ctx := &Ctx[T]{
 		Context:                  c,
-		Tx:                       model.UseDB(c),
+		Tx:                       model.UseDB(model.RequestContext(c)),
 		rules:                    make(gin.H),
 		gormScopes:               make([]func(tx *gorm.DB) *gorm.DB, 0),
 		prepareHookFunc:          make([]func(ctx *Ctx[T]), 0),
@@ -84,6 +85,14 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 	}
 
 	return ctx
+}
+
+// RequestContext returns the request-scoped context that must be handed to
+// GORM (or any other API that may outlive the handler) instead of the embedded
+// *gin.Context. See model.RequestContext for why the *gin.Context itself must
+// never reach database/sql.
+func (c *Ctx[T]) RequestContext() context.Context {
+	return model.RequestContext(c.Context)
 }
 
 func (c *Ctx[T]) SetTable(table string, args ...any) *Ctx[T] {

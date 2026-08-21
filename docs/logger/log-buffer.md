@@ -127,8 +127,8 @@ sessionLogger.Info("Processing user request")
 GORM 日志会继承请求上下文中的关联字段并实时写入 Default Log：
 
 ```go
-// 在请求处理中
-db := cosy.GetDB().WithContext(c)
+// 在请求处理中；UseDB 会把 *gin.Context 转换为安全的请求上下文，不要直接 db.WithContext(c)
+db := cosy.UseDB(c)
 // SQL 日志包含 correlation_id、request_id、log_type=sql 和 db_caller
 var users []User
 db.Find(&users)
