@@ -323,7 +323,7 @@ Cosy 支持多种 HTTP 协议，包括 HTTP/1.1、HTTP/2 和 HTTP/3：
 
 ## 请求体大小限制
 
-- `PayloadMaxBytes`：CRUD 管线与 `BindAndValid` 接受的 JSON 请求体大小上限（单位：字节）。默认 `0` 表示使用内置上限 10 MiB；设置为负数关闭限制。超限请求会在解析前被拒绝。
+- `PayloadMaxBytes`：请求体大小上限（单位：字节），由 router 中间件对所有路由生效，CRUD 管线与 `BindAndValid` 内部再兜底一次。默认 `0` 表示使用内置上限 10 MiB；设置为负数关闭限制。超限请求会在解析前被拒绝：CRUD 管线返回 406，`BindAndValid` 返回 413。
 
 详细的配置说明，请参考：
 - [环境变量配置](environment-variables.md) - 环境变量的详细配置和使用方法
