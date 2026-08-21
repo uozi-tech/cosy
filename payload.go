@@ -61,12 +61,40 @@ func bindJSONPayload(c *gin.Context, dst any) error {
 		return errors.New("invalid request")
 	}
 	body := io.Reader(c.Request.Body)
-	if limit := payloadMaxBytes(); limit >= 0 {
+	limit := payloadMaxBytes()
+	if limit >= 0 {
 		body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 	}
-	raw, err := io.ReadAll(body)
+	raw, err := readBody(body, c.Request.ContentLength, limit)
 	if err != nil {
 		return err
 	}
 	return decodeJSON(raw, dst)
+}
+
+// readBody is io.ReadAll with the buffer sized up front from Content-Length
+// (capped by the body limit), so a typical request is read in one allocation
+// instead of doubling from 512 bytes.
+func readBody(body io.Reader, contentLength, limit int64) ([]byte, error) {
+	size := int64(512)
+	if contentLength > 0 {
+		size = contentLength + 1 // +1 so the final Read sees io.EOF without growing
+	}
+	if limit >= 0 && size > limit+1 {
+		size = limit + 1
+	}
+	buf := make([]byte, 0, size)
+	for {
+		if len(buf) == cap(buf) {
+			buf = append(buf, 0)[:len(buf)]
+		}
+		n, err := body.Read(buf[len(buf):cap(buf)])
+		buf = buf[:len(buf)+n]
+		if err != nil {
+			if err == io.EOF {
+				return buf, nil
+			}
+			return buf, err
+		}
+	}
 }

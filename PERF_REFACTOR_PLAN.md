@@ -1,6 +1,6 @@
 # Cosy 请求解码/校验管线"编译式"重构方案
 
-> 状态：P0–P3 全部完成，2026-08-21 完成 code review 修复轮（15 项）
+> 状态：P0–P3 全部完成，2026-08-21 完成 code review 修复轮（15 项）与热路径优化轮
 > 分支：`refactor/compiled-codec`
 > 最低 Go 版本：1.27.0（`encoding/json/v2` 正式可用）
 >
@@ -16,6 +16,8 @@
 > - ✅ P2（commit `4f6cfe7`）：`internal/rulecheck` 编译式规则引擎替换 `validator.ValidateMap`，validator/v10 保留为 fallback。
 > - ✅ P3（commits `a591042` → `c3cf525`）：bytes→map 切 `encoding/json/v2`、请求体大小上限、模型预热。
 > - ✅ Review 修复轮（commit `135e38b` 清理，commit `c6c7a65` 修复 15 项）。
+> - ✅ 热路径优化轮：按计划字段查输入 map、编译期特化标量 / 嵌套 struct 解码器、无锁转换器注册表与计划缓存、
+>   嵌入指针每次解码只克隆一次、RFC 3339 快路径、按 Content-Length 预分配读缓冲。
 
 ## 0. 目标
 
@@ -24,7 +26,7 @@
 
 - 全平台（所有 GOOS/GOARCH）、全 Go 版本可用，只用 `unsafe.Pointer` 稳定 API，不绑 runtime 内部实现；
 - 公开 API 不变：`map2struct.WeakDecode` 签名、`c.Payload`、`SetValidRules`、错误格式（`gin.H{key: rule}`）、`GetValidator()`；
-- 典型写请求的框架侧开销从 ~82 µs 降到 ~5 µs（约 16×），内存分配从 276 次降到 71 次（§3 实测）。
+- 典型写请求的框架侧开销从 ~82 µs 降到 ~3.7 µs（约 22×），内存分配从 276 次降到 34 次（§3 实测）。
 
 ## 1. 现状诊断（origin/main）
 
@@ -61,8 +63,13 @@ JSON bytes → gin.H (encoding/json v1) → v.ValidateMap (validator/v10)
 
 ### 2.1 `internal/structcodec`：map→struct
 
-- 首次遇到类型 `T` 时扫描字段（json tag、`unsafe.Offsetof`、embedded squash），生成 `decodePlan`，
-  以 `reflect.Type` 为 key 缓存（`cache.go`）。递归嵌入指针（`type Node struct{ *Node }`）按普通字段处理，编译必然终止。
+- 首次遇到类型 `T` 时扫描字段（json tag、`unsafe.Offsetof`、embedded squash），生成 `decodePlan` 以及
+  精确名 / 小写名两张索引，以 `reflect.Type` 为 key 缓存（`cache.go`，`sync.Map` + 代数计数器，读路径无锁）。
+  递归嵌入指针（`type Node struct{ *Node }`）按普通字段处理，编译必然终止。
+- 解码时直接遍历输入 `map[string]any`（`gin.H` 等命名类型经 `reflect.Convert` 零拷贝转换），按索引命中计划字段：
+  精确名优先、小写名兜底，字段表放在栈上的 32 槽 scratch 里，不再为每次解码复制两份 map。
+- 标量（string / bool / 整数 / 浮点）与嵌套 struct 字段在编译期生成特化闭包，JSON 产出的输入形态不经 reflect 直接写入；
+  其余形态回落到通用弱类型转换，语义不变。转换器注册表是 copy-on-write 快照，查询只是一次原子读。
 - 弱类型转换在编译时按目标类型选定特化函数；运行时对输入先解一层非 nil 指针，再按 kind 转换，
   与 mapstructure 的 `reflect.Indirect` 语义一致。
 - 特殊类型（`time.Time` / `*time.Time` / `decimal.Decimal` / `null.String` / `pgtype.Date` / `*pgtype.Date`）
@@ -136,15 +143,16 @@ jsonv2.JoinOptions(
 | bytes → map | 2,477 ns / 54 allocs（encoding/json v1） | 1,884 ns / 24 allocs（json/v2） | 1.3× |
 | 校验 | 53,737 ns / 139 allocs（含 F3：safety_text 每次重编译正则） | 466 ns / **0 allocs** | 115× |
 | 校验（同规则、正则预编译） | 460 ns / 5 allocs（validator，`BenchmarkValidatorValidateMap`） | 178 ns / 0 allocs（`BenchmarkRulecheckValidateMap`） | 2.6× |
-| map → struct | 23,376 ns / 83 allocs（mapstructure） | 2,118 ns / 47 allocs | 11× |
-| **端到端** | **82,627 ns / 276 allocs** | **4,999 ns / 71 allocs** | **16.5×** |
-| 端到端（18 核并行） | 80,288 ns | 4,065 ns | 19.8× |
+| map → struct | 23,376 ns / 83 allocs（mapstructure） | 857 ns / 10 allocs | 27× |
+| **端到端** | **82,627 ns / 276 allocs** | **3,650 ns / 34 allocs** | **22.6×** |
+| 端到端（18 核并行） | 80,288 ns | 3,221 ns | 24.9× |
 
 说明：
 
 - 校验阶段旧实现的绝对值被 F3 放大；第三行用 `internal/rulecheck` 的成对基准（4 条规则、正则预编译）给出引擎本身的对比。
-- 新路径的 map → struct 比 P1 刚落地时（2,270 ns / 60 allocs）略有变化：review 修复后 slice 字段逐元素拷贝、输入多一层指针解引用，
-  换来的是不再与 payload 共享内存；`newMapView` 的双 map 拷贝仍占解码分配的大头，是下一轮优化点（§9）。
+- map → struct 从 P1 落地时的 2,270 ns / 60 allocs 降到 857 ns / 10 allocs：去掉每次解码的双 map 拷贝与逐值注册表查询后，
+  剩下的 10 次分配是根对象的副本（I4）、slice 背板、3 个元素路径字符串和 `decimal` 内部的 `big.Int`。
+- 端到端现在由 bytes → map 主导（~2 µs，json/v2 解到 `map[string]any` 的固有成本）；`Payload gin.H` 是公开 API，这一段不做融合解析。
 
 ## 4. 兼容性与测试
 
@@ -276,11 +284,11 @@ go test -run '^$' -bench 'WeakDecode' -benchmem ./map2struct/
 旧基线用 `git archive origin/main` 解出的快照加同一份 `pipeline_bench_test.go`（把 `decodeJSON` 换成 `json.Unmarshal`、
 `rulecheck.ValidateMap` 换成 `v.ValidateMap`）复现。
 
-下一轮可选优化（review 已指出、未实施，均为热路径分配）：`newMapView` 改为按计划字段查输入 map 而不是整份拷贝；
-字段解码闭包在编译期解析 converter / 特殊类型而不是每次查注册表；slice / map 元素路径按需拼接；`time.Parse(RFC3339Nano)` 快路径；
-`io.ReadAll` 按 `ContentLength` 预分配。
+热路径优化轮已完成 review 列出的项目：按计划字段查输入 map、编译期特化解码器与无锁注册表、嵌入指针单次克隆、
+`time.Parse(RFC3339Nano)` 快路径、读缓冲按 `Content-Length` 预分配。仍可做但收益有限：slice / map 元素路径改为出错时再拼接
+（每个元素省 1 次分配）；`decimal.Decimal` 的 `big.Int` 分配属库内部。
 
 ## 10. 结论
 
-"每类型 / 每规则编译一次 + 执行 N 次"的纯 Go 实现就拿到了 16× 的端到端提升（瓶颈 mapstructure 为 11×，校验 0 alloc），
+"每类型 / 每规则编译一次 + 执行 N 次"的纯 Go 实现就拿到了 22× 的端到端提升（瓶颈 mapstructure 为 27×，校验 0 alloc），
 全平台无条件可用、不绑 Go 版本、无第三方 JIT 依赖；bytes→map 交给标准库 `encoding/json/v2`，并借机把重复键与非法 UTF-8 挡在入口。

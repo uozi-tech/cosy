@@ -45,45 +45,157 @@ func cloneValue(source reflect.Value) reflect.Value {
 	return clone
 }
 
+// matchQuality records how an input key was matched to a plan field; an exact
+// match always wins over a case-insensitive one.
+type matchQuality uint8
+
+const (
+	matchNone matchQuality = iota
+	matchFolded
+	matchExact
+)
+
+type fieldInput struct {
+	value   any
+	quality matchQuality
+}
+
+// scratchFields is the number of fields a decode handles without allocating
+// its per-decode input table.
+const scratchFields = 32
+
 func (plan *decodePlan) decode(input any, dst unsafe.Pointer, path string) error {
-	view, err := newMapView(input)
-	if err != nil {
-		return namedExpectedMap(path, input)
+	source, ok := asStringMap(input)
+	if !ok {
+		return plan.decodeView(input, dst, path)
+	}
+
+	var scratch [scratchFields]fieldInput
+	var inputs []fieldInput
+	if len(plan.fields) <= scratchFields {
+		inputs = scratch[:len(plan.fields)]
+	} else {
+		inputs = make([]fieldInput, len(plan.fields))
+	}
+
+	// Walk the input once: exact name first, lower-cased name second. This
+	// replaces the two map copies newMapView used to build per decode.
+	for key, value := range source {
+		if index, found := plan.index[key]; found {
+			for ; index >= 0; index = plan.fields[index].next {
+				inputs[index] = fieldInput{value: value, quality: matchExact}
+			}
+			continue
+		}
+		index, found := plan.lowerIndex[strings.ToLower(key)]
+		if !found {
+			continue
+		}
+		for ; index >= 0; index = plan.fields[index].next {
+			if inputs[index].quality != matchExact {
+				inputs[index] = fieldInput{value: value, quality: matchFolded}
+			}
+		}
 	}
 
 	var decodeErrors []string
+	var cloned []unsafe.Pointer
 	for i := range plan.fields {
-		field := &plan.fields[i]
-		inputValue, ok := view.lookup(field.name)
-		if !ok {
+		if inputs[i].quality == matchNone {
 			continue
 		}
-		fieldPath := joinPath(path, field.name)
-		address := field.address(dst)
-		if err := field.decode(address, inputValue, fieldPath); err != nil {
+		field := &plan.fields[i]
+		address := field.address(dst, &cloned)
+		if err := field.decode(address, inputs[i].value, joinPath(path, field.name)); err != nil {
 			decodeErrors = appendDecodeErrors(decodeErrors, err)
 		}
 	}
 	return combineErrors(decodeErrors)
 }
 
-func (field *fieldPlan) address(base unsafe.Pointer) unsafe.Pointer {
+// decodeView handles inputs that are not a map[string]any: structs (and
+// pointers to them) and maps with other value types.
+func (plan *decodePlan) decodeView(input any, dst unsafe.Pointer, path string) error {
+	view, err := newMapView(input)
+	if err != nil {
+		return namedExpectedMap(path, input)
+	}
+
+	var decodeErrors []string
+	var cloned []unsafe.Pointer
+	for i := range plan.fields {
+		field := &plan.fields[i]
+		inputValue, ok := view.lookup(field.name)
+		if !ok {
+			continue
+		}
+		address := field.address(dst, &cloned)
+		if err := field.decode(address, inputValue, joinPath(path, field.name)); err != nil {
+			decodeErrors = appendDecodeErrors(decodeErrors, err)
+		}
+	}
+	return combineErrors(decodeErrors)
+}
+
+var (
+	stringMapType = reflect.TypeFor[map[string]any]()
+)
+
+// asStringMap returns the input as a map[string]any when it is one (or a named
+// type such as gin.H, or a pointer to either) without copying it.
+func asStringMap(input any) (map[string]any, bool) {
+	switch source := input.(type) {
+	case map[string]any:
+		return source, true
+	case nil:
+		return nil, false
+	}
+	value := reflect.ValueOf(input)
+	for value.Kind() == reflect.Pointer {
+		if value.IsNil() {
+			return nil, false
+		}
+		value = value.Elem()
+	}
+	if value.Kind() != reflect.Map || !value.Type().ConvertibleTo(stringMapType) {
+		return nil, false
+	}
+	return value.Convert(stringMapType).Interface().(map[string]any), true
+}
+
+// address resolves the field's storage, allocating or copy-on-write cloning
+// embedded pointer structs on the way. cloned remembers the pointer slots
+// already handled during this decode so each embedded struct is cloned once
+// rather than once per promoted field.
+func (field *fieldPlan) address(base unsafe.Pointer, cloned *[]unsafe.Pointer) unsafe.Pointer {
 	address := base
 	for _, step := range field.steps {
 		address = unsafe.Add(address, step.offset)
 		if step.ptrType != nil {
 			pointerValue := reflect.NewAt(step.ptrType, address).Elem()
-			if pointerValue.IsNil() {
-				pointerValue.Set(reflect.New(step.ptrType.Elem()))
-			} else {
-				copy := reflect.New(step.ptrType.Elem())
-				copy.Elem().Set(cloneValue(pointerValue.Elem()))
-				pointerValue.Set(copy)
+			if !alreadyCloned(*cloned, address) {
+				if pointerValue.IsNil() {
+					pointerValue.Set(reflect.New(step.ptrType.Elem()))
+				} else {
+					copy := reflect.New(step.ptrType.Elem())
+					copy.Elem().Set(pointerValue.Elem())
+					pointerValue.Set(copy)
+				}
+				*cloned = append(*cloned, address)
 			}
 			address = unsafe.Pointer(pointerValue.Pointer())
 		}
 	}
 	return address
+}
+
+func alreadyCloned(cloned []unsafe.Pointer, slot unsafe.Pointer) bool {
+	for _, done := range cloned {
+		if done == slot {
+			return true
+		}
+	}
+	return false
 }
 
 type mapView struct {

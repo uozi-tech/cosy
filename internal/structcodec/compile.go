@@ -13,6 +13,27 @@ func compilePlan(typ reflect.Type) (*decodePlan, error) {
 
 	plan := &decodePlan{typ: typ}
 	walkFields(typ, nil, &plan.fields, map[reflect.Type]bool{typ: true})
+	plan.index = make(map[string]int, len(plan.fields))
+	plan.lowerIndex = make(map[string]int, len(plan.fields))
+	for i := range plan.fields {
+		field := &plan.fields[i]
+		field.next = -1
+		if first, ok := plan.index[field.name]; ok {
+			// chain fields repeating a name so every one of them still
+			// receives the input value
+			last := first
+			for plan.fields[last].next >= 0 {
+				last = plan.fields[last].next
+			}
+			plan.fields[last].next = i
+		} else {
+			plan.index[field.name] = i
+		}
+		lower := strings.ToLower(field.name)
+		if _, ok := plan.lowerIndex[lower]; !ok {
+			plan.lowerIndex[lower] = i
+		}
+	}
 	return plan, nil
 }
 

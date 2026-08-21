@@ -2,17 +2,21 @@ package structcodec
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 	"sync"
+	"sync/atomic"
 )
 
 // Converter converts an input value into one registered concrete type.
 type Converter func(input any) (any, error)
 
-var converterRegistry = struct {
-	sync.RWMutex
-	values map[reflect.Type]Converter
-}{values: make(map[reflect.Type]Converter)}
+var (
+	// converters is a copy-on-write snapshot so the per-value lookup on the
+	// decode path is a single atomic load; nil means nothing is registered.
+	converters   atomic.Pointer[map[reflect.Type]Converter]
+	convertersMu sync.Mutex
+)
 
 // RegisterConverter registers a converter for the concrete type represented by
 // sample. Existing compiled plans are discarded so later decodes see it.
@@ -23,13 +27,9 @@ func RegisterConverter(sample any, converter Converter) error {
 	if converter == nil {
 		return fmt.Errorf("structcodec: converter must not be nil")
 	}
-	typ := reflect.TypeOf(sample)
-	planMu.Lock()
-	converterRegistry.Lock()
-	converterRegistry.values[typ] = converter
-	converterRegistry.Unlock()
-	planCache.Clear()
-	planMu.Unlock()
+	updateConverters(func(registry map[reflect.Type]Converter) {
+		registry[reflect.TypeOf(sample)] = converter
+	})
 	return nil
 }
 
@@ -39,18 +39,31 @@ func UnregisterConverter(sample any) {
 	if sample == nil {
 		return
 	}
-	typ := reflect.TypeOf(sample)
-	planMu.Lock()
-	converterRegistry.Lock()
-	delete(converterRegistry.values, typ)
-	converterRegistry.Unlock()
-	planCache.Clear()
-	planMu.Unlock()
+	updateConverters(func(registry map[reflect.Type]Converter) {
+		delete(registry, reflect.TypeOf(sample))
+	})
+}
+
+func updateConverters(mutate func(map[reflect.Type]Converter)) {
+	convertersMu.Lock()
+	defer convertersMu.Unlock()
+	registry := make(map[reflect.Type]Converter)
+	if current := converters.Load(); current != nil {
+		registry = maps.Clone(*current)
+	}
+	mutate(registry)
+	if len(registry) == 0 {
+		converters.Store(nil)
+	} else {
+		converters.Store(&registry)
+	}
+	invalidatePlans()
 }
 
 func registeredConverter(typ reflect.Type) Converter {
-	converterRegistry.RLock()
-	converter := converterRegistry.values[typ]
-	converterRegistry.RUnlock()
-	return converter
+	registry := converters.Load()
+	if registry == nil {
+		return nil
+	}
+	return (*registry)[typ]
 }

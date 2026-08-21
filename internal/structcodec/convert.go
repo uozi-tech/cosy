@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -31,9 +32,84 @@ func compileValueDecoder(typ reflect.Type) valueDecoder {
 		return decoder
 	}
 
-	return func(dst unsafe.Pointer, input any, path string) error {
+	generic := func(dst unsafe.Pointer, input any, path string) error {
 		return decodeReflect(input, reflect.NewAt(typ, dst).Elem(), path)
 	}
+
+	// Fast paths for the input shapes JSON produces (string, float64, bool,
+	// object). Anything else takes the generic reflective conversion, so the
+	// semantics stay identical; only the common case skips reflection.
+	switch typ.Kind() {
+	case reflect.String:
+		return func(dst unsafe.Pointer, input any, path string) error {
+			if text, ok := input.(string); ok {
+				*(*string)(dst) = text
+				return nil
+			}
+			return generic(dst, input, path)
+		}
+	case reflect.Bool:
+		return func(dst unsafe.Pointer, input any, path string) error {
+			if value, ok := input.(bool); ok {
+				*(*bool)(dst) = value
+				return nil
+			}
+			return generic(dst, input, path)
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return func(dst unsafe.Pointer, input any, path string) error {
+			switch number := input.(type) {
+			case float64:
+				reflect.NewAt(typ, dst).Elem().SetInt(int64(number))
+				return nil
+			case int:
+				reflect.NewAt(typ, dst).Elem().SetInt(int64(number))
+				return nil
+			case int64:
+				reflect.NewAt(typ, dst).Elem().SetInt(number)
+				return nil
+			}
+			return generic(dst, input, path)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return func(dst unsafe.Pointer, input any, path string) error {
+			if number, ok := input.(float64); ok {
+				reflect.NewAt(typ, dst).Elem().SetUint(uint64(number))
+				return nil
+			}
+			return generic(dst, input, path)
+		}
+	case reflect.Float32, reflect.Float64:
+		return func(dst unsafe.Pointer, input any, path string) error {
+			if number, ok := input.(float64); ok {
+				reflect.NewAt(typ, dst).Elem().SetFloat(number)
+				return nil
+			}
+			return generic(dst, input, path)
+		}
+	case reflect.Struct:
+		// Nested struct: resolve the plan once, on first use (lazily so that
+		// recursive types compile), instead of looking it up per value.
+		var (
+			once   sync.Once
+			nested *decodePlan
+			err    error
+		)
+		return func(dst unsafe.Pointer, input any, path string) error {
+			if input == nil || isNilPointer(input) {
+				return nil
+			}
+			if _, ok := asStringMap(input); ok {
+				once.Do(func() { nested, err = getPlan(typ) })
+				if err != nil {
+					return err
+				}
+				return nested.decode(input, dst, path)
+			}
+			return generic(dst, input, path)
+		}
+	}
+	return generic
 }
 
 func converterDecoder(typ reflect.Type, converter Converter) valueDecoder {
@@ -331,7 +407,7 @@ func decodeSliceValue(raw any, input, target reflect.Value, path string) error {
 	}
 	var decodeErrors []string
 	for i := 0; i < input.Len(); i++ {
-		if err := decodeReflect(input.Index(i).Interface(), result.Index(i), fmt.Sprintf("%s[%d]", path, i)); err != nil {
+		if err := decodeReflect(input.Index(i).Interface(), result.Index(i), indexPath(path, i)); err != nil {
 			decodeErrors = appendDecodeErrors(decodeErrors, err)
 		}
 	}
@@ -352,7 +428,7 @@ func decodeArrayValue(raw any, input, target reflect.Value, path string) error {
 	}
 	var decodeErrors []string
 	for i := 0; i < input.Len(); i++ {
-		if err := decodeReflect(input.Index(i).Interface(), target.Index(i), fmt.Sprintf("%s[%d]", path, i)); err != nil {
+		if err := decodeReflect(input.Index(i).Interface(), target.Index(i), indexPath(path, i)); err != nil {
 			decodeErrors = appendDecodeErrors(decodeErrors, err)
 		}
 	}
@@ -369,7 +445,7 @@ func decodeMapValue(raw any, input, target reflect.Value, path string) error {
 		}
 		for i := 0; i < input.Len(); i++ {
 			element := input.Index(i).Interface()
-			if err := decodeMapValue(element, reflect.ValueOf(element), target, fmt.Sprintf("%s[%d]", path, i)); err != nil {
+			if err := decodeMapValue(element, reflect.ValueOf(element), target, indexPath(path, i)); err != nil {
 				return err
 			}
 		}
@@ -416,7 +492,7 @@ func decodeMapValue(raw any, input, target reflect.Value, path string) error {
 	for iterator.Next() {
 		key := reflect.New(target.Type().Key()).Elem()
 		value := reflect.New(target.Type().Elem()).Elem()
-		itemPath := fmt.Sprintf("%s[%v]", path, iterator.Key().Interface())
+		itemPath := keyPath(path, iterator.Key())
 		if err := decodeReflect(iterator.Key().Interface(), key, itemPath); err != nil {
 			decodeErrors = appendDecodeErrors(decodeErrors, err)
 			continue
@@ -449,7 +525,7 @@ func decodeTime(dst unsafe.Pointer, input any, path string) error {
 	var err error
 	switch value.Kind() {
 	case reflect.String:
-		result, err = cast.ToTimeInDefaultLocationE(input, nil)
+		result, err = parseTime(value.String())
 	case reflect.Float64:
 		result = time.Unix(0, int64(value.Float())*int64(time.Millisecond))
 	case reflect.Int64:
@@ -485,7 +561,7 @@ func decodeTimePointer(dst unsafe.Pointer, input any, path string) error {
 	var err error
 	switch value.Kind() {
 	case reflect.String:
-		result, err = cast.ToTimeInDefaultLocationE(input, nil)
+		result, err = parseTime(value.String())
 	case reflect.Float64:
 		result = time.Unix(0, int64(value.Float())*int64(time.Millisecond))
 	case reflect.Int64:
@@ -553,6 +629,29 @@ func decodePGDatePointer(dst unsafe.Pointer, input any, _ string) error {
 	_ = result.Set(input)
 	*(**pgtype.Date)(dst) = result
 	return nil
+}
+
+// indexPath formats "path[i]" without fmt; it is built per element, so keep
+// it to a single concatenation.
+func indexPath(path string, index int) string {
+	return path + "[" + strconv.Itoa(index) + "]"
+}
+
+func keyPath(path string, key reflect.Value) string {
+	if key.Kind() == reflect.String {
+		return path + "[" + key.String() + "]"
+	}
+	return fmt.Sprintf("%s[%v]", path, key.Interface())
+}
+
+// parseTime accepts RFC 3339 (with or without fractional seconds) directly —
+// the form JSON clients send — and falls back to cast's layout list for
+// everything else, which is what the legacy hook always did.
+func parseTime(text string) (time.Time, error) {
+	if result, err := time.Parse(time.RFC3339Nano, text); err == nil {
+		return result, nil
+	}
+	return cast.ToTimeInDefaultLocationE(text, nil)
 }
 
 func unconvertible(path string, target reflect.Type, input reflect.Value) error {
