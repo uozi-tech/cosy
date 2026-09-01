@@ -80,6 +80,7 @@ export default defineConfig({
         text: '介绍',
         items: [
           { text: '何为 Cosy?', link: '/introduce/about' },
+          { text: 'v1.35.0 性能优化', link: '/performance/v1.35.0' },
         ]
       },
       {

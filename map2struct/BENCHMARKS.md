@@ -1,58 +1,51 @@
-# WeakDecode benchmark
+# map2struct 性能基线
 
-The benchmark in `benchmark_test.go` is the stable comparison point for the
-map-to-struct decoder. Run it with:
+`benchmark_test.go` 使用包含标量、嵌套结构、slice、时间、decimal、null.String 和 pgtype.Date 的模型，作为 `map2struct.WeakDecode` 的稳定性能基线。
+
+它与根包的 `BenchmarkPipelineDecode` 使用不同模型：这里用于观察公开 API 的完整解码能力；根包 benchmark 用于拆分典型 HTTP 写请求管线，二者的 ns/op 和 allocs/op 不应直接混用。
+
+## 当前结果
+
+复现命令：
 
 ```sh
-go test ./map2struct -run '^$' -bench '^BenchmarkWeakDecode$' -benchmem -count=5
+go test ./map2struct -run '^$' -bench '^BenchmarkWeakDecode' -benchmem -count=5 -cpu=1
 ```
 
-## P0 baseline: mapstructure v1.5.0
+测试环境：2026-09-01，Go 1.27.0，darwin/arm64，Apple M5 Pro。
 
-Recorded on 2026-07-18 with Go 1.26.5, darwin/arm64, Apple M5 Pro:
-
-| run | ns/op | B/op | allocs/op |
-|---:|---:|---:|---:|
-| 1 | 29,771 | 8,160 | 102 |
-| 2 | 29,582 | 8,160 | 102 |
-| 3 | 29,810 | 8,160 | 102 |
-| 4 | 28,799 | 8,160 | 102 |
-| 5 | 29,078 | 8,160 | 102 |
-
-Median: **29,582 ns/op, 8,160 B/op, 102 allocs/op**.
-
-## P1: compiled structcodec
-
-Recorded on the same machine and Go toolchain:
+### 串行解码
 
 | run | ns/op | B/op | allocs/op |
 |---:|---:|---:|---:|
-| 1 | 2,205 | 3,194 | 60 |
-| 2 | 2,205 | 3,194 | 60 |
-| 3 | 2,270 | 3,194 | 60 |
-| 4 | 2,393 | 3,194 | 60 |
-| 5 | 2,470 | 3,194 | 60 |
+| 1 | 1,022 | 536 | 13 |
+| 2 | 1,010 | 536 | 13 |
+| 3 | 969.8 | 536 | 13 |
+| 4 | 959.6 | 536 | 13 |
+| 5 | 955.6 | 536 | 13 |
 
-Median: **2,270 ns/op, 3,194 B/op, 60 allocs/op**. Compared with the P0
-median this is **13.0x faster**, uses **61% fewer bytes**, and performs **42
-fewer allocations** per decode.
+中位数：**969.8 ns/op、536 B/op、13 allocs/op**。
 
-## Review + hot-path round: plan-driven lookup, specialised decoders
-
-Recorded on 2026-08-21 with Go 1.27.0, darwin/arm64, Apple M5 Pro (the
-module now requires Go 1.27):
+### 并行安全路径
 
 | run | ns/op | B/op | allocs/op |
 |---:|---:|---:|---:|
-| 1 | 803 | 536 | 13 |
-| 2 | 819 | 536 | 13 |
-| 3 | 892 | 536 | 13 |
-| 4 | 852 | 536 | 13 |
-| 5 | 817 | 536 | 13 |
+| 1 | 1,044 | 536 | 13 |
+| 2 | 1,030 | 536 | 13 |
+| 3 | 952.1 | 536 | 13 |
+| 4 | 962.6 | 536 | 13 |
+| 5 | 1,002 | 536 | 13 |
 
-Median: **819 ns/op, 536 B/op, 13 allocs/op**. Compared with the P0
-median this is **36.1x faster** with **89 fewer allocations** per
-decode; compared with P1 it is **2.8x faster** with **47 fewer
-allocations**, after the decoder stopped copying the input map per decode,
-resolved converters and nested plans at compile time and started copying
-slices/maps instead of aliasing the payload.
+中位数：**1,002 ns/op、536 B/op、13 allocs/op**。
+
+这里固定 `-cpu=1`，用于减少跨轮次调度差异并验证 `RunParallel` 路径；评估整机并行吞吐时应移除该参数，并单独记录 `GOMAXPROCS`。
+
+## 旧引擎对照
+
+重构前的 mapstructure v1.5.0 基线记录于 2026-07-18，环境为 Go 1.26.5、darwin/arm64、Apple M5 Pro：
+
+- 中位数：**29,582 ns/op、8,160 B/op、102 allocs/op**。
+- 当前串行中位数约快 **30.5x**。
+- 每次解码减少 **7,624 B** 和 **89 次分配**。
+
+旧引擎数据只保留为历史对照；后续更新只需覆盖“当前结果”的环境、五轮原始数据与中位数。
