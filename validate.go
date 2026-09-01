@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/uozi-tech/cosy/internal/rulecheck"
 	"github.com/uozi-tech/cosy/logger"
 	"github.com/uozi-tech/cosy/valid"
 )
@@ -23,12 +24,10 @@ type ValidateError struct {
 
 func NewValidateError(errors map[string]any) *ValidateError {
 	return &ValidateError{
-		Error: Error{
-			Scope:   "validate",
-			Code:    http.StatusNotAcceptable,
-			Message: "Requested with wrong parameters",
-		},
-		Errors: errors,
+		Scope:   "validate",
+		Code:    http.StatusNotAcceptable,
+		Message: "Requested with wrong parameters",
+		Errors:  errors,
 	}
 }
 
@@ -52,9 +51,25 @@ func init() {
 	}
 }
 
-// GetValidator returns the validator instance
+// GetValidator returns the validator instance.
+//
+// To override one of the rule names the compiled fast path implements
+// (email, url, date, safety_text, hostname_port, min, max, oneof) use
+// RegisterValidation: registering directly on the returned instance only
+// affects rules that reach the validator fallback.
 func GetValidator() *validator.Validate {
 	return v
+}
+
+// RegisterValidation registers a custom validation on the shared validator and
+// marks the tag as overridden so the compiled rule engine routes it to the
+// validator instead of its built-in implementation.
+func RegisterValidation(tag string, fn validator.Func, callValidationEvenIfNull ...bool) error {
+	if err := v.RegisterValidation(tag, fn, callValidationEvenIfNull...); err != nil {
+		return err
+	}
+	rulecheck.Override(tag)
+	return nil
 }
 
 type ValidError struct {
@@ -65,7 +80,7 @@ type ValidError struct {
 func (c *Ctx[T]) validate() (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	if err := c.ShouldBindJSON(&c.Payload); err != nil {
+	if err := bindJSONPayload(c.Context, &c.Payload); err != nil {
 		logJSONBindError(c.Context, err)
 		return gin.H{"body": err.Error()}
 	}
@@ -77,7 +92,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 
 	c.Payload["id"] = c.ID
 
-	errs = v.ValidateMap(c.Payload, c.rules)
+	errs = rulecheck.ValidateMap(v, c.Payload, c.rules)
 
 	if len(errs) > 0 {
 		// logger.Debug(errs)
@@ -94,6 +109,10 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 			return
 		}
 		if len(conflicts) > 0 {
+			// rulecheck.ValidateMap returns a nil map when everything passed
+			if errs == nil {
+				errs = make(gin.H, len(conflicts))
+			}
 			for _, v := range conflicts {
 				errs[v] = "db_unique"
 			}
@@ -101,15 +120,13 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 		}
 	}
 
-	// Make sure that the key in c.Payload is also the key of rules
-	validated := make(map[string]any)
-
-	for k, v := range c.Payload {
-		if _, ok := c.rules[k]; ok {
-			validated[k] = v
+	// Make sure that the key in c.Payload is also the key of rules (I1):
+	// drop everything else in place rather than rebuilding the map.
+	for k := range c.Payload {
+		if _, ok := c.rules[k]; !ok {
+			delete(c.Payload, k)
 		}
 	}
-	c.Payload = validated
 
 	return
 }
@@ -117,7 +134,7 @@ func (c *Ctx[T]) validate() (errs gin.H) {
 func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 	c.Payload = make(gin.H)
 
-	if err := c.ShouldBindJSON(&c.Payload); err != nil {
+	if err := bindJSONPayload(c.Context, &c.Payload); err != nil {
 		logJSONBindError(c.Context, err)
 		return gin.H{"body": err.Error()}
 	}
@@ -132,12 +149,13 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 		return
 	}
 
-	if _, ok := c.Payload["data"]; !ok {
+	data, ok := c.Payload["data"].(map[string]any)
+	if !ok {
 		errs = gin.H{"data": "required"}
 		return
 	}
 
-	errs = v.ValidateMap(c.Payload["data"].(map[string]any), c.rules)
+	errs = rulecheck.ValidateMap(v, data, c.rules)
 
 	if len(errs) > 0 {
 		// logger.Debug(errs)
@@ -147,14 +165,13 @@ func validateBatchUpdate[T any](c *Ctx[T]) (errs gin.H) {
 		return
 	}
 
-	// Make sure that the key in c.Payload is also the key of rules
-	validated := make(map[string]any)
-	for k, value := range c.Payload["data"].(map[string]any) {
-		if _, ok := c.rules[k]; ok {
-			validated[k] = value
+	// Make sure that the key in data is also the key of rules (I1)
+	for k := range data {
+		if _, ok := c.rules[k]; !ok {
+			delete(data, k)
 		}
 	}
-	c.Payload["data"] = validated
+	c.Payload["data"] = data
 
 	return
 }
@@ -164,8 +181,13 @@ func logJSONBindError(c *gin.Context, err error) {
 }
 
 func BindAndValid(c *gin.Context, target any) bool {
-	err := c.ShouldBindJSON(target)
-	if err != nil {
+	if err := bindJSONPayload(c, target); err != nil {
+		return abortBindError(c, err)
+	}
+	if binding.Validator == nil {
+		return true
+	}
+	if err := binding.Validator.ValidateStruct(target); err != nil {
 		var verrs validator.ValidationErrors
 		ok := errors.As(err, &verrs)
 		if !ok {
@@ -193,6 +215,27 @@ func BindAndValid(c *gin.Context, target any) bool {
 	}
 
 	return true
+}
+
+// abortBindError answers a failed body read/decode: oversized bodies get 413,
+// malformed or ill-typed JSON gets 406 (same shape as the CRUD pipeline), and
+// anything else is a server-side failure handled by errHandler.
+func abortBindError(c *gin.Context, err error) bool {
+	var tooLarge *http.MaxBytesError
+	switch {
+	case errors.As(err, &tooLarge):
+		c.JSON(http.StatusRequestEntityTooLarge, &ValidateError{
+			Scope:   "validate",
+			Code:    http.StatusRequestEntityTooLarge,
+			Message: "Request body too large",
+			Errors:  gin.H{"body": err.Error()},
+		})
+	case isPayloadError(err):
+		c.JSON(http.StatusNotAcceptable, NewValidateError(gin.H{"body": err.Error()}))
+	default:
+		errHandler(c, err)
+	}
+	return false
 }
 
 // findField recursively finds the field in a nested struct

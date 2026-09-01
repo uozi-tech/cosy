@@ -2,16 +2,12 @@ package valid
 
 import (
 	val "github.com/go-playground/validator/v10"
-	"regexp"
+	"github.com/uozi-tech/cosy/internal/rulecheck"
 )
 
+// SafetyText is the validator.v10 adapter for the "safety_text" rule; the
+// check itself lives in rulecheck so the compiled fast path and the validator
+// fallback cannot drift apart.
 func SafetyText(fl val.FieldLevel) bool {
-	asciiPattern := `^[a-zA-Z0-9-_./: ]*$`
-	unicodePattern := `^[\p{L}\p{N}-_.—— ]*$`
-
-	asciiRegex := regexp.MustCompile(asciiPattern)
-	unicodeRegex := regexp.MustCompile(unicodePattern)
-
-	str := fl.Field().String()
-	return asciiRegex.MatchString(str) || unicodeRegex.MatchString(str)
+	return rulecheck.IsSafetyText(fl.Field().String())
 }

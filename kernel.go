@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"sync/atomic"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-gormigrate/gormigrate/v2"
@@ -160,9 +159,9 @@ func Boot(confPath string) {
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	logger.Info("shutting down gracefully, press Ctrl+C again to force")
 
-	// The context is used to inform the server it has 5 seconds to finish
-	// the request it is currently handling
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// ctx is already cancelled by the signal, so the drain budget hangs off a
+	// fresh context rather than off ctx.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), settings.ServerSettings.ShutdownTimeout())
 	defer cancel()
 	if err := serverFactory.Shutdown(shutdownCtx); err != nil {
 		logger.Fatal("Server forced to shutdown: ", err)

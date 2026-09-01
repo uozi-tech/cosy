@@ -26,7 +26,8 @@ features:
       details: 在生命周期的关键事件提供钩子函数，方便用户自定义业务逻辑。
   -   icon: ⚡
       title: 性能优化
-      details: 尽最大努力优化，减少反射的使用。
+      details: v1.35.0 编译式请求管线端到端提升 21.3 倍，分配次数减少 87.7%。
+      link: /performance/v1.35.0
   -   icon: 📝
       title: 日志审计
       details: 完整的请求审计和日志记录，支持 SLS 集成和数据库监控。
@@ -34,4 +35,3 @@ features:
       title: 地理位置
       details: 内置 GeoIP 功能，自动解析客户端地理位置信息。
 ---
-

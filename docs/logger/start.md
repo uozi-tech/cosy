@@ -70,8 +70,9 @@ func main() {
         sessionLogger.Info("查询用户")
 
         // 数据库操作（自动记录 SQL）
+        // 传请求上下文而不是 *gin.Context，原因见「GORM 日志集成」页的注意事项
         var user User
-        db.WithContext(c).First(&user, c.Param("id"))
+        db.WithContext(cosy.RequestContext(c)).First(&user, c.Param("id"))
 
         c.JSON(200, user)
     })

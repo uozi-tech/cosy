@@ -3,7 +3,12 @@
 GORM 日志集成为数据库操作提供完整的日志记录和监控功能，并与 SLS 审计系统无缝集成。
 
 :::warning 注意
-GORM 日志集成依赖 `*gin.Context` 上下文，请确保在数据库操作时提前用 `WithContext(c)` 传递上下文。
+GORM 日志通过上下文关联到当前请求，请确保数据库操作带上请求上下文；但**不要把 `*gin.Context` 直接传给 GORM**。
+
+- 用 `cosy.UseDB(c)` 获取 `*gorm.DB`，内部会自动转换为安全的请求上下文；
+- 自行持有 `*gorm.DB` 时，用 `db.WithContext(cosy.RequestContext(c))`。不要直接用 `c.Request.Context()`：它会在客户端断开或 handler 返回时取消，而 `cosy.RequestContext(c)` 保留了 `*gin.Context` 原本「不随请求取消」的语义。
+
+原因：gin 会池化并复用 `gin.Context`，而 `database/sql` 在事务内的每次查询都会启动 `Rows.awaitDone` goroutine，它在结果集关闭后才调用 `ctx.Err()`，此时 handler 可能已经返回、同一个 `gin.Context` 已被下一个请求复用，于是和 `Engine.ServeHTTP` 写 `c.Request` 产生 data race。`cosy.RequestContext(c)` 返回由 `c.Request.Context()` 派生的上下文，请求级的值（会话日志、pprof 标签等）仍可被 GORM 日志读取。
 :::
 
 ## 功能特性
@@ -155,7 +160,7 @@ func GetUser(c *gin.Context, db *gorm.DB, userID uint) (*User, error) {
     var user User
 
     // 这个查询会被记录到控制台和 SLS
-    err := db.WithContext(c).First(&user, userID).Error
+    err := db.WithContext(cosy.RequestContext(c)).First(&user, userID).Error
     if err != nil {
         return nil, err
     }
@@ -174,7 +179,7 @@ func GetUserOrders(c *gin.Context, db *gorm.DB, userID uint) ([]Order, error) {
     var orders []Order
 
     // 复杂查询，会记录执行时间和结果
-    err := db.WithContext(c).
+    err := db.WithContext(cosy.RequestContext(c)).
         Preload("Items").
         Where("user_id = ? AND status IN ?", userID, []string{"pending", "paid"}).
         Order("created_at DESC").
@@ -199,7 +204,7 @@ func CreateOrderWithTransaction(c *gin.Context, db *gorm.DB, order *Order) error
     sessionLogger.Info("开始创建订单事务")
 
     // 开始事务 - 会记录事务开始
-    tx := db.WithContext(c).Begin()
+    tx := db.WithContext(cosy.RequestContext(c)).Begin()
     defer func() {
         if r := recover(); r != nil {
             sessionLogger.Error("事务回滚:", r)
@@ -240,7 +245,7 @@ func CreateOrderWithTransaction(c *gin.Context, db *gorm.DB, order *Order) error
 
 ```go
 // 当查询时间超过 SlowThreshold 时，自动记录为慢查询
-db.WithContext(c).Raw("SELECT SLEEP(1)").Scan(&result)
+db.WithContext(cosy.RequestContext(c)).Raw("SELECT SLEEP(1)").Scan(&result)
 
 // 输出格式：
 // [SLOW SQL >= 200ms] [1234.567ms] [rows:1] SELECT SLEEP(1)
@@ -274,13 +279,13 @@ func initDBWithSlowQueryHandler() *gorm.DB {
 ```go
 // 记录未找到错误
 var user User
-err := db.WithContext(c).First(&user, 999).Error
+err := db.WithContext(cosy.RequestContext(c)).First(&user, 999).Error
 if errors.Is(err, gorm.ErrRecordNotFound) {
     // 会记录：record not found [1.234ms] [rows:0] SELECT * FROM users WHERE id = 999
 }
 
 // 记录 SQL 语法错误
-err = db.WithContext(c).Raw("INVALID SQL").Scan(&result).Error
+err = db.WithContext(cosy.RequestContext(c)).Raw("INVALID SQL").Scan(&result).Error
 if err != nil {
     // 会记录详细的 SQL 错误信息
 }
@@ -352,7 +357,7 @@ func UserHandler(c *gin.Context) {
 
     // 数据库操作 - SQL 日志会自动关联到此请求
     var user User
-    db.WithContext(c).First(&user, c.Param("id"))
+    db.WithContext(cosy.RequestContext(c)).First(&user, c.Param("id"))
 
     c.JSON(http.StatusOK, user)
 }
@@ -360,7 +365,7 @@ func UserHandler(c *gin.Context) {
 
 ## 注意事项
 
-1. **上下文传递**：务必使用 `db.WithContext(c)` 传递 Gin 上下文
+1. **上下文传递**：务必传递请求上下文，但不要直接传 `*gin.Context`：用 `cosy.UseDB(c)`，或 `db.WithContext(cosy.RequestContext(c))`
 2. **日志级别**：生产环境建议使用 Warn 级别以减少日志量
 3. **慢查询阀值**：根据业务需求合理设置慢查询阀值
 4. **SLS 依赖**：SQL 日志集成依赖 SLS 配置，若未配置则只输出到控制台

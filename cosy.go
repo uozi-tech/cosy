@@ -1,6 +1,7 @@
 package cosy
 
 import (
+	"context"
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
@@ -86,6 +87,14 @@ func Core[T any](c *gin.Context) *Ctx[T] {
 	return ctx
 }
 
+// RequestContext returns the request-scoped context that must be handed to
+// GORM (or any other API that may outlive the handler) instead of the embedded
+// *gin.Context. See model.RequestContext for why the *gin.Context itself must
+// never reach database/sql.
+func (c *Ctx[T]) RequestContext() context.Context {
+	return model.RequestContext(c.Context)
+}
+
 func (c *Ctx[T]) SetTable(table string, args ...any) *Ctx[T] {
 	c.table = table
 	c.tableArgs = args
@@ -125,13 +134,17 @@ func (c *Ctx[T]) SetJoins(args ...string) *Ctx[T] {
 	return c
 }
 
-func (c *Ctx[T]) SetScan(scan func(tx *gorm.DB) any) *Ctx[T] {
-	c.scan = scan
+func (c *Ctx[T]) SetScan[K any](scan func(tx *gorm.DB) K) *Ctx[T] {
+	c.scan = func(tx *gorm.DB) any {
+		return scan(tx)
+	}
 	return c
 }
 
-func (c *Ctx[T]) SetTransformer(t func(m *T) any) *Ctx[T] {
-	c.transformer = t
+func (c *Ctx[T]) SetTransformer[K any](transformer func(m *T) K) *Ctx[T] {
+	c.transformer = func(m *T) any {
+		return transformer(m)
+	}
 	return c
 }
 
