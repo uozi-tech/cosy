@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type probeDecoder struct {
@@ -20,8 +23,8 @@ var probeDecoders = []probeDecoder{
 }
 
 // TestJSONDecoderSemanticsMatrix records how encoding/json v1, json/v2 and the
-// pipeline decoder treat the corpus D/E edge cases. It asserts only the I5
-// invariant (never panic); per-decoder behaviour is logged as evidence.
+// pipeline decoder treat malformed and boundary inputs. Per-decoder behaviour
+// is logged, while every case is required to return without panicking.
 func TestJSONDecoderSemanticsMatrix(t *testing.T) {
 	cases := []struct {
 		name string
@@ -65,4 +68,21 @@ func TestJSONDecoderSemanticsMatrix(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestJSONDecoderCopiesStrings(t *testing.T) {
+	raw := []byte(`{"name":"copystring-check"}`)
+	var decoded map[string]any
+	require.NoError(t, decodeJSON(raw, &decoded))
+
+	for i := range raw {
+		raw[i] = 'z'
+	}
+	assert.Equal(t, "copystring-check", decoded["name"])
+}
+
+func TestJSONDecoderRejectsRawControlChars(t *testing.T) {
+	var decoded map[string]any
+	err := decodeJSON([]byte("{\"a\":\"x\x01y\"}"), &decoded)
+	assert.Error(t, err)
 }

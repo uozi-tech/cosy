@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -98,6 +99,36 @@ func TestRequestContext_NilRequestFallsBackToBackground(t *testing.T) {
 	assert.False(t, isGin)
 	assert.Nil(t, got.Done())
 	assert.NoError(t, got.Err())
+}
+
+func TestRequestContext_KeepsCallerDeadline(t *testing.T) {
+	c := newGinTestContext(t, false, context.Background())
+	ctx, cancel := context.WithTimeout(c, 20*time.Millisecond)
+	defer cancel()
+
+	got := RequestContext(ctx)
+
+	_, hasDeadline := got.Deadline()
+	assert.True(t, hasDeadline, "a caller-supplied deadline must survive detaching")
+	select {
+	case <-got.Done():
+	case <-time.After(time.Second):
+		t.Fatal("detached context never expired")
+	}
+	assert.ErrorIs(t, got.Err(), context.DeadlineExceeded)
+}
+
+func TestRequestContext_ExposesGinKeys(t *testing.T) {
+	c := newGinTestContext(t, false, context.Background())
+	c.Set("user_id", 42)
+
+	got := RequestContext(c)
+
+	_, isGin := got.(*gin.Context)
+	require.False(t, isGin)
+	assert.Equal(t, 42, got.Value("user_id"))
+	assert.Nil(t, got.Value("missing"))
+	assert.Nil(t, got.Value(gin.ContextKey), "the pooled *gin.Context must not leak")
 }
 
 // useSQLiteDB swaps the package-level db for an in-memory sqlite instance for

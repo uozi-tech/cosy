@@ -69,11 +69,7 @@ func TestBindAndValid(t *testing.T) {
 }
 
 func TestValidateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request = httptest.NewRequest(http.MethodPost, "/users/1", strings.NewReader(`{"name": "张三"`))
-	c.Request.Header.Set("Content-Type", "application/json")
+	c, _ := newJSONTestContext(t, http.MethodPost, "/users/1", `{"name": "张三"`)
 	observed := attachSessionLogger(c)
 
 	core := Core[User](c).SetValidRules(gin.H{
@@ -88,11 +84,7 @@ func TestValidateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
 }
 
 func TestValidateBatchUpdateReturnsBodyErrorWhenJSONBindingFails(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request = httptest.NewRequest(http.MethodPut, "/users", strings.NewReader(`{"ids": ["1"], "data": {`))
-	c.Request.Header.Set("Content-Type", "application/json")
+	c, _ := newJSONTestContext(t, http.MethodPut, "/users", `{"ids": ["1"], "data": {`)
 	observed := attachSessionLogger(c)
 
 	core := Core[User](c).SetValidRules(gin.H{

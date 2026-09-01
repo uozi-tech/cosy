@@ -10,8 +10,6 @@ import (
 	"github.com/uozi-tech/cosy/internal/structcodec"
 )
 
-// Regression tests for the review findings on the compiled decoder.
-
 type recursiveNode struct {
 	*recursiveNode
 	X int `json:"x"`

@@ -12,7 +12,7 @@ import (
 	"github.com/uozi-tech/cosy/settings"
 )
 
-// decodeOptions drives every request-body decode (PERF_REFACTOR_PLAN.md P3):
+// decodeOptions defines the contract shared by every request-body decode:
 //
 //   - DefaultOptionsV1 keeps encoding/json v1 semantics for struct targets
 //     (case-insensitive member matching, null leaves pre-populated fields,
