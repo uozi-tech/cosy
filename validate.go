@@ -24,12 +24,10 @@ type ValidateError struct {
 
 func NewValidateError(errors map[string]any) *ValidateError {
 	return &ValidateError{
-		Error: Error{
-			Scope:   "validate",
-			Code:    http.StatusNotAcceptable,
-			Message: "Requested with wrong parameters",
-		},
-		Errors: errors,
+		Scope:   "validate",
+		Code:    http.StatusNotAcceptable,
+		Message: "Requested with wrong parameters",
+		Errors:  errors,
 	}
 }
 
@@ -227,12 +225,10 @@ func abortBindError(c *gin.Context, err error) bool {
 	switch {
 	case errors.As(err, &tooLarge):
 		c.JSON(http.StatusRequestEntityTooLarge, &ValidateError{
-			Error: Error{
-				Scope:   "validate",
-				Code:    http.StatusRequestEntityTooLarge,
-				Message: "Request body too large",
-			},
-			Errors: gin.H{"body": err.Error()},
+			Scope:   "validate",
+			Code:    http.StatusRequestEntityTooLarge,
+			Message: "Request body too large",
+			Errors:  gin.H{"body": err.Error()},
 		})
 	case isPayloadError(err):
 		c.JSON(http.StatusNotAcceptable, NewValidateError(gin.H{"body": err.Error()}))

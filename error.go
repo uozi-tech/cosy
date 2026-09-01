@@ -77,8 +77,7 @@ func NewErrorWithParams(code int32, message string, params ...string) error {
 
 // WrapErrorWithParams adds parameters to an existing error
 func WrapErrorWithParams(err error, params ...string) error {
-	var cErr *Error
-	if errors.As(err, &cErr) {
+	if cErr, ok := errors.AsType[*Error](err); ok {
 		newErr := &Error{
 			Scope:   cErr.Scope,
 			Code:    cErr.Code,
