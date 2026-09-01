@@ -23,7 +23,7 @@
     "esbuild": "^0.28.2",
     "js-yaml": "5.4.1",
     "linkify-it": "^5.0.2",
-    "markdown-it": "^14.3.1",
+    "markdown-it": "^15.0.1",
     "mermaid": "^11.17.2",
     "undici": "^8.10.1",
     "vite": "^8.2.2"
