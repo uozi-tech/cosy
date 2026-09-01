@@ -2,6 +2,7 @@ package structcodec
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"sync"
@@ -60,7 +61,7 @@ func compileValueDecoder(typ reflect.Type) valueDecoder {
 		return func(dst unsafe.Pointer, input any, path string) error {
 			switch number := input.(type) {
 			case float64:
-				reflect.NewAt(typ, dst).Elem().SetInt(int64(number))
+				reflect.NewAt(typ, dst).Elem().SetInt(floatToInt64(number))
 				return nil
 			case int:
 				reflect.NewAt(typ, dst).Elem().SetInt(int64(number))
@@ -284,7 +285,7 @@ func decodeIntValue(input, target reflect.Value, path string) error {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		target.SetInt(int64(input.Uint()))
 	case reflect.Float32, reflect.Float64:
-		target.SetInt(int64(input.Float()))
+		target.SetInt(floatToInt64(input.Float()))
 	case reflect.Bool:
 		if input.Bool() {
 			target.SetInt(1)
@@ -305,6 +306,24 @@ func decodeIntValue(input, target reflect.Value, path string) error {
 		return unconvertible(path, target.Type(), input)
 	}
 	return nil
+}
+
+// floatToInt64 makes the otherwise implementation-specific conversion of
+// out-of-range floating-point values deterministic. In particular,
+// float64(math.MaxInt64) rounds to 1<<63, so converting it directly can yield
+// math.MinInt64 on amd64 instead of the saturating result callers expect.
+func floatToInt64(value float64) int64 {
+	const limit = float64(uint64(1) << 63)
+	switch {
+	case math.IsNaN(value):
+		return 0
+	case value >= limit:
+		return math.MaxInt64
+	case value <= -limit:
+		return math.MinInt64
+	default:
+		return int64(value)
+	}
 }
 
 func decodeUintValue(input, target reflect.Value, path string) error {
