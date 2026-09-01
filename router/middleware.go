@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"runtime"
 
@@ -12,14 +13,14 @@ import (
 func recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
-			if err := recover(); err != nil {
+			if recovered := recover(); recovered != nil {
 				s := logger.NewSessionLogger(c)
 				buf := make([]byte, 1024)
 				runtime.Stack(buf, false)
-				s.Errorf("%s\n%s", err, buf)
-				logger.LogPanicWithContext(c, err)
+				s.Errorf("%v\n%s", recovered, buf)
+				logger.LogPanicWithContext(c, recovered)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-					"message": err.(error).Error(),
+					"message": fmt.Sprint(recovered),
 				})
 			}
 		}()

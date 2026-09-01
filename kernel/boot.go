@@ -20,8 +20,6 @@ func RegisterDebugInitializer(initializer func() error) {
 
 // Boot the kernel
 func Boot(ctx context.Context) {
-	defer recovery()
-
 	// Initialize debug monitoring system if registered
 	if debugInitializer != nil {
 		if err := debugInitializer(); err != nil {
@@ -29,18 +27,20 @@ func Boot(ctx context.Context) {
 		}
 	}
 
-	// Start history cleanup timer
-	StartHistoryCleanup()
-
 	for _, v := range async {
 		v()
 	}
+
+	// Runtime workers must only start after every synchronous initializer has
+	// completed. Initialization panics are intentionally allowed to propagate so
+	// the process cannot continue with a partially configured router or database.
+	StartHistoryCleanup()
 
 	// Start goroutines with tracking using the new Run function
 	for i, v := range syncs {
 		name := fmt.Sprintf("kernel-goroutine-%d", i)
 		fn := v
-		
+
 		// Use Run function with async execution
 		go Run(ctx, name, fn)
 	}
