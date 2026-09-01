@@ -22,7 +22,7 @@
     "dompurify": "^3.4.14",
     "esbuild": "^0.28.2",
     "js-yaml": "5.4.1",
-    "linkify-it": "^5.0.2",
+    "linkify-it": "^6.1.0",
     "markdown-it": "^15.0.1",
     "mermaid": "^11.17.2",
     "undici": "^8.10.1",
