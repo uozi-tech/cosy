@@ -134,13 +134,17 @@ func (c *Ctx[T]) SetJoins(args ...string) *Ctx[T] {
 	return c
 }
 
-func (c *Ctx[T]) SetScan(scan func(tx *gorm.DB) any) *Ctx[T] {
-	c.scan = scan
+func (c *Ctx[T]) SetScan[K any](scan func(tx *gorm.DB) K) *Ctx[T] {
+	c.scan = func(tx *gorm.DB) any {
+		return scan(tx)
+	}
 	return c
 }
 
-func (c *Ctx[T]) SetTransformer(t func(m *T) any) *Ctx[T] {
-	c.transformer = t
+func (c *Ctx[T]) SetTransformer[K any](transformer func(m *T) K) *Ctx[T] {
+	c.transformer = func(m *T) any {
+		return transformer(m)
+	}
 	return c
 }
 

@@ -48,7 +48,7 @@ func GetUser(c *gin.Context) {
 ```
 
 ## Transformer
-Cosy 提供了 `SetTransformer(fx func(user *model.User) any)` 方法，可以在返回响应之前对数据进行处理。
+Cosy 提供了 `SetTransformer[K any](fx func(user *model.User) K)` 方法，可以在返回响应之前对数据进行处理。返回类型 `K` 会根据传入的函数自动推断。
 
 ```go
 type APIUser struct {
@@ -58,7 +58,7 @@ type APIUser struct {
 
 func GetUser(c *gin.Context) {
    cosy.Core[model.User](c).
-      SetTransformer(func(user *model.User) any {
+      SetTransformer(func(user *model.User) *APIUser {
          var group string
          if user.Group != nil {
             group = user.Group.Name
@@ -74,7 +74,7 @@ func GetUser(c *gin.Context) {
 ```
 
 ## Scan
-使用 SQL View 后或者其他情况需要扩展原有模型的字段，可以使用 `SetScan(fx func(tx *gorm.DB) any)` 方法，自定义扫描函数。
+使用 SQL View 后或者其他情况需要扩展原有模型的字段，可以使用 `SetScan[K any](fx func(tx *gorm.DB) K)` 方法，自定义扫描函数。返回类型 `K` 会根据传入的函数自动推断。
 通过 tx 指针可以执行更加复杂的 SQL 操作，如 JOIN、Where 等。
 
 ```go
@@ -85,7 +85,7 @@ type UserView struct {
 
 func GetUser(c *gin.Context) {
    cosy.Core[model.User](c).
-   SetScan(func (tx *gorm.DB) any{
+   SetScan(func(tx *gorm.DB) []UserView {
       users := make([]UserView, 0)
       tx.Scan(&users)
       return users

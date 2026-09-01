@@ -165,8 +165,8 @@ GET /users?page=1&id[]=1&id[]=2&id[]=3
 以下方法的使用与获取**单个记录**的方式相同
 
 - SetTable(table string)
-- SetTransformer(fx func(user *model.User) any)
-- SetScan(fx func(tx *gorm.DB) any)
+- SetTransformer[K any](fx func(user *model.User) K)
+- SetScan[K any](fx func(tx *gorm.DB) K)
 - GormScope(fx func(tx *gorm.DB) *gorm.DB)
 - SetResponseBuilder(func(ctx *cosy.Ctx[model.User]))
 
