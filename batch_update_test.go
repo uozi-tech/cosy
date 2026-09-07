@@ -202,4 +202,21 @@ func testBatchModify(t *testing.T, instance *sandbox.Instance) {
 	assert.Equal(t, 1, user.Status)
 	assert.Equal(t, cast.ToTime("2024-03-13T11:22:44.405374+08:00"), *user.EmployedAt)
 
+	// data without any batch-updatable field is rejected instead of running
+	// an unrestricted update
+	resp, err = c.Put("/users", gin.H{
+		"ids":  []string{fmt.Sprint(firstUser.ID), fmt.Sprint(secondUser.ID)},
+		"data": gin.H{"bio": "SHOULD_NOT_BE_MODIFIED"},
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	assert.Equal(t, 406, resp.StatusCode, resp.BodyText())
+	var verr ValidateError
+	if err = resp.To(&verr); err != nil {
+		t.Error(err)
+		return
+	}
+	assert.Equal(t, ErrEmptyPayload, verr.Errors["body"])
 }

@@ -72,6 +72,19 @@ func RegisterValidation(tag string, fn validator.Func, callValidationEvenIfNull 
 	return nil
 }
 
+// ErrEmptyPayload is the "body" entry of the 406 ValidateError returned by
+// Modify and BatchModify when, after rule filtering and hooks, the request
+// carries no field the endpoint is allowed to update.
+const ErrEmptyPayload = "empty payload"
+
+// abortEmptyPayload rejects an update that would select no column. Letting it
+// through would hand GORM an empty Select, which falls back to "*" and
+// overwrites every column with the zero-valued model.
+func abortEmptyPayload[T any](c *Ctx[T]) {
+	c.JSON(http.StatusNotAcceptable, NewValidateError(gin.H{"body": ErrEmptyPayload}))
+	c.Abort()
+}
+
 type ValidError struct {
 	Key     string
 	Message string

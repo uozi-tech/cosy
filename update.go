@@ -64,7 +64,16 @@ func (c *Ctx[T]) Modify() {
 				}
 			}
 
-			if err := c.Tx.Select(c.GetSelectedFields()).Save(&c.Model).Error; err != nil {
+			// An empty selection would make GORM's Save fall back to "*" and
+			// overwrite every column with the zero-valued c.Model, so a body
+			// that carries no updatable field is rejected instead.
+			fields := c.GetSelectedFields()
+			if len(fields) == 0 {
+				abortEmptyPayload(c)
+				return
+			}
+
+			if err := c.Tx.Select(fields).Save(&c.Model).Error; err != nil {
 				ctx.AbortWithError(err)
 				return
 			}

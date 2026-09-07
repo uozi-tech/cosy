@@ -63,12 +63,19 @@ flowchart TD
   D -- 否 --> E1[AbortWithError 错误响应] --> END
   D -- 是 --> SET[提取 Data 到 Model 与 IDs 到 BatchEffectedIDs]
   SET --> BE[BeforeExecute Hook]
-  BE --> UPD[应用 GormScope 与 可选表 并按 ID 条件更新 选定字段]
+  BE --> EMPTY{存在可批量更新字段?}
+  EMPTY -- 否 --> E406[返回 406 empty payload] --> END
+  EMPTY -- 是 --> UPD[应用 GormScope 与 可选表 并按 ID 条件更新 选定字段]
   UPD --> UERR{更新出错?}
   UERR -- 是 --> E2[AbortWithError 错误响应] --> END
   UERR -- 否 --> EX[Executed Hook]
   EX --> OK200[200 OK 返回 ok]
 ```
+
+::: warning 空 payload
+`data` 中只有带 `batch` 标记的字段会被写入。如果 `data` 里没有任何可批量更新的字段，
+接口会返回 `406` 的 `ValidateError`，其中 `errors.body` 为 `empty payload`，不会执行任何写入。
+:::
 
 与**修改**接口类似，我们提供三个钩子，分别是 `BeforeDecodeHook`，`BeforeExecuteHook` 和 `ExecutedHook`。
 

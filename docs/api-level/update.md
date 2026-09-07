@@ -41,7 +41,9 @@ flowchart TD
   Q -- 是 --> D{映射成功?}
   D -- 否 --> E1[AbortWithError 错误响应] --> END
   D -- 是 --> BE[BeforeExecute Hook]
-  BE --> SAVE[保存 已选字段]
+  BE --> EMPTY{存在可更新字段?}
+  EMPTY -- 否 --> E406[返回 406 empty payload] --> END
+  EMPTY -- 是 --> SAVE[保存 已选字段]
   SAVE --> ER{更新出错?}
   ER -- 是 --> E2[AbortWithError 错误响应] --> END
   ER -- 否 --> PL[预加载关联 并处理 Preload 与 Joins 并查询]
@@ -64,6 +66,12 @@ flowchart TD
 | ExecutedHook      | 原记录             | 更新后的数据    | 客户端提交的数据    |
 
 注意，该接口在更新项目后，会再次查询数据库并使用 `Preload(clause.Associations)` 预加载所有的关联。
+
+::: warning 空 payload
+只有出现在请求体中、且带有 `update` 校验规则的字段才会被写入数据库，未提交的字段保持原值。
+如果经过规则过滤和钩子处理后没有任何可更新字段（例如请求体为空，或只包含没有 `update` 规则的字段），
+接口会返回 `406` 的 `ValidateError`，其中 `errors.body` 为 `empty payload`，不会执行任何写入。
+:::
 
 默认情况下，该接口会返回更新后的记录，如果需要直接跳转到下一个 Gin Handler Func，请使用 `SetNextHandler(c *gin.Context)` 方法。
 
