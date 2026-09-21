@@ -6,7 +6,7 @@
     "vite": "^8.3.0",
     "vitepress": "^1.6.4",
     "vitepress-plugin-legend": "^2.0.0",
-    "vue": "^3.5.42"
+    "vue": "^3.5.43"
   },
   "scripts": {
     "docs:sync": "mkdir -p docs/public/debug-app && cp -r debug/app/css debug/app/js debug/app/fonts debug/app/assets docs/public/debug-app/",

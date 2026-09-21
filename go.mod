@@ -11,8 +11,8 @@ require (
 	github.com/gin-contrib/pprof v1.5.5
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-co-op/gocron/v2 v2.22.0
-	github.com/go-gormigrate/gormigrate/v2 v2.1.6
-	github.com/go-playground/validator/v10 v10.30.4
+	github.com/go-gormigrate/gormigrate/v2 v2.1.7
+	github.com/go-playground/validator/v10 v10.30.5
 	github.com/google/pprof v0.0.0-20260507013755-92041b743c96
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
@@ -20,7 +20,7 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/oschwald/geoip2-golang/v2 v2.4.0
-	github.com/pierrec/lz4/v4 v4.1.29
+	github.com/pierrec/lz4/v4 v4.1.30
 	github.com/quic-go/quic-go v0.62.0
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/samber/lo v1.53.0
@@ -29,7 +29,7 @@ require (
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.12.1
-	github.com/ulikunitz/xz v0.5.16
+	github.com/ulikunitz/xz v0.5.17
 	github.com/uozi-tech/cosy-driver-mysql v0.2.4
 	github.com/uozi-tech/cosy-driver-postgres v0.2.3
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.2
@@ -95,13 +95,13 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/arch v0.29.0 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
-	golang.org/x/mod v0.39.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gorm.io/datatypes v1.2.7 // indirect
