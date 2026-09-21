@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
-	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -200,34 +200,82 @@ func BindAndValid(c *gin.Context, target any) bool {
 	if binding.Validator == nil {
 		return true
 	}
-	if err := binding.Validator.ValidateStruct(target); err != nil {
-		var verrs validator.ValidationErrors
-		ok := errors.As(err, &verrs)
-		if !ok {
-			errHandler(c, err)
-			return false
-		}
 
-		t := reflect.TypeOf(target).Elem()
-		errorsMap := make(map[string]any)
-		for _, value := range verrs {
-			var path []string
-			namespace := strings.Split(value.StructNamespace(), ".")
-			// logger.Debug(t.Name(), namespace)
-			if t.Name() != "" && len(namespace) > 1 {
-				namespace = namespace[1:]
-			}
-
-			getJsonPath(t, namespace, &path)
-			insertError(errorsMap, path, value.Tag())
-		}
-
+	// Allocated on the first failure only, a valid request pays nothing for it
+	var errorsMap map[string]any
+	if err := collectValidationErrors(reflect.ValueOf(target), nil, &errorsMap); err != nil {
+		errHandler(c, err)
+		return false
+	}
+	if len(errorsMap) > 0 {
 		c.JSON(http.StatusNotAcceptable, NewValidateError(errorsMap))
-
 		return false
 	}
 
 	return true
+}
+
+// collectValidationErrors validates value and records every failure in
+// errorsMap under its JSON path. Slices and arrays are walked here rather than
+// handed to gin, whose SliceValidationError drops the index of the failing
+// element. An error is returned only for failures that are not validation
+// errors.
+func collectValidationErrors(value reflect.Value, prefix []string, errorsMap *map[string]any) error {
+	for value.Kind() == reflect.Pointer || value.Kind() == reflect.Interface {
+		if value.IsNil() {
+			return nil
+		}
+		value = value.Elem()
+	}
+
+	switch value.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < value.Len(); i++ {
+			// Copy the prefix so sibling elements never share a backing array
+			elemPrefix := append(append([]string(nil), prefix...), strconv.Itoa(i))
+			if err := collectValidationErrors(value.Index(i), elemPrefix, errorsMap); err != nil {
+				return err
+			}
+		}
+		return nil
+	case reflect.Struct:
+	default:
+		return nil
+	}
+
+	var obj any
+	if value.CanAddr() {
+		obj = value.Addr().Interface()
+	} else {
+		obj = value.Interface()
+	}
+
+	err := binding.Validator.ValidateStruct(obj)
+	if err == nil {
+		return nil
+	}
+	var verrs validator.ValidationErrors
+	if !errors.As(err, &verrs) {
+		return err
+	}
+
+	if *errorsMap == nil {
+		*errorsMap = make(map[string]any)
+	}
+
+	t := value.Type()
+	for _, fieldErr := range verrs {
+		namespace := fieldErr.StructNamespace()
+		// The namespace starts with the name of the validated struct, unless
+		// the struct is anonymous
+		if name := t.Name(); name != "" {
+			namespace = strings.TrimPrefix(namespace, name+".")
+		}
+
+		path := append(append([]string(nil), prefix...), getJsonPath(t, namespace)...)
+		insertError(*errorsMap, path, fieldErr.Tag())
+	}
+	return nil
 }
 
 // abortBindError answers a failed body read/decode: oversized bodies get 413,
@@ -251,51 +299,135 @@ func abortBindError(c *gin.Context, err error) bool {
 	return false
 }
 
-// findField recursively finds the field in a nested struct
-func getJsonPath(t reflect.Type, fields []string, path *[]string) {
-	field := fields[0]
-	// used in case of an array
-	var index string
-	if field[len(field)-1] == ']' {
-		re := regexp.MustCompile(`(\w+)\[(\d+)\]`)
-		matches := re.FindStringSubmatch(field)
-
-		if len(matches) > 2 {
-			field = matches[1]
-			index = matches[2]
-		}
-	}
-
-	f, ok := t.FieldByName(field)
-	if !ok {
-		return
-	}
-
-	jsonTag := f.Tag.Get("json")
-	// Handle empty json tag case
-	if jsonTag == "" {
-		// Use lowercase field name as fallback
-		jsonTag = strings.ToLower(field)
-	} else {
-		// Handle json:"name,omitempty" case
-		if parts := strings.Split(jsonTag, ","); len(parts) > 0 {
-			jsonTag = parts[0]
-		}
-	}
-
-	*path = append(*path, jsonTag)
-
-	if index != "" {
-		*path = append(*path, index)
-	}
-
-	if len(fields) > 1 {
-		subFields := fields[1:]
-		getJsonPath(f.Type, subFields, path)
-	}
+// namespaceSegment is one dot separated part of a validator namespace: a
+// struct field name followed by the slice indexes or map keys applied to it,
+// e.g. "Items[0][key]".
+type namespaceSegment struct {
+	name string
+	keys []string
 }
 
-// insertError inserts an error into the errors map
+// splitNamespace splits a validator namespace such as "Detail.Items[0].Name"
+// into its segments. A map key may contain dots, so a bracket is only closed by
+// a "]" that ends the segment or is followed by another key.
+func splitNamespace(namespace string) []namespaceSegment {
+	var segments []namespaceSegment
+
+	for len(namespace) > 0 {
+		var segment namespaceSegment
+
+		end := strings.IndexAny(namespace, ".[")
+		if end < 0 {
+			end = len(namespace)
+		}
+		segment.name = namespace[:end]
+		namespace = namespace[end:]
+
+		for strings.HasPrefix(namespace, "[") {
+			closing := -1
+			for i := 1; i < len(namespace); i++ {
+				if namespace[i] == ']' &&
+					(i+1 == len(namespace) || namespace[i+1] == '.' || namespace[i+1] == '[') {
+					closing = i
+					break
+				}
+			}
+			if closing < 0 {
+				// Unbalanced bracket: keep the rest as the key instead of dropping it
+				segment.keys = append(segment.keys, namespace[1:])
+				namespace = ""
+				break
+			}
+			segment.keys = append(segment.keys, namespace[1:closing])
+			namespace = namespace[closing+1:]
+		}
+
+		segments = append(segments, segment)
+		namespace = strings.TrimPrefix(namespace, ".")
+	}
+
+	return segments
+}
+
+// indirectType strips every pointer level from t
+func indirectType(t reflect.Type) reflect.Type {
+	for t != nil && t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return t
+}
+
+// jsonFieldName returns the name encoding/json uses for the field. flatten
+// reports an embedded struct without a json name, whose fields are promoted to
+// the parent object and therefore add nothing to the path.
+func jsonFieldName(f reflect.StructField) (name string, flatten bool) {
+	name, _, _ = strings.Cut(f.Tag.Get("json"), ",")
+	if name != "" && name != "-" {
+		return name, false
+	}
+	if f.Anonymous && name == "" && indirectType(f.Type).Kind() == reflect.Struct {
+		return "", true
+	}
+	// Use lowercase field name as fallback
+	return strings.ToLower(f.Name), false
+}
+
+// getJsonPath converts a validator struct namespace, relative to t, into the
+// path of the offending value in the JSON document. Pointers, slices, arrays
+// and maps are followed down to their element type. Whatever cannot be
+// resolved from the static type (a struct behind an interface, an unknown
+// field) falls back to the lowercase field name, so the path is never
+// truncated and resolving it never panics.
+func getJsonPath(t reflect.Type, namespace string) []string {
+	var path []string
+
+	segments := splitNamespace(namespace)
+	for _, segment := range segments {
+		name := strings.ToLower(segment.name)
+
+		t = indirectType(t)
+		if t != nil && t.Kind() == reflect.Struct {
+			if f, ok := t.FieldByName(segment.name); ok {
+				// name is empty for a flattened embedded struct
+				name, _ = jsonFieldName(f)
+				t = f.Type
+			} else {
+				t = nil
+			}
+		} else {
+			t = nil
+		}
+
+		if name != "" {
+			path = append(path, name)
+		}
+		path = append(path, segment.keys...)
+
+		for range segment.keys {
+			t = indirectType(t)
+			if t == nil {
+				break
+			}
+			switch t.Kind() {
+			case reflect.Slice, reflect.Array, reflect.Map:
+				t = t.Elem()
+			default:
+				t = nil
+			}
+		}
+	}
+
+	// The failing field is a flattened embedded struct itself (e.g. a required
+	// embedded pointer): report it under its own name rather than losing it
+	if len(path) == 0 && len(segments) > 0 {
+		path = append(path, strings.ToLower(segments[len(segments)-1].name))
+	}
+
+	return path
+}
+
+// insertError inserts an error into the errors map. The first error recorded
+// at a path wins: a later one never replaces it nor descends through it.
 func insertError(errorsMap map[string]any, path []string, errorTag string) {
 	if len(path) == 0 {
 		return
@@ -304,7 +436,9 @@ func insertError(errorsMap map[string]any, path []string, errorTag string) {
 	jsonTag := path[0]
 	if len(path) == 1 {
 		// Last element in the path, set the error
-		errorsMap[jsonTag] = errorTag
+		if _, ok := errorsMap[jsonTag]; !ok {
+			errorsMap[jsonTag] = errorTag
+		}
 		return
 	}
 
@@ -314,6 +448,9 @@ func insertError(errorsMap map[string]any, path []string, errorTag string) {
 	}
 
 	// Recursively insert into the nested map
-	subMap, _ := errorsMap[jsonTag].(map[string]any)
+	subMap, ok := errorsMap[jsonTag].(map[string]any)
+	if !ok {
+		return
+	}
 	insertError(subMap, path[1:], errorTag)
 }
