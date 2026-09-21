@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -20,6 +21,10 @@ func TestQueue(t *testing.T) {
 	t.Run("test Len", testLen)
 	t.Run("test ProduceConsumeWithRetry", testProduceConsumeWithRetry)
 	t.Run("test Subscribe", testSubscribe)
+	t.Run("test ConcurrentLockUnlock", testConcurrentLockUnlock)
+	t.Run("test SubscribeBacklog", testSubscribeBacklog)
+	t.Run("test SubscribeCancelWithoutReader", testSubscribeCancelWithoutReader)
+	t.Run("test SubscribeCancelWhileLockHeld", testSubscribeCancelWhileLockHeld)
 }
 
 func queueNew(t *testing.T) {
@@ -160,4 +165,135 @@ func testSubscribe(t *testing.T) {
 	// Clean up
 	err = q.Clean()
 	assert.NoError(t, err)
+}
+
+// Goroutines sharing a queue take turns on its lock. A release must never
+// wipe the lock another goroutine has just obtained, otherwise that lock is
+// leaked until its TTL expires and the next Lock stalls for a minute.
+func testConcurrentLockUnlock(t *testing.T) {
+	q := New[string]("test_concurrent_lock_queue", LeftToRight)
+
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 10 {
+				if !assert.NoError(t, q.Lock()) {
+					return
+				}
+				assert.NoError(t, q.Unlock())
+			}
+		}()
+	}
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(20 * time.Second):
+		t.Fatal("Timed out: a lock was leaked")
+	}
+
+	assert.Nil(t, q.lock)
+}
+
+// Tasks produced before Subscribe are delivered, in order, along with the ones
+// produced afterwards.
+func testSubscribeBacklog(t *testing.T) {
+	q := New[int]("test_subscribe_backlog_queue", LeftToRight)
+	assert.NoError(t, q.Clean())
+	defer func() { assert.NoError(t, q.Clean()) }()
+
+	for i := range 3 {
+		assert.NoError(t, q.Produce(&i))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	taskChan, err := q.Subscribe(ctx)
+	assert.NoError(t, err)
+
+	for i := 3; i < 5; i++ {
+		assert.NoError(t, q.Produce(&i))
+	}
+
+	for want := range 5 {
+		select {
+		case got := <-taskChan:
+			assert.Equal(t, want, got)
+		case <-time.After(3 * time.Second):
+			t.Fatalf("Timed out waiting for task %d", want)
+		}
+	}
+}
+
+// Cancelling a subscription nobody reads from must close the channel and
+// release the lock instead of blocking on the send forever.
+func testSubscribeCancelWithoutReader(t *testing.T) {
+	q := New[int]("test_subscribe_cancel_queue", LeftToRight)
+	assert.NoError(t, q.Clean())
+	defer func() { assert.NoError(t, q.Clean()) }()
+
+	for i := range 3 {
+		assert.NoError(t, q.Produce(&i))
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	taskChan, err := q.Subscribe(ctx)
+	assert.NoError(t, err)
+
+	// Let the subscriber block on the first send, then cancel
+	time.Sleep(200 * time.Millisecond)
+	cancel()
+
+	deadline := time.After(3 * time.Second)
+	for open := true; open; {
+		select {
+		case _, open = <-taskChan:
+		case <-deadline:
+			t.Fatal("Timed out waiting for the subscription to close")
+		}
+	}
+
+	// The lock was released: it can be taken again right away
+	locked := make(chan error, 1)
+	go func() { locked <- q.Lock() }()
+	select {
+	case err := <-locked:
+		assert.NoError(t, err)
+		assert.NoError(t, q.Unlock())
+	case <-time.After(3 * time.Second):
+		t.Fatal("Timed out: the subscription leaked its lock")
+	}
+}
+
+// The queue lock may be held by another consumer, or left behind by a crashed
+// one until its TTL expires. A cancelled subscription must not keep waiting
+// for it.
+func testSubscribeCancelWhileLockHeld(t *testing.T) {
+	holder := New[int]("test_subscribe_lock_held_queue", LeftToRight)
+	assert.NoError(t, holder.Lock())
+	defer func() { assert.NoError(t, holder.Unlock()) }()
+
+	q := New[int]("test_subscribe_lock_held_queue", LeftToRight)
+	ctx, cancel := context.WithCancel(context.Background())
+	taskChan, err := q.Subscribe(ctx)
+	assert.NoError(t, err)
+
+	// Let the subscriber start waiting for the lock, then cancel
+	time.Sleep(200 * time.Millisecond)
+	cancel()
+
+	select {
+	case _, open := <-taskChan:
+		assert.False(t, open)
+	case <-time.After(3 * time.Second):
+		t.Fatal("Timed out: the cancelled subscription is still waiting for the lock")
+	}
 }

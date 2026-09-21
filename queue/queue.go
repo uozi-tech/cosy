@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/bsm/redislock"
@@ -23,7 +24,9 @@ type Queue[T any] struct {
 	name      string
 	direction Direction // left-to-right or right-to-left
 	listName  string
-	lock      *redislock.Lock
+	// lockMu guards lock: Lock and Unlock may be called from several goroutines
+	lockMu sync.Mutex
+	lock   *redislock.Lock
 }
 
 // New create a new queue
@@ -72,28 +75,50 @@ func (q *Queue[T]) consume() (dataStr string, err error) {
 
 // Lock acquire a lock for the queue
 func (q *Queue[T]) Lock() error {
-	lock, err := redis.ObtainLock("queue_lock:"+q.listName, 1*time.Minute, &redislock.Options{
+	return q.LockContext(context.Background())
+}
+
+// LockContext acquires a lock for the queue, giving up as soon as ctx is done.
+// The lock may be held by another consumer, or left behind by a crashed one
+// until its TTL expires, so waiting for it can take up to a minute.
+func (q *Queue[T]) LockContext(ctx context.Context) error {
+	lock, err := redis.ObtainLockContext(ctx, "queue_lock:"+q.listName, 1*time.Minute, &redislock.Options{
 		RetryStrategy: redislock.ExponentialBackoff(20*time.Millisecond, 40*time.Millisecond),
 	})
 
 	if err != nil {
 		return err
 	}
+	q.lockMu.Lock()
 	q.lock = lock
+	q.lockMu.Unlock()
 	return nil
 }
 
 // Unlock releases the lock associated with the queue.
 // If no lock is held, it returns nil.
 func (q *Queue[T]) Unlock() error {
-	if q.lock == nil {
+	// Forget the lock before releasing it: once it is released another
+	// goroutine may obtain a new one, which must not be overwritten with nil
+	q.lockMu.Lock()
+	lock := q.lock
+	q.lock = nil
+	q.lockMu.Unlock()
+
+	if lock == nil {
 		return nil
 	}
-	err := q.lock.Release(context.Background())
+	err := lock.Release(context.Background())
 	if err != nil {
+		// Keep the lock so the release can be retried, unless a new one was
+		// obtained in the meantime
+		q.lockMu.Lock()
+		if q.lock == nil {
+			q.lock = lock
+		}
+		q.lockMu.Unlock()
 		return err
 	}
-	q.lock = nil
 	return nil
 }
 
@@ -132,26 +157,34 @@ func (q *Queue[T]) Len() (result int64) {
 // Returns a channel that will receive task data whenever new tasks are added
 func (q *Queue[T]) Subscribe(ctx context.Context) (<-chan T, error) {
 	taskChan := make(chan T)
+
+	// Subscribe before draining, so a task produced while the backlog is being
+	// drained still triggers a notification
+	pubsub := redis.Subscribe("queue_notify:" + q.listName)
+
+	// send delivers the task unless the subscription is cancelled first
+	send := func(task T) {
+		select {
+		case taskChan <- task:
+		case <-ctx.Done():
+		}
+	}
+
+	// A single goroutine owns taskChan: it is the only sender and closes it
 	go func() {
-		err := q.Lock()
-		if err == nil {
-			for q.Len() > 0 {
+		defer pubsub.Close()
+		defer close(taskChan)
+
+		// Deliver the tasks that were queued before the subscription
+		if err := q.LockContext(ctx); err == nil {
+			for ctx.Err() == nil && q.Len() > 0 {
 				var task T
-				err = q.Consume(&task)
-				if err == nil {
-					taskChan <- task
+				if err = q.Consume(&task); err == nil {
+					send(task)
 				}
 			}
 			_ = q.Unlock()
 		}
-	}()
-
-	pubsub := redis.Subscribe("queue_notify:" + q.listName)
-
-	// Handle messages in a goroutine
-	go func() {
-		defer pubsub.Close()
-		defer close(taskChan)
 
 		for {
 			select {
@@ -159,7 +192,7 @@ func (q *Queue[T]) Subscribe(ctx context.Context) (<-chan T, error) {
 				return
 			case <-pubsub.Channel():
 				// When notification received, try to acquire lock before consuming
-				err := q.Lock()
+				err := q.LockContext(ctx)
 				if err != nil {
 					// If lock acquisition fails, continue to next iteration
 					continue
@@ -177,7 +210,7 @@ func (q *Queue[T]) Subscribe(ctx context.Context) (<-chan T, error) {
 				err = q.Consume(&task)
 				if err == nil {
 					// Only send to channel if successfully consumed
-					taskChan <- task
+					send(task)
 				}
 
 				// Always release the lock

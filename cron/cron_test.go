@@ -1,10 +1,12 @@
 package cron
 
 import (
-	"github.com/go-co-op/gocron/v2"
-	"github.com/stretchr/testify/assert"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/go-co-op/gocron/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRegisterJob(t *testing.T) {
@@ -23,14 +25,14 @@ func TestRegisterJob(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	// Initialize test data
-	test := 0
+	var test atomic.Int32
 
 	testJobName := "testJob"
 	testJobFunc := func(s gocron.Scheduler) {
 		_, err := s.NewJob(
 			gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()),
 			gocron.NewTask(func() {
-				test++
+				test.Add(1)
 			}),
 		)
 		if err != nil {
@@ -45,5 +47,5 @@ func TestStart(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Check if the job was executed
-	assert.Equal(t, 1, test, "testJobFunc was not executed")
+	assert.Equal(t, int32(1), test.Load(), "testJobFunc was not executed")
 }
