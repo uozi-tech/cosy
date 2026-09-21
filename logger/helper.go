@@ -20,20 +20,28 @@ func getMessagef(format string, args ...any) string {
 }
 
 // fileWithLineNum returns the file name and line number of the caller
-// It will skip the gorm internal files and the logger files in the project
+// It will skip the gorm internal files and the files of the cosy module
+// itself (the logger package as well as the CRUD helpers in the root and
+// sub packages) so the reported location is the application code that
+// issued the query. When every frame belongs to cosy (cosy's own tests),
+// it falls back to the first frame outside gorm and the logger package.
 func fileWithLineNum() string {
 	// Get the current file directory, used to skip the logger package internal calls
 	_, currentFile, _, _ := runtime.Caller(0)
 	loggerDir := filepath.Dir(currentFile)
+	// The cosy module root: every package under it is a wrapper around gorm,
+	// not the application code that issued the query.
+	cosyDir := filepath.Dir(loggerDir) + string(filepath.Separator)
 
 	// Get the gorm source code directory (used to skip the gorm internal calls)
 	gormSourceDir := getGormSourceDir()
 
-	pcs := make([]uintptr, 15)
+	pcs := make([]uintptr, 32)
 	// Start capturing from the first caller (skipping fileWithLineNum itself)
 	depth := runtime.Callers(1, pcs)
 	frames := runtime.CallersFrames(pcs[:depth])
 
+	fallback := ""
 	for i := 0; i < depth; i++ {
 		frame, more := frames.Next()
 
@@ -46,7 +54,18 @@ func fileWithLineNum() string {
 			!strings.Contains(frame.File, loggerDir) &&
 			!strings.HasSuffix(frame.File, "_test.go") &&
 			!strings.HasSuffix(frame.File, ".gen.go") {
-			return frame.File + ":" + strconv.Itoa(frame.Line)
+			location := frame.File + ":" + strconv.Itoa(frame.Line)
+			// 5. The other packages of the cosy module (list.go, delete.go,
+			//    model/, filter/, valid/ ...) and the runtime/testing entry
+			//    points that sit on top of every stack (runtime.goexit,
+			//    testing.tRunner) are only remembered as a fallback, so the
+			//    application frame wins when there is one
+			if !strings.HasPrefix(frame.File, cosyDir) && !isEntryPointFrame(frame.Function) {
+				return location
+			}
+			if fallback == "" {
+				fallback = location
+			}
 		}
 
 		if !more {
@@ -54,7 +73,13 @@ func fileWithLineNum() string {
 		}
 	}
 
-	return ""
+	return fallback
+}
+
+// isEntryPointFrame reports whether the function belongs to the runtime or
+// testing packages, which never are the code that issued a query.
+func isEntryPointFrame(function string) bool {
+	return strings.HasPrefix(function, "runtime.") || strings.HasPrefix(function, "testing.")
 }
 
 // getGormSourceDir returns the gorm source code directory
