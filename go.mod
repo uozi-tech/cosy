@@ -8,7 +8,7 @@ require (
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fatih/color v1.19.0
-	github.com/gin-contrib/pprof v1.5.5
+	github.com/gin-contrib/pprof v1.5.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-co-op/gocron/v2 v2.22.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.7
@@ -21,7 +21,7 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/oschwald/geoip2-golang/v2 v2.4.0
 	github.com/pierrec/lz4/v4 v4.1.30
-	github.com/quic-go/quic-go v0.62.0
+	github.com/quic-go/quic-go v0.63.0
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/samber/lo v1.53.0
 	github.com/shirou/gopsutil/v4 v4.26.8
