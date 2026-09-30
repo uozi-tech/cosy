@@ -14,7 +14,7 @@ func main() {
 	kernel.Boot(context.Background())
 
 	if err := debug.InitDebugSystem(nil); err != nil {
-		logger.GetLogger().Fatal("Failed to initialize debug system:", err)
+		logger.Fatal("Failed to initialize debug system:", err)
 	}
 
 	r := gin.Default()

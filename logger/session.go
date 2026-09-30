@@ -91,9 +91,14 @@ func ForkSessionLogger(ctx context.Context) (context.Context, *SessionLogger) {
 	return newCtx, forkedLogger
 }
 
+// WithOptions returns a copy of the session logger with the options applied.
+// The receiver is left untouched: it is usually the logger shared by the whole
+// request through the gin context, and a caller skip applied to it in place
+// would shift the reported location of every later log call of the request.
 func (s *SessionLogger) WithOptions(opts ...zap.Option) *SessionLogger {
-	s.Logger = s.Logger.WithOptions(opts...)
-	return s
+	clone := *s
+	clone.Logger = s.Logger.WithOptions(opts...)
+	return &clone
 }
 
 // "Debug" logs a message at DebugLevel.

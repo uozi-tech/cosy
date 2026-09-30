@@ -23,7 +23,7 @@ func Boot(ctx context.Context) {
 	// Initialize debug monitoring system if registered
 	if debugInitializer != nil {
 		if err := debugInitializer(); err != nil {
-			logger.GetLogger().Error("Failed to initialize debug system:", err)
+			logger.Error("Failed to initialize debug system:", err)
 		}
 	}
 
