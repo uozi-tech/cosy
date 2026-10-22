@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -19,13 +19,13 @@ require (
 	github.com/guregu/null/v6 v6.0.0
 	github.com/jackc/pgtype v1.14.4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/oschwald/geoip2-golang/v2 v2.4.0
+	github.com/oschwald/geoip2-golang/v2 v2.5.0
 	github.com/pierrec/lz4/v4 v4.1.33
-	github.com/quic-go/quic-go v0.63.0
+	github.com/quic-go/quic-go v0.64.1
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/samber/lo v1.53.0
 	github.com/shirou/gopsutil/v4 v4.26.9
-	github.com/shopspring/decimal v1.5.0
+	github.com/shopspring/decimal v1.6.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.12.1
@@ -78,7 +78,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.44 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
-	github.com/oschwald/maxminddb-golang/v2 v2.6.0 // indirect
+	github.com/oschwald/maxminddb-golang/v2 v2.8.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20260805114148-88456608a4f6 // indirect
@@ -98,11 +98,11 @@ require (
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gorm.io/datatypes v1.2.7 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
