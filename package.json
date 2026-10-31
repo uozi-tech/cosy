@@ -1,12 +1,12 @@
 {
   "private": true,
-  "packageManager": "bun@1.4.2",
+  "packageManager": "bun@1.4.4",
   "devDependencies": {
     "esbuild": "^0.28.2",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vitepress": "^1.6.4",
     "vitepress-plugin-legend": "^2.0.0",
-    "vue": "^3.5.43"
+    "vue": "^3.5.44"
   },
   "scripts": {
     "docs:sync": "mkdir -p docs/public/debug-app && cp -r debug/app/css debug/app/js debug/app/fonts debug/app/assets docs/public/debug-app/",
@@ -18,14 +18,14 @@
     "esbuild"
   ],
   "overrides": {
-    "axios": "^1.20.0",
-    "dompurify": "^3.4.16",
+    "axios": "^1.21.0",
+    "dompurify": "^3.4.17",
     "esbuild": "^0.28.2",
-    "js-yaml": "5.4.3",
+    "js-yaml": "5.5.0",
     "linkify-it": "^6.1.0",
-    "markdown-it": "^15.0.2",
-    "mermaid": "^12.1.0",
-    "undici": "^8.11.2",
-    "vite": "^8.3.4"
+    "markdown-it": "^15.0.3",
+    "mermaid": "^12.2.0",
+    "undici": "^8.12.3",
+    "vite": "^8.3.5"
   }
 }
