@@ -1,31 +1,31 @@
 module github.com/uozi-tech/cosy
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/bsm/redislock v0.10.0
-	github.com/caarlos0/env/v11 v11.4.1
+	github.com/caarlos0/env/v11 v11.4.2
 	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fatih/color v1.19.0
-	github.com/gin-contrib/pprof v1.5.6
+	github.com/gin-contrib/pprof v1.5.7
 	github.com/gin-gonic/gin v1.12.0
-	github.com/go-co-op/gocron/v2 v2.22.0
+	github.com/go-co-op/gocron/v2 v2.23.0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.7
-	github.com/go-playground/validator/v10 v10.30.5
+	github.com/go-playground/validator/v10 v10.30.6
 	github.com/google/pprof v0.0.0-20260507013755-92041b743c96
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/guregu/null/v6 v6.0.0
 	github.com/jackc/pgtype v1.14.4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/oschwald/geoip2-golang/v2 v2.4.0
+	github.com/oschwald/geoip2-golang/v2 v2.5.0
 	github.com/pierrec/lz4/v4 v4.1.33
-	github.com/quic-go/quic-go v0.63.0
+	github.com/quic-go/quic-go v0.65.0
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/samber/lo v1.53.0
-	github.com/shirou/gopsutil/v4 v4.26.9
-	github.com/shopspring/decimal v1.5.0
+	github.com/shirou/gopsutil/v4 v4.26.10
+	github.com/shopspring/decimal v1.6.0
 	github.com/sony/sonyflake/v2 v2.2.0
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.12.1
@@ -50,12 +50,12 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/ebitengine/purego v0.11.1 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
+	github.com/ebitengine/purego v0.11.2 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.16 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-playground/locales v0.14.1 // indirect
-	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/locales v0.14.2 // indirect
+	github.com/go-playground/universal-translator v0.18.2 // indirect
 	github.com/go-sql-driver/mysql v1.10.0 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
@@ -78,7 +78,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.44 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
-	github.com/oschwald/maxminddb-golang/v2 v2.6.0 // indirect
+	github.com/oschwald/maxminddb-golang/v2 v2.8.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20260805114148-88456608a4f6 // indirect
@@ -95,14 +95,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/arch v0.29.0 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
 	gorm.io/datatypes v1.2.7 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
