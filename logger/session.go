@@ -209,9 +209,17 @@ func (s *SessionLogger) write(level zapcore.Level, message string, callerSkip in
 	}
 }
 
+// logSQL reports the statement at caller, the application code that issued
+// it, rather than at this wrapper: a fixed caller skip can never climb out of
+// gorm's call chain, so the entry's caller is set explicitly.
 func (s *SessionLogger) logSQL(level zapcore.Level, message, caller string) {
-	fields := []any{FieldLogType, LogTypeSQL, FieldDBCaller, caller}
-	s.write(level, message, 1, fields...)
+	file, line, ok := splitCaller(caller)
+	if !ok {
+		s.write(level, message, 1, FieldLogType, LogTypeSQL, FieldDBCaller, caller)
+	} else if entry := s.Logger.Desugar().WithOptions(zap.WithCaller(false)).Check(level, message); entry != nil {
+		entry.Caller = zapcore.EntryCaller{Defined: true, File: file, Line: line}
+		entry.Write(zap.String(FieldLogType, LogTypeSQL), zap.String(FieldDBCaller, caller))
+	}
 	if !HasSLSSupport() && s.Logs != nil {
 		s.Logs.Append(LogItem{
 			Time:    time.Now().Unix(),

@@ -142,15 +142,16 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 
-	// Get the actual caller location (skipping gorm internal and logger files)
-	caller := fileWithLineNum()
-
+	// The caller location (skipping gorm internal and logger files) is only
+	// resolved for statements that are actually logged.
+	var caller string
 	var logLevel zapcore.Level
 	var message string
 	sessionLogger := sessionLoggerFromContext(ctx)
 
 	switch {
 	case err != nil && l.LogLevel >= gormlogger.Error && (!errors.Is(err, gormlogger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
+		caller = fileWithLineNum()
 		logLevel = zapcore.ErrorLevel
 		if rows == -1 {
 			if sessionLogger == nil {
@@ -164,6 +165,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 			message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, err, sql)
 		}
 	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= gormlogger.Warn:
+		caller = fileWithLineNum()
 		logLevel = zapcore.WarnLevel
 		slowLog := fmt.Sprintf("SLOW SQL >= %v", l.SlowThreshold)
 		if rows == -1 {
@@ -178,6 +180,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 			message = fmt.Sprintf("[%.3fms] [rows:%v] %s %s", float64(elapsed.Nanoseconds())/1e6, rows, slowLog, sql)
 		}
 	case l.LogLevel == gormlogger.Info:
+		caller = fileWithLineNum()
 		logLevel = zapcore.InfoLevel
 		if rows == -1 {
 			if sessionLogger == nil {

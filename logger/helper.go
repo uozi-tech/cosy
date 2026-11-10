@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func getMessageln(fmtArgs ...any) string {
@@ -19,6 +20,73 @@ func getMessagef(format string, args ...any) string {
 	return msg
 }
 
+var (
+	// loggerDir is this package's source directory: gorm_logger.go, session.go
+	// and the other logging wrappers are never the code that issued a query.
+	loggerDir = func() string {
+		_, file, _, _ := runtime.Caller(0)
+		return filepath.Dir(file)
+	}()
+	// cosyDir is the cosy module root: every package under it is a wrapper
+	// around gorm, not the application code that issued the query.
+	cosyDir = filepath.Dir(loggerDir) + string(filepath.Separator)
+)
+
+// gormPathMarker matches gorm and its drivers wherever they are built from
+// (module cache, vendor/ or a replace directive).
+const gormPathMarker = "gorm.io/"
+
+// frameKind is how fileWithLineNum treats one stack frame.
+type frameKind uint8
+
+const (
+	frameSkipped  frameKind = iota // gorm, the logger package, tests, generated code
+	frameFallback                  // other cosy packages and runtime/testing entry points
+	frameCaller                    // application code
+)
+
+type callerFrame struct {
+	location string
+	kind     frameKind
+}
+
+// callerFrames caches the classified frames of each program counter. A PC
+// always resolves to the same frames, and the set of PCs is bounded by the
+// binary's code, so the cache never needs eviction. One PC can expand to
+// several frames when calls were inlined.
+var callerFrames sync.Map // uintptr -> []callerFrame
+
+func framesForPC(pc uintptr) []callerFrame {
+	if cached, ok := callerFrames.Load(pc); ok {
+		return cached.([]callerFrame)
+	}
+	var out []callerFrame
+	frames := runtime.CallersFrames([]uintptr{pc})
+	for {
+		frame, more := frames.Next()
+		out = append(out, classifyFrame(frame))
+		if !more {
+			break
+		}
+	}
+	actual, _ := callerFrames.LoadOrStore(pc, out)
+	return actual.([]callerFrame)
+}
+
+func classifyFrame(frame runtime.Frame) callerFrame {
+	if strings.Contains(frame.File, gormPathMarker) ||
+		strings.Contains(frame.File, loggerDir) ||
+		strings.HasSuffix(frame.File, "_test.go") ||
+		strings.HasSuffix(frame.File, ".gen.go") {
+		return callerFrame{kind: frameSkipped}
+	}
+	location := frame.File + ":" + strconv.Itoa(frame.Line)
+	if strings.HasPrefix(frame.File, cosyDir) || isEntryPointFrame(frame.Function) {
+		return callerFrame{location: location, kind: frameFallback}
+	}
+	return callerFrame{location: location, kind: frameCaller}
+}
+
 // fileWithLineNum returns the file name and line number of the caller
 // It will skip the gorm internal files and the files of the cosy module
 // itself (the logger package as well as the CRUD helpers in the root and
@@ -26,53 +94,23 @@ func getMessagef(format string, args ...any) string {
 // issued the query. When every frame belongs to cosy (cosy's own tests),
 // it falls back to the first frame outside gorm and the logger package.
 func fileWithLineNum() string {
-	// Get the current file directory, used to skip the logger package internal calls
-	_, currentFile, _, _ := runtime.Caller(0)
-	loggerDir := filepath.Dir(currentFile)
-	// The cosy module root: every package under it is a wrapper around gorm,
-	// not the application code that issued the query.
-	cosyDir := filepath.Dir(loggerDir) + string(filepath.Separator)
-
-	// Get the gorm source code directory (used to skip the gorm internal calls)
-	gormSourceDir := getGormSourceDir()
-
-	pcs := make([]uintptr, 32)
-	// Start capturing from the first caller (skipping fileWithLineNum itself)
-	depth := runtime.Callers(1, pcs)
-	frames := runtime.CallersFrames(pcs[:depth])
+	var pcs [32]uintptr
+	// Skip runtime.Callers and fileWithLineNum itself.
+	depth := runtime.Callers(2, pcs[:])
 
 	fallback := ""
-	for i := 0; i < depth; i++ {
-		frame, more := frames.Next()
-
-		// Skip the following files:
-		// 1. The files in the gorm source code directory
-		// 2. The files in the logger directory of the project (gorm_logger.go, logger.go, etc.)
-		// 3. Test files
-		// 4. Generated files
-		if !strings.Contains(frame.File, gormSourceDir) &&
-			!strings.Contains(frame.File, loggerDir) &&
-			!strings.HasSuffix(frame.File, "_test.go") &&
-			!strings.HasSuffix(frame.File, ".gen.go") {
-			location := frame.File + ":" + strconv.Itoa(frame.Line)
-			// 5. The other packages of the cosy module (list.go, delete.go,
-			//    model/, filter/, valid/ ...) and the runtime/testing entry
-			//    points that sit on top of every stack (runtime.goexit,
-			//    testing.tRunner) are only remembered as a fallback, so the
-			//    application frame wins when there is one
-			if !strings.HasPrefix(frame.File, cosyDir) && !isEntryPointFrame(frame.Function) {
-				return location
+	for _, pc := range pcs[:depth] {
+		for _, frame := range framesForPC(pc) {
+			switch frame.kind {
+			case frameCaller:
+				return frame.location
+			case frameFallback:
+				if fallback == "" {
+					fallback = frame.location
+				}
 			}
-			if fallback == "" {
-				fallback = location
-			}
-		}
-
-		if !more {
-			break
 		}
 	}
-
 	return fallback
 }
 
@@ -82,26 +120,15 @@ func isEntryPointFrame(function string) bool {
 	return strings.HasPrefix(function, "runtime.") || strings.HasPrefix(function, "testing.")
 }
 
-// getGormSourceDir returns the gorm source code directory
-func getGormSourceDir() string {
-	pcs := make([]uintptr, 10)
-	depth := runtime.Callers(0, pcs)
-	frames := runtime.CallersFrames(pcs[:depth])
-
-	for i := 0; i < depth; i++ {
-		frame, more := frames.Next()
-		// Find the gorm.io path
-		if strings.Contains(frame.File, "gorm.io") {
-			// Get the root directory of gorm.io
-			idx := strings.Index(frame.File, "gorm.io")
-			if idx > 0 {
-				return frame.File[:idx+len("gorm.io")]
-			}
-		}
-		if !more {
-			break
-		}
+// splitCaller splits a "file:line" location produced by fileWithLineNum.
+func splitCaller(caller string) (string, int, bool) {
+	i := strings.LastIndexByte(caller, ':')
+	if i <= 0 {
+		return "", 0, false
 	}
-
-	return "gorm.io"
+	line, err := strconv.Atoi(caller[i+1:])
+	if err != nil || line <= 0 {
+		return "", 0, false
+	}
+	return caller[:i], line, true
 }

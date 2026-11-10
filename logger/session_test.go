@@ -106,7 +106,7 @@ func TestSessionLoggerUsesBoundedFallbackWithoutSLS(t *testing.T) {
 	}
 }
 
-func setSLSSupportForTest(t *testing.T, enabled bool) {
+func setSLSSupportForTest(t testing.TB, enabled bool) {
 	t.Helper()
 	previous := slsSupportActive.Load()
 	slsSupportActive.Store(enabled)

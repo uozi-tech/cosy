@@ -182,3 +182,40 @@ func TestGormLoggerParamsFilterHonorsParameterizedQueries(t *testing.T) {
 		t.Fatalf("expected params to be hidden, got %#v", params)
 	}
 }
+
+// The entry's caller is the application code that issued the statement, the
+// same location as db_caller, never the logger wrapper that wrote it.
+func TestGormLoggerTraceReportsQueryCallerOnEntry(t *testing.T) {
+	setSLSSupportForTest(t, true)
+	core, observed := observer.New(zapcore.DebugLevel)
+	base := zap.New(core, zap.AddCaller()).WithOptions(zap.AddCallerSkip(1)).Sugar()
+	sessionLogger := newSessionLogger("request-1", "request-1", NewLogBuffer(), base)
+	ctx := context.WithValue(context.Background(), CosySessionLoggerCtxKey, sessionLogger)
+	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{LogLevel: gormlogger.Info})
+
+	gormLog.Trace(ctx, time.Now(), func() (string, int64) { return `SELECT 1`, 1 }, nil)
+
+	entries := observed.TakeAll()
+	if len(entries) != 1 {
+		t.Fatalf("expected one entry, got %d", len(entries))
+	}
+	entry := entries[0]
+	dbCaller, _ := entry.ContextMap()[FieldDBCaller].(string)
+	if dbCaller == "" || !entry.Caller.Defined || entry.Caller.FullPath() != dbCaller {
+		t.Fatalf("expected entry caller %q, got %q", dbCaller, entry.Caller.FullPath())
+	}
+	if strings.Contains(entry.Caller.File, "logger/gorm_logger.go") || strings.Contains(entry.Caller.File, "logger/session.go") {
+		t.Fatalf("entry caller points into the logger wrapper: %s", entry.Caller.FullPath())
+	}
+}
+
+// Statements that are not logged must not pay for resolving their caller.
+func TestGormLoggerTraceSkipsCallerForUnloggedSQL(t *testing.T) {
+	gormLog := NewGormLogger(log.New(io.Discard, "", 0), gormlogger.Config{LogLevel: gormlogger.Warn, SlowThreshold: time.Second})
+	allocs := testing.AllocsPerRun(100, func() {
+		gormLog.Trace(context.Background(), time.Now(), func() (string, int64) { return `SELECT 1`, 1 }, nil)
+	})
+	if allocs != 0 {
+		t.Fatalf("expected no allocations for an unlogged statement, got %v", allocs)
+	}
+}

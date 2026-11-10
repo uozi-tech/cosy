@@ -51,3 +51,31 @@ func TestFileWithLineNum_FallsBackInsideGoroutine(t *testing.T) {
 		t.Fatalf("expected the runtime.goexit fallback, got %q", got)
 	}
 }
+
+func TestFileWithLineNum_CachedFramesMatchFreshResolution(t *testing.T) {
+	first := fileWithLineNum()
+	second := fileWithLineNum()
+	if first == "" || first != second {
+		t.Fatalf("expected a stable caller, got %q then %q", first, second)
+	}
+}
+
+func TestSplitCaller(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		file string
+		line int
+		ok   bool
+	}{
+		{"/srv/app/service/user.go:42", "/srv/app/service/user.go", 42, true},
+		{`C:/app/user.go:7`, "C:/app/user.go", 7, true},
+		{"", "", 0, false},
+		{"user.go", "", 0, false},
+		{"user.go:x", "", 0, false},
+	} {
+		file, line, ok := splitCaller(tc.in)
+		if file != tc.file || line != tc.line || ok != tc.ok {
+			t.Fatalf("splitCaller(%q) = %q, %d, %v", tc.in, file, line, ok)
+		}
+	}
+}
