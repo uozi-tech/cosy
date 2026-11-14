@@ -1,6 +1,6 @@
 module github.com/uozi-tech/cosy
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/BurntSushi/toml v1.6.0
@@ -8,9 +8,9 @@ require (
 	github.com/caarlos0/env/v11 v11.4.2
 	github.com/elliotchance/orderedmap/v3 v3.1.1
 	github.com/fatih/color v1.19.0
-	github.com/gin-contrib/pprof v1.5.7
+	github.com/gin-contrib/pprof v1.5.8
 	github.com/gin-gonic/gin v1.12.0
-	github.com/go-co-op/gocron/v2 v2.23.0
+	github.com/go-co-op/gocron/v2 v2.23.1
 	github.com/go-gormigrate/gormigrate/v2 v2.1.7
 	github.com/go-playground/validator/v10 v10.30.6
 	github.com/google/pprof v0.0.0-20260507013755-92041b743c96
@@ -34,7 +34,7 @@ require (
 	github.com/uozi-tech/cosy-driver-postgres v0.2.3
 	github.com/uozi-tech/cosy-driver-sqlite v0.2.2
 	go.uber.org/zap v1.28.0
-	gopkg.in/ini.v1 v1.67.3
+	gopkg.in/ini.v1 v1.68.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.6.0
@@ -98,7 +98,7 @@ require (
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3 // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect

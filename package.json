@@ -3,7 +3,7 @@
   "packageManager": "bun@1.4.4",
   "devDependencies": {
     "esbuild": "^0.28.2",
-    "vite": "^8.3.6",
+    "vite": "^8.3.8",
     "vitepress": "^1.6.4",
     "vitepress-plugin-legend": "^2.0.0",
     "vue": "^3.5.45"
@@ -18,14 +18,14 @@
     "esbuild"
   ],
   "overrides": {
-    "axios": "^1.21.0",
-    "dompurify": "^3.4.17",
+    "axios": "^1.21.1",
+    "dompurify": "^3.4.18",
     "esbuild": "^0.28.2",
     "js-yaml": "5.5.0",
     "linkify-it": "^6.1.0",
     "markdown-it": "^15.0.3",
     "mermaid": "^12.3.0",
     "undici": "^8.12.4",
-    "vite": "^8.3.6"
+    "vite": "^8.3.8"
   }
 }
